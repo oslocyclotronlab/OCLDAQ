@@ -1,0 +1,34 @@
+# -*- Makefile -*-
+
+ifeq ($(BASEDIR),)
+$(error This file must be included from another 'Makefile' with BASEDIR set)
+endif
+
+# for automatic dependency files
+DEPEND = .depend-
+DEPFILES = $(OBJECTS:%.o=$(DEPEND)%.dep)
+
+install: install-dirs
+install-dirs:
+	@install -d $(INSTALL_DIR)
+install-targets: install-dirs $(TARGETS)
+	$(INSTALL_BIN) $(TARGETS) $(INSTALL_DIR)
+
+%.o: %.cpp $(DEPEND)%.dep
+	@$(ECHO) $(CXXMSG) $<
+	$H $(CXX) $(CXXFLAGS) -o $@ -c $<
+
+clean:  
+	$(RM) $(OBJECTS) a.out core $(TARGETS)
+
+very-clean: clean
+	rm -f $(DEPFILES)
+
+$(DEPEND)%.dep: %.cpp
+	@$(ECHO) $(DEPMSG) $<
+	$H ( echo -n "$@ "; $(CXX) $(CXXFLAGS) -MM $< ) > $@ || rm -f $@
+
+-include $(DEPFILES)
+
+.SUFFIXES: # Delete the default suffixes
+.PHONY: all install install-dirs install-targets clean very-clean

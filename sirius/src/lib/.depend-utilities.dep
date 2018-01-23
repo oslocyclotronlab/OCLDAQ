@@ -1,0 +1,2 @@
+-n .depend-utilities.dep 
+utilities.o: utilities.cpp ../../include/utilities.h

@@ -1,0 +1,4 @@
+.depend-sort_main.dep sort_main.o: sort_main.cpp ../../include/engine_shm.h \
+  ../../include/net_control.h user_routine_basic.h user_routine.h \
+  sort_format.h sort_calib.h ../../include/run_command.h \
+  ../../include/sort_spectra.h spectrum_rw.h ../../include/utilities.h
