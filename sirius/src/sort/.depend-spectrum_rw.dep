@@ -1,0 +1,2 @@
+.depend-spectrum_rw.dep spectrum_rw.o: spectrum_rw.cpp spectrum_rw.h ../../include/sort_spectra.h \
+  ../../include/utilities.h ../../include/debug.h
