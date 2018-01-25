@@ -1,24 +1,28 @@
-# -*- Makefile -*-
+# Makefile for lib
 
-BASEDIR = ../..
-include $(BASEDIR)/makefile-head
+LIBS		= -lm
+INCLUDES	= -I../../include
+DEFINES 	= -D_FILE_OFFSET_BITS=64
+CXX			= g++
+CXXFLAGS	= -Wall -W -O3 -g -fPIC $(DEFINES) $(INCLUDES)
 
-DEFINES        += -D_FILE_OFFSET_BITS=64
+AR			= ar cr
+RANLIB		= ranlib
 
-LIBSIRIUS      = libsirius.a
-TARGETS        = $(LIBSIRIUS)
+TARGET		= libsirius.a
+OBJECTS		= engine_shm.o net_control.o run_command.o utilities.o sort_spectra.o
 
-LIB_OBJECTS    = engine_shm.o net_control.o run_command.o utilities.o sort_spectra.o
-OBJECTS        = $(LIB_OBJECTS)
+all: $(TARGET)
 
-all: $(TARGETS)
+$(TARGET): $(OBJECTS)
+	$(AR) $@ $^
+	$(RANLIB) $@
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
+
+clean:
+	rm -r $(TARGET) $(OBJECTS)
 
 install:
 # nothing to install here
-
-$(LIBSIRIUS): $(LIB_OBJECTS)
-	@$(ECHO) $(ARMSG) $@
-	$H $(AR) $@ $^
-	$H $(RANLIB) $@
-
-include $(MAKEFILE_TAIL)

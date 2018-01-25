@@ -180,7 +180,9 @@ bool m_sort_connect(io_control& ioc)
 			   new line_cb(m_sort_have_line));
     if( !lc_sort ) {
 	commands->run("sort");
-	sleep(1);
+    #ifndef __APPLE__
+        sleep(1);
+    #endif // __APPLE__
 	lc_sort = line_connect(ioc, "127.0.0.1", 32010,
 			       new line_cb(m_sort_disconnected),
 			       new line_cb(m_sort_have_line));

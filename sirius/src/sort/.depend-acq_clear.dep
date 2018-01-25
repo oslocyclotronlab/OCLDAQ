@@ -1,1 +1,0 @@
-.depend-acq_clear.dep acq_clear.o: acq_clear.cpp ../../include/sort_spectra.h

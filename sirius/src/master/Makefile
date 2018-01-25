@@ -1,30 +1,27 @@
 # -*- Makefile -*-
 
-BASEDIR = ../..
-include $(BASEDIR)/makefile-head
+LIBS		= -lm -L/usr/X11R6/lib -lX11 -lXm -lXt -L../lib -lsirius
+INCLUDES	= -I../../include -I/usr/X11R6/include
+DEFINES 	=
+CXX			= g++
+CXXFLAGS	= -Wall -W -O3 -g -fPIC $(DEFINES) $(INCLUDES)
 
+OBJECTS		= acq_gui.o acq_storage.o acq_start.o \
+			  acq_stop.o acq_status.o acq_clear.o acq_dump.o acq_init.o \
+			  m_engine.o m_sort.o io_xtapp.o
 
-INCLUDES       += $(XINCLUDES)
-LIBS           += $(XLIBS)
-MASTEROBJS     = acq_gui.o acq_storage.o acq_start.o \
-                 acq_stop.o acq_status.o acq_clear.o acq_dump.o acq_init.o \
-                 m_engine.o m_sort.o io_xtapp.o
+TARGET      = acq_master
 
-LIBSIRIUS      = ../lib/libsirius.a
-ACQMASTER      = acq_master
+all: $(TARGET)
 
-OBJECTS        = $(MASTEROBJS)
-TARGETS        = $(ACQMASTER)
+$(TARGET): $(OBJECTS)
+	$(CXX) -o $@ $^ $(LIBS)
 
-all: $(TARGETS)
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
-install: install-targets
+clean:
+	rm -r $(TARGET) $(OBJECTS)
 
-$(ACQMASTER): $(MASTEROBJS) $(LIBSIRIUS)
-	@$(ECHO) $(CXXLMSG) $@
-	$H $(CXX) $(LIBS) $^ -o $@
-
-$(LIBSIRIUS):
-	@$(MAKE) -C $(shell dirname $(LIBSIRIUS)) $(shell basename $(LIBSIRIUS))
-
-include $(MAKEFILE_TAIL)
+install:
+	#Do nothing... yet...

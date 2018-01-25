@@ -101,7 +101,7 @@ static void do_stop()
     std::cout << "sleeping 1s to avoid confusing bobcat... " << std::flush;
     sleep(1);
     std::cout << "done" << std::endl;
-}
+} 
 
 // ########################################################################
 
@@ -388,7 +388,7 @@ int main(int argc, char* argv[])
 
     // main loop
     while( leaveprog == 'n' ) {
-
+//#ifndef DUMMY
         if( !stopped ) {
             if( sbs_usb_check_buffer() ) {
                 // a buffer is available; reset timestamp
@@ -444,7 +444,7 @@ int main(int argc, char* argv[])
             if( !sbs_usb_status() )
                 do_stop();
         }
-
+//#endif // DUMMY
         struct timeval timeout = { 0, 250 };
         ioc.run(&timeout);
     }

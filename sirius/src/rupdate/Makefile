@@ -1,37 +1,41 @@
-# -*- Makefile -*-
+# Makefile for rupdate
 
-BASEDIR = ../..
-include $(BASEDIR)/makefile-head
+# Library flags
+RLIBS			= $(shell root-config --glibs)
+LIBS			= -lm $(RLIBS) -L../lib -lsirius
 
-LIBS           += $(RLIBS)
-CXXFLAGS       += -I../sort $(RFLAGS)
+# Clang/gcc flags
+RFLAGS			= $(shell root-config --cflags)
+DEFINES			=
+INCLUDES		= -I../../include -I../sort
+CXXFLAGS		= -Wall -W -O2 -g -fPIC $(RFLAGS) $(INCLUDES) $(DEFINES)
 
-LIBSIRIUS      = ../lib/libsirius.a
-RUPDATE        = rupdate
-TARGETS        = $(RUPDATE)
+# Tools
+CC				= gcc
+CXX				= g++
+RM				= rm -f
 
-RUPDATE_SRCS   = rupdate.cpp io_root.cpp
-RUPDATE_OBJS   = $(RUPDATE_SRCS:%.cpp=%.o)
+# Target biaries
+TARGET			= rupdate
 
-OBJECTS        = $(sort $(RUPDATE_OBJS))
+# Object files
+OBJECTS			= rupdate.o io_root.o
 
-all: $(TARGETS)
 
-install: install-targets
+all: $(TARGET)
 
-$(RUPDATE): $(RUPDATE_OBJS) rootdict.o $(LIBSIRIUS)
-	@$(ECHO) $(CXXLMSG) $@
-	$H $(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
+$(TARGET): $(OBJECTS) rootdict.o
+	$(CXX) -o $@ $^ $(LIBS)
 
-$(LIBSIRIUS):
-	@$(MAKE) -C $(shell dirname $(LIBSIRIUS)) $(shell basename $(LIBSIRIUS))
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
+
+rootdict.o: rootdict.cpp
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
 rootdict.cpp: rupdate.h linkdef.h
-	@$(ECHO) "      [CINT] $<"
-	$H rootcint -f $@ -c $^
+	rootcint -f $@ -c $^
 
-clean: rclean
-rclean:
-	$(RM) rootdict.cpp rootdict.h
-
-include $(MAKEFILE_TAIL)
+clean:
+	$(RM) rootdict.cpp rootdict.h rootdict_rdict.pcm rootdict.o
+	$(RM) $(TARGET) $(OBJECTS)
