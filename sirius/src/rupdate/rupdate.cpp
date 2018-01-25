@@ -37,6 +37,8 @@
 #define NDEBUG
 #include "debug.h"
 
+ClassImp(MyMainFrame)
+
 // ########################################################################
 // ########################################################################
 
@@ -775,7 +777,7 @@ void MyMainFrame::UpdateHistogram()
         ec->cd();
     }
 
-    delete copy;
+    delete[] copy;
     ec->Update();
 }
 

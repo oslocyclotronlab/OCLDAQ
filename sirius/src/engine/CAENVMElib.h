@@ -22,7 +22,11 @@
 	#include <stdint.h>
 #endif
 #include <stdlib.h>
+
+#ifndef MACOSX
 #include <malloc.h>
+#endif MACOSX
+
 #include "CAENVMEoslib.h"
 #include "CAENVMEtypes.h"
 

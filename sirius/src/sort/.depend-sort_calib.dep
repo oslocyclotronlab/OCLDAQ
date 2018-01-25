@@ -1,2 +1,0 @@
-.depend-sort_calib.dep sort_calib.o: sort_calib.cpp sort_calib.h spectrum_rw.h \
-  ../../include/sort_spectra.h sort_format.h ../../include/utilities.h

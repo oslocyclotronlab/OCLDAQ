@@ -1,65 +1,72 @@
-# -*- Makefile -*-
 
-BASEDIR = ../..
-include $(BASEDIR)/makefile-head
+RLIBS			= $(shell root-config --glibs)
+LIBS			= -lm -L../lib -lsirius
+LIBS			+= $(RLIBS)
 
-LIBSIRIUS      = ../lib/libsirius.a
-LIBSORT        = libsort.a
-LIBOFFLINE     = liboffline.a
+RFLAGS			= $(shell root-config --cflags)
+INCLUDES		= -I../../include
+DEFINES			= -D_FILE_OFFSET_BITS=64
+CXXFLAGS		= -Wall -W -O3 -g -fPIC $(DEFINES) $(INCLUDES)
+CXXFLAGS		+= $(RFLAGS)
 
-DEFINES        += -D_FILE_OFFSET_BITS=64
+CXX				= g++
+AR				= ar cr
+RANLIB			= ranlib
+RM				= rm -f
 
-COMMON_SRCS    = spectrum_rw.cpp sort_format.cpp sort_calib.cpp userutil.cpp
-libsort_SRCS   = $(COMMON_SRCS) user_routine_basic.cpp sort_main.cpp
-liboffline_SRCS = $(COMMON_SRCS)  sort_offline.cpp
+# Object files needed for all targets
+OBJECT_COMMON	= spectrum_rw.o sort_format.o sort_calib.o userutil.o user_routine.o
 
-COMMON_OBJS    = $(COMMON_SRCS:%.cpp=%.o)
-libsort_OBJS   = $(libsort_SRCS:%.cpp=%.o)
-liboffline_OBJS = $(liboffline_SRCS:%.cpp=%.o)
+# Online library
+ONLINELIB		= libsort.a
+OBJECT_ONLINE	= sort_main.o user_routine_basic.o
 
-CLEAR_SRCS     = acq_clear.cpp
-CLEAR_OBJS     = $(CLEAR_SRCS:%.cpp=%.o)
+# Offline library
+OFFLINELIB		= liboffline.a
+OBJECT_OFFLINE	= sort_offline.o
 
-LIBRARIES      = $(LIBSORT) $(LIBOFFLINE)
-OBJECTS        = $(sort $(COMMON_OBJS) $(libsort_OBJS) $(liboffline_OBJS) $(CLEAR_OBJS))
+# Libraries!
+LIB_TARGETS		= $(ONLINELIB) $(OFFLINELIB)
 
-CLEAR          = acq_clear
-MAMA2ROOT      = mama2root
+# The acq_clear binary target
+CLEAR_APL		= acq_clear
+OBJECT_CLEAR	= acq_clear.o
 
-CXXFLAGS       += $(RFLAGS)
-LIBS           += $(RLIBS)
+# The mama2root binary target
+MAMA2ROOT_APL	= mama2root
+OBJECT_M2R		= mama2root.o
 
-TARGETS = $(LIBRARIES) $(CLEAR) $(MAMA2ROOT)
+APL_TARGETS		= $(CLEAR_APL) $(MAMA2ROOT_APL)
+
+TARGETS			= $(APL_TARGETS) $(LIB_TARGETS)
+OBJECTS			= $(OBJECT_COMMON) $(OBJECT_ONLINE) $(OBJECT_OFFLINE) $(OBJECT_CLEAR) $(OBJECT_M2R)
+
+
+##################################################
+
 
 all: $(TARGETS)
-	$(MAKE) -C user
 
-# only install mama2root and acq_clear, not the libraries
-install:
-	$(INSTALL_BIN) $(CLEAR) $(MAMA2ROOT) $(INSTALL_DIR)
-	$(MAKE) -C user $@
 
-##################################################
-# made after the example in "info make eval"
-# creates a rule for each library
-define LIBRARY_template
-$(1): $$($(1:%.a=%)_OBJS)
-	@$(ECHO) $(ARMSG) $$@ $$^
-	$H $(AR) $$@ $$^
-	$H $(RANLIB) $$@
-endef
-$(foreach lib,$(LIBRARIES),$(eval $(call LIBRARY_template,$(lib))))
-##################################################
+$(CLEAR_APL): $(OBJECT_CLEAR) $(OBJECT_COMMON)
+	$(CXX) -o $@ $^ $(LIBS)
 
-$(CLEAR): $(CLEAR_OBJS) $(COMMON_OBJS) $(LIBSIRIUS)
-	@$(ECHO) $(CXXLMSG) $@
-	$H $(CXX) $(CXXFLAGS) $^ -o $@ $(LIBS)
+$(MAMA2ROOT_APL): $(OBJECT_M2R)
+	$(CXX) -o $@ $^ $(LIBS)
 
-$(MAMA2ROOT): $(MAMA2ROOT).cpp
-	@$(ECHO) "   [CXX-EXE] $@"
-	$H $(CXX) $(CXXFLAGS) -DHAVE_MAIN -o $@ $^ $(LIBS) 
+$(ONLINELIB): $(OBJECT_COMMON) $(OBJECT_ONLINE)
+	$(AR) $@ $^
+	$(RANLIB) $@
 
-$(LIBSIRIUS):
-	@$(MAKE) -C $(shell dirname $(LIBSIRIUS)) $(shell basename $(LIBSIRIUS))
+$(OFFLINELIB): $(OBJECT_COMMON) $(OBJECT_OFFLINE)
+	$(AR) $@ $^
+	$(RANLIB) $@
 
-include $(MAKEFILE_TAIL)
+$(OBJECT_M2R): mama2root.cpp
+	$(CXX) $(CXXFLAGS) -DHAVE_MAIN -o $@ -c $^
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
+
+clean:
+	$(RM) $(OBJECTS) $(TARGETS)

@@ -12,6 +12,9 @@
 
 #include <stdlib.h>
 
+#if TEST_STUFF
+#endif // TEST_STUFF
+
 #define NDEBUG
 #include "debug.h"
 
@@ -109,7 +112,9 @@ bool m_engine_connect(io_control& ioc)
 			     new line_cb(m_engine_have_line));
     if( !lc_engine ) {
 	commands->run("engine");
-	sleep(1);
+    #ifndef __APPLE__
+        sleep(1);
+    #endif // __APPLE__
 	lc_engine = line_connect(ioc, "127.0.0.1", 32009,
 				 new line_cb(m_engine_disconnected),
 				 new line_cb(m_engine_have_line));

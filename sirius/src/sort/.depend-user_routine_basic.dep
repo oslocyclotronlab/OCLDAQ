@@ -1,3 +1,0 @@
-.depend-user_routine_basic.dep user_routine_basic.o: user_routine_basic.cpp user_routine_basic.h \
-  user_routine.h sort_format.h sort_calib.h ../../include/sort_spectra.h \
-  spectrum_rw.h

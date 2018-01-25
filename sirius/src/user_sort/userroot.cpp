@@ -52,6 +52,16 @@ bool UserROOT::Data(const std::string& /*filename*/)
 
 // ########################################################################
 
+#if __APPLE__
+
+bool UserROOT::ReadNaIEnergyCalibration(std::istream& in)
+{
+    calibration_t& cal = GetCalibration();
+    for(int i=0; i<28; ++i)
+        in >> cal.shiftna[i] >> cal.gainna[i];
+    return in.good();
+}
+#else
 bool UserROOT::ReadNaIEnergyCalibration(istream& in)
 {
     calibration_t& cal = GetCalibration();
@@ -59,6 +69,7 @@ bool UserROOT::ReadNaIEnergyCalibration(istream& in)
         in >> cal.shiftna[i] >> cal.gainna[i];
     return in.good();
 }
+#endif // __APPLE__
 
 // ########################################################################
 
