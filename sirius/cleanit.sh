@@ -9,6 +9,7 @@ TOPDIR="$(cd "$(dirname "$0")" && pwd -L)"
 LIBDIR="$TOPDIR/src/lib"
 MASTERDIR="$TOPDIR/src/master"
 ENGINEDIR="$TOPDIR/src/engine"
+XIAENGINEDIR="$TOPDIR/src/XIAengine"
 RUPDATEDIR="$TOPDIR/src/rupdate"
 SORTDIR="$TOPDIR/src/sort"
 USRSORTDIR="$TOPDIR/src/user_sort"
@@ -23,6 +24,10 @@ make clean
 
 # Next engine directory
 cd $ENGINEDIR
+make clean
+
+# Next XIAengine directory
+cd $XIAENGINEDIR
 make clean
 
 # Rupdate

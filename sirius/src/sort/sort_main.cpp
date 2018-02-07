@@ -18,9 +18,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#if __APPLE__
 #include <unistd.h>
-#endif // __APPLE__
 
 #if 0
 static const char* PATH_GAINSHIFT  = "/Applications/sirius/data/gainshift.init";
