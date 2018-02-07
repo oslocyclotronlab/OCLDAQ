@@ -11,10 +11,10 @@
 #include <sys/wait.h>
 #include <wordexp.h>
 
-#if defined(__APPLE__)
+//#if defined(__APPLE__)
 #include <sys/types.h>
 #include <unistd.h>
-#endif // defined(__APPLE__)
+//#endif // defined(__APPLE__)
 
 #define NDEBUG
 #include "debug.h"

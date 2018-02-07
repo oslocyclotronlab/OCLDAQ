@@ -11,6 +11,7 @@
 #include <sstream>
 
 #include <stdlib.h>
+#include <unistd.h>
 
 #if TEST_STUFF
 #endif // TEST_STUFF

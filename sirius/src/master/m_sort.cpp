@@ -10,6 +10,7 @@
 #include <iostream>
 
 #include <stdlib.h>
+#include <unistd.h>
 
 #define NDEBUG
 #include "debug.h"
