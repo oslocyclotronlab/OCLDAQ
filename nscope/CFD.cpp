@@ -61,7 +61,7 @@ CFD::CFD(const TGWindow * p, const TGWindow * main,
   chanNumber = 0;
   cfddelay = 0;
   cfdscale = 0;
-  cfdthresh = 0;
+  //thresh = 0;
 
 
   MapSubwindows();
@@ -134,7 +134,7 @@ Bool_t CFD::ProcessMessage(Long_t msg, Long_t parm1,
 	  if (i != chanNumber) {
 	    sprintf(tmp, "%1.3f", cfddelay);
 	    NumEntry[1][i]->SetText(tmp);
-        sprintf(tmp, "%d", static_cast<int>(cfdscale));
+	    sprintf(tmp, "%1.3f", cfdscale);
 	    NumEntry[2][i]->SetText(tmp);
 	    sprintf(tmp, "%1.3f", cfdthresh);
  	    NumEntry[3][i]->SetText(tmp);
@@ -179,13 +179,13 @@ int CFD::load_info(Long_t module)
     retval =
       Pixie16ReadSglChanPar(/*"CFDScale"*/pCFDScale, &ChanParData,
 			      modNumber, i);
-    sprintf(text, "%d", static_cast<int>(ChanParData));
+    sprintf(text, "%1.3f", ChanParData);
     NumEntry[2][i]->SetText(text);
 
     retval =
-      Pixie16ReadSglChanPar(/*"CFDThresh"*/pCFDThresh, &ChanParData,
+      Pixie16ReadSglChanPar(/*"TRIGGER_THRESHOLD"*/pCFDThresh, &ChanParData,
 			      modNumber, i);
-    sprintf(text, "%1.3f", ChanParData);
+    sprintf(text, "%d", (int) ChanParData);
     NumEntry[3][i]->SetText(text);
   }
   std::cout << "loading info for module " << module << std::endl;
@@ -203,6 +203,7 @@ int CFD::change_values(Long_t module)
   char pCFDDelay[]="CFDDelay";
   char pCFDScale[]="CFDScale";
   char pCFDThresh[]="CFDThresh";
+  //  double thresh;
 
   for (int i = 0; i < 16; i++) {
     cfddelay = NumEntry[1][i]->GetNumber();
@@ -211,7 +212,7 @@ int CFD::change_values(Long_t module)
     cfdscale = NumEntry[2][i]->GetNumber();
     Pixie16WriteSglChanPar(/*"CFDScale"*/pCFDScale, cfdscale, modNumber, i);
     cfdthresh = NumEntry[3][i]->GetNumber();
-    Pixie16WriteSglChanPar(/*"CFDThresh"*/pCFDThresh, cfdthresh, modNumber, i);
+    Pixie16WriteSglChanPar(/*"TRIGGER_THRESHOLD"*/pCFDThresh, cfdthresh, modNumber, i);
   }
 
 

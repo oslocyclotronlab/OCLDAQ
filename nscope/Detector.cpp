@@ -1,19 +1,19 @@
 #include "Detector.h"
-#include "SystemBooter.h"
-
 #include <string.h>
 #include <limits>
 #include <iostream>
 #include <fstream>
 
 using namespace std;
-using namespace DAQ::DDAS;
-namespace HR = DAQ::DDAS::HardwareRegistry;
-
 Detector::Detector()
 {
-    m_newset = false;
-    booted = false;
+  newset = false;
+  booted = false;
+  const char* vFile ="/home/vetlewi/Desktop/nscope/DDASFirmwareVersions.txt";
+  ReadFirmwareVersionFile(vFile);
+  const char* pFile ="cfgPixie16.txt";
+  ReadConfigFile (pFile);
+  //BootSystem (NumModules, PXISlotMap);
 }
 
 Detector::~Detector()
@@ -22,40 +22,7 @@ Detector::~Detector()
 
 void Detector::Boot()
 {
-    std::string setFilePath;
-    // make sure that if the user set a new settings file via File > Open...
-    // the user's selection gets honored.
-    if (m_newset) {
-        setFilePath = m_config.getSettingsFilePath();
-    }
-
-    m_config = *(Configuration::generate(FIRMWARE_FILE, "cfgPixie16.txt"));
-
-    if (m_newset) {
-        m_config.setSettingsFilePath(setFilePath);
-        m_newset = false;
-    }
-
-    SystemBooter booter;
-
-    if (getenv("DDAS_BOOT_WHEN_REQUESTED") == NULL) {
-        booter.boot(m_config, SystemBooter::FullBoot);
-    } else {
-        booter.boot(m_config, SystemBooter::SettingsOnly);
-    }
-
-    // the hardware map is set up during boot time
-    NumModules = m_config.getNumberOfModules();
-    std::vector<int> hdwrMap = m_config.getHardwareMap();
-    for (size_t i=0; i<hdwrMap.size(); ++i) {
-        HR::HardwareSpecification spec = HR::getSpecification(hdwrMap.at(i));
-        ModADCMSPS[i] = spec.s_adcFrequency;
-        ModADCBits[i] = spec.s_adcResolution;
-        ModRev[i]     = spec.s_hdwrRevision;
-    }
-
-    booted = true;
-
+  BootSystem(NumModules, PXISlotMap);
 }
 
 int Detector::ExitSystem()
@@ -77,21 +44,393 @@ int Detector::ExitSystem()
 
 void Detector::SetSetFile(const char *newsetfile)
 {
-  m_newset = true;
-  m_config.setSettingsFilePath(newsetfile);
-  cout << "Using new set file " << m_config.getSettingsFilePath() << endl;
+  //char tempname[FILENAME_STR_MAXLEN];
+  strcpy(DSPParFile,newsetfile);
+  //DSPParFile = tempname;
+  newset = true;
+  cout << "Using new set file " << DSPParFile << endl;;
 }
 
+bool Detector::ReadConfigFile (const char *config)
+{
+  ifstream input;
+  string line;
+  char *temp = new char[FILENAME_STR_MAXLEN];
+  input.open (config, ios::in);
+  int crateNum;
+  
+  if (input.fail ()) {
+    cout << "Can't open the config file ! " << config << endl << flush;
+    return false;
+  } else {
+    cout << "Reading config file... " << config << endl << flush;
+  }
+  
+  // Read and ignore the crate number that readout uses:
+  
+  input >> crateNum;
+  input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  
+  input >> NumModules;
+  cout << "\n" << NumModules << " modules, in slots: ";
+  input.getline (temp, FILENAME_STR_MAXLEN);
+  PXISlotMap = new unsigned short[NumModules];
+  for (int i = 0; i < NumModules; i++) {
+    input >> PXISlotMap[i];
+    input.getline (temp, FILENAME_STR_MAXLEN);
+    cout << PXISlotMap[i] << " ";
+  }
+  cout << "\n" << endl;
+  input >> DSPParFile;
+  input.getline (temp, FILENAME_STR_MAXLEN);
+  //cout << "DSPParFile:         " << DSPParFile << endl;
+
+  //check to make sure that this line contains a set file (.set extension)
+  //since the format has changed from previous versions of the code.
+  if( strstr(DSPParFile, ".set") == NULL) {
+    cout << "The file " << DSPParFile << " read in from " << config 
+	 << " does not appear to be a *.set file required by DDAS " << endl;
+    cout << "Program will now terminate " << endl;
+    exit(1);
+  }
+
+
+  while (getline(input, line)) {
+    if (line == "[100MSPS]") {
+      // load in files to overide defaults
+      //load syspixie
+      input >> ComFPGAConfigFile_RevBCD;
+      //load fippipixe
+      input >> SPFPGAConfigFile_RevBCD;
+      //load ldr file
+      input >> DSPCodeFile_RevBCD;
+      //load var file
+      input >> DSPVarFile_RevBCD;
+
+    } else if (line == "[250MSPS]"){
+      input >> ComFPGAConfigFile_RevF_250MHz_14Bit;
+      input >> SPFPGAConfigFile_RevF_250MHz_14Bit;
+      input >> DSPCodeFile_RevF_250MHz_14Bit;
+      input >> DSPVarFile_RevF_250MHz_14Bit;
+
+    } else if (line == "[500MSPS]"){
+      input >> ComFPGAConfigFile_RevF_500MHz_12Bit;
+      input >> SPFPGAConfigFile_RevF_500MHz_12Bit;
+      input >> DSPCodeFile_RevF_500MHz_12Bit;
+      input >> DSPVarFile_RevF_500MHz_12Bit;
+    }
+    
+  }
+  
+  ////cout << endl << "Firmware files: \n";
+  //input >> ComFPGAConfigFile;
+  //input.getline (temp, FILENAME_STR_MAXLEN);
+  ////cout << "ComFPGAConfigFile:  " << ComFPGAConfigFile << endl;
+  //input >> SPFPGAConfigFile;
+  //input.getline (temp, FILENAME_STR_MAXLEN);
+  ////cout << "SPFPGAConfigFile:   " << SPFPGAConfigFile << endl;
+  //input >> TrigFPGAConfigFile;
+  //input.getline (temp, FILENAME_STR_MAXLEN);
+  ////cout << "TrigFPGAConfigFile: " << TrigFPGAConfigFile << endl;
+  //input >> DSPCodeFile;
+  //input.getline (temp, FILENAME_STR_MAXLEN);
+  ////cout << "DSPCodeFile:        " << DSPCodeFile << endl;
+  //input >> DSPVarFile;
+  //input.getline (temp, FILENAME_STR_MAXLEN);
+  ////cout << "DSPVarFile:         " << DSPVarFile << endl;
+  ////cout << "--------------------------------------------------------\n\n";
+  
+
+  return true;
+}
+
+bool Detector::ReadFirmwareVersionFile(const char *config){
+
+  ifstream input;
+  string line;
+  unsigned short count;
+  input.open(config, ios::in);
+
+  if(input.fail()) {
+    cout << "Can't open the FirmwareVersion file !" << config << endl << flush;
+    return false;
+  } else {
+    cout << "Reading Firmware Version file... " << config << endl << flush;
+  }
+
+  // read input file with code provided by XIA using XIA defined formatted file
+  while(!(input.eof()))
+    {
+      input>>line;
+        
+      if(line == "[FPGAFirmwarefiles]") 
+	{
+	  cout<<"Found Firmware    #"<<line<<endl;
+	  
+	  // Loop through all possible Pixie-16 variants
+	  count = 0;
+	  while (count < TOTAL_PIXIE16_VARIANTS)
+	    {
+	       input>>line;
+	      
+	      if (line == "***Rev-B/C/D***")
+		{
+		  input >> ComFPGAConfigFile_RevBCD;
+		  input >> SPFPGAConfigFile_RevBCD;
+		  count ++;
+		}
+	      else if (line == "***Rev-F-14Bit-100MSPS***")
+		{
+		  input >> ComFPGAConfigFile_RevF_100MHz_14Bit;
+		  input >> SPFPGAConfigFile_RevF_100MHz_14Bit;
+		  count ++;
+		}
+	      else if (line == "***Rev-F-16Bit-100MSPS***")
+		{
+		  input >> ComFPGAConfigFile_RevF_100MHz_16Bit;
+		  input >> SPFPGAConfigFile_RevF_100MHz_16Bit;
+		  count ++;
+		}
+	      else if (line == "***Rev-F-12Bit-250MSPS***")
+		{
+		  input >> ComFPGAConfigFile_RevF_250MHz_12Bit;
+		  input >> SPFPGAConfigFile_RevF_250MHz_12Bit;
+		  count ++;
+		}
+	      else if (line == "***Rev-F-14Bit-250MSPS***")
+		{
+		  input >> ComFPGAConfigFile_RevF_250MHz_14Bit;
+		  input >> SPFPGAConfigFile_RevF_250MHz_14Bit;
+		  count ++;
+		}
+	      else if (line == "***Rev-F-16Bit-250MSPS***")
+		{
+		  input >> ComFPGAConfigFile_RevF_250MHz_16Bit;
+		  input >> SPFPGAConfigFile_RevF_250MHz_16Bit;
+		  count ++;
+		}
+	      else if (line == "***Rev-F-12Bit-500MSPS***")
+		{
+		  input >> ComFPGAConfigFile_RevF_500MHz_12Bit;
+		  input >> SPFPGAConfigFile_RevF_500MHz_12Bit;
+		  count ++;
+		}
+	      else if (line == "***Rev-F-14Bit-500MSPS***")
+		{
+		  input >> ComFPGAConfigFile_RevF_500MHz_14Bit;
+		  input >> SPFPGAConfigFile_RevF_500MHz_14Bit;
+		  // cout<<"test: "<<ComFPGAConfigFile_RevF_500MHz_14Bit<<endl;
+		  count ++;
+		}
+	    }
+	}
+      else if (line == "[DSPCodefiles]")
+	{
+	  // Loop through all possible Pixie-16 variants
+	  count = 0;
+	  while (count < TOTAL_PIXIE16_VARIANTS)
+	    {
+	      input>>line;
+	      
+	      if (line == "***Rev-B/C/D***")
+		{
+		  input >> DSPCodeFile_RevBCD;
+		  input >> DSPVarFile_RevBCD;
+		  count ++;
+		}
+	      else if (line == "***Rev-F-14Bit-100MSPS***")
+		{
+		  input >> DSPCodeFile_RevF_100MHz_14Bit;
+		  input >> DSPVarFile_RevF_100MHz_14Bit;
+		  count ++;
+		}
+	      else if (line == "***Rev-F-16Bit-100MSPS***")
+		{
+		  input >> DSPCodeFile_RevF_100MHz_16Bit;
+		  input >> DSPVarFile_RevF_100MHz_16Bit;
+		  count ++;
+		}
+	      else if (line == "***Rev-F-12Bit-250MSPS***")
+		{
+		  input >> DSPCodeFile_RevF_250MHz_12Bit;
+		  input >> DSPVarFile_RevF_250MHz_12Bit;
+		  count ++;
+		}
+	      else if (line == "***Rev-F-14Bit-250MSPS***")
+		{
+		  input >> DSPCodeFile_RevF_250MHz_14Bit;
+		  input >> DSPVarFile_RevF_250MHz_14Bit;
+		  count ++;
+		}
+	      else if (line == "***Rev-F-16Bit-250MSPS***")
+		{
+		  input >> DSPCodeFile_RevF_250MHz_16Bit;
+		  input >> DSPVarFile_RevF_250MHz_16Bit;
+		  count ++;
+		}
+	      else if (line == "***Rev-F-12Bit-500MSPS***")
+		{
+		  input >> DSPCodeFile_RevF_500MHz_12Bit;
+		  input >> DSPVarFile_RevF_500MHz_12Bit;
+		  count ++;
+		}
+	      else if (line == "***Rev-F-14Bit-500MSPS***")
+		{
+		  input >> DSPCodeFile_RevF_500MHz_14Bit;
+		  input >> DSPVarFile_RevF_500MHz_14Bit;
+		  count ++;
+		}
+	    }
+	}
+    }
+  
+  input.close();
+  input.clear();
+  
+  return true;  
+}
 
 std::vector<unsigned short> Detector::GetPXISlotMap() const
 {
-    return m_config.getSlotMap();
+    std::vector<unsigned short> slotmap(PXISlotMap,PXISlotMap+NumModules);
+    return slotmap;
 }
 
 bool Detector::IsBooted()
 {
   if(booted) return true;
   else return false;
+}
+
+bool
+Detector::BootSystem (unsigned short NumModules, unsigned short *PXISlotMap)
+{
+  booted = true; 
+  
+  int retval = 0;
+  retval = Pixie16InitSystem (NumModules, PXISlotMap, 0);
+  
+  if (retval != 0) {
+    cout << "PCI Pixie init has failed: " << retval << endl;
+    return false;
+  }
+
+  //////////////////////////////////////////////////////////
+  //  Read hardware variant information of each Pixie-16 module
+  //////////////////////////////////////////////////////////
+  for(unsigned short k=0; k<NumModules; k++) {
+    retval = Pixie16ReadModuleInfo(k, &ModRev[k], &ModSerNum[k], &ModADCBits[k], &ModADCMSPS[k]);
+    if (retval < 0)
+      {
+	cout<<"Reading hardware variant information failed in module "<<k<<", retval="<<retval<<endl;
+	return -3;
+      }
+  }
+
+  //////////////////////////////////////////////////////////
+  //  Assign firmware files based on hardware variant information
+  //  and then boot each Pixie-16 module
+  //////////////////////////////////////////////////////////
+	
+  cout<<"Booting all Pixie-16 modules...\n";
+	
+  // Set Pixie16_Trig_FPGA_File to a dummy string since it is no longer in use - just a place holder for software compatibility
+  strcpy(Pixie16_Trig_FPGA_File, "pixie16trigger.bin");
+
+  // Select firmware and dsp files based on hardware variant
+  for(unsigned short k=0; k<NumModules; k++) {
+    switch (ModRev[k]) {
+      case 11:
+      case 12:
+      case 13:
+	strcpy(Pixie16_Com_FPGA_File, ComFPGAConfigFile_RevBCD);
+	strcpy(Pixie16_SP_FPGA_File,  SPFPGAConfigFile_RevBCD);
+	strcpy(Pixie16_DSP_Code_File, DSPCodeFile_RevBCD);
+	strcpy(Pixie16_DSP_Var_File,  DSPVarFile_RevBCD);
+	break;
+      case 15:
+	if ((ModADCBits[k] == 14) && (ModADCMSPS[k] == 100)) {
+	  strcpy(Pixie16_Com_FPGA_File, ComFPGAConfigFile_RevF_100MHz_14Bit);
+	  strcpy(Pixie16_SP_FPGA_File,  SPFPGAConfigFile_RevF_100MHz_14Bit);
+	  strcpy(Pixie16_DSP_Code_File, DSPCodeFile_RevF_100MHz_14Bit);
+	  strcpy(Pixie16_DSP_Var_File,  DSPVarFile_RevF_100MHz_14Bit);
+	}
+	else if ((ModADCBits[k] == 16) && (ModADCMSPS[k] == 100)) {
+	  strcpy(Pixie16_Com_FPGA_File, ComFPGAConfigFile_RevF_100MHz_16Bit);
+	  strcpy(Pixie16_SP_FPGA_File,  SPFPGAConfigFile_RevF_100MHz_16Bit);
+	  strcpy(Pixie16_DSP_Code_File, DSPCodeFile_RevF_100MHz_16Bit);
+	  strcpy(Pixie16_DSP_Var_File,  DSPVarFile_RevF_100MHz_16Bit);
+	}
+	else if ((ModADCBits[k] == 12) && (ModADCMSPS[k] == 250)) {
+	  strcpy(Pixie16_Com_FPGA_File, ComFPGAConfigFile_RevF_250MHz_12Bit);
+	  strcpy(Pixie16_SP_FPGA_File,  SPFPGAConfigFile_RevF_250MHz_12Bit);
+	  strcpy(Pixie16_DSP_Code_File, DSPCodeFile_RevF_250MHz_12Bit);
+	  strcpy(Pixie16_DSP_Var_File,  DSPVarFile_RevF_250MHz_12Bit);
+	}
+	else if ((ModADCBits[k] == 14) && (ModADCMSPS[k] == 250)) {
+	  strcpy(Pixie16_Com_FPGA_File, ComFPGAConfigFile_RevF_250MHz_14Bit);
+	  strcpy(Pixie16_SP_FPGA_File,  SPFPGAConfigFile_RevF_250MHz_14Bit);
+	  strcpy(Pixie16_DSP_Code_File, DSPCodeFile_RevF_250MHz_14Bit);
+	  strcpy(Pixie16_DSP_Var_File,  DSPVarFile_RevF_250MHz_14Bit);
+	}
+	else if ((ModADCBits[k] == 16) && (ModADCMSPS[k] == 250)) {
+	  strcpy(Pixie16_Com_FPGA_File, ComFPGAConfigFile_RevF_250MHz_16Bit);
+	  strcpy(Pixie16_SP_FPGA_File,  SPFPGAConfigFile_RevF_250MHz_16Bit);
+	  strcpy(Pixie16_DSP_Code_File, DSPCodeFile_RevF_250MHz_16Bit);
+	  strcpy(Pixie16_DSP_Var_File,  DSPVarFile_RevF_250MHz_16Bit);
+	}
+	else if ((ModADCBits[k] == 12) && (ModADCMSPS[k] == 500)) {
+	  strcpy(Pixie16_Com_FPGA_File, ComFPGAConfigFile_RevF_500MHz_12Bit);
+	  strcpy(Pixie16_SP_FPGA_File,  SPFPGAConfigFile_RevF_500MHz_12Bit);
+	  strcpy(Pixie16_DSP_Code_File, DSPCodeFile_RevF_500MHz_12Bit);
+	  strcpy(Pixie16_DSP_Var_File,  DSPVarFile_RevF_500MHz_12Bit);
+	}
+	else if ((ModADCBits[k] == 14) && (ModADCMSPS[k] == 500)) {
+	  strcpy(Pixie16_Com_FPGA_File, ComFPGAConfigFile_RevF_500MHz_14Bit);
+	  strcpy(Pixie16_SP_FPGA_File,  SPFPGAConfigFile_RevF_500MHz_14Bit);
+	  strcpy(Pixie16_DSP_Code_File, DSPCodeFile_RevF_500MHz_14Bit);
+	  strcpy(Pixie16_DSP_Var_File,  DSPVarFile_RevF_500MHz_14Bit);
+	}
+	break;
+      default:
+	cout<<"Wrong revision information in module "<<k<<", revision="<<ModRev[k]<<"\n\n";
+	return -4;
+    }
+  
+    cout<<"\nBooting Pixie-16 module #"<<k<<", Rev="<<ModRev[k]<<", S/N="<<ModSerNum[k]<<", Bits="<<ModADCBits[k]<<", MSPS="<<ModADCMSPS[k]<<endl;
+    cout << "ComFPGAConfigFile:  " << Pixie16_Com_FPGA_File << endl;
+    cout << "SPFPGAConfigFile:   " << Pixie16_SP_FPGA_File << endl;
+    cout << "DSPCodeFile:        " << Pixie16_DSP_Code_File << endl;
+    cout << "DSPVarFile:         " << Pixie16_DSP_Var_File << endl;
+    cout << "--------------------------------------------------------\n\n";
+	
+    retval = Pixie16BootModule (Pixie16_Com_FPGA_File, 
+				// Name of communications FPGA config. file
+				Pixie16_SP_FPGA_File, 
+			      // Name of signal processing FPGA config. file
+				Pixie16_Trig_FPGA_File, 
+			      // placeholder name of trigger FPGA configuration file
+				Pixie16_DSP_Code_File, 
+			      // Name of executable code file for digital 
+			      // signal processor (DSP)
+				DSPParFile,           // Name of DSP parameter file
+				Pixie16_DSP_Var_File, // Name of DSP variable names file
+				k,                    // Pixie module number
+				0x7F);                // Fast boot pattern bitmask
+
+
+    if (retval != 0) {
+      cout << "Cards booting has failed " << retval << " !\n";
+      return false;
+    }
+  
+  }
+
+  cout << "Boot all modules ok " << endl;
+  cout << "DSPParFile:        " << DSPParFile << endl;
+
+  return true;
+  
 }
 
 int Detector::Syncronise ()
@@ -114,7 +453,7 @@ int Detector::StartLSMRun (int continue_run)
       fprintf (stderr, "Failed to write SYNCH_WAIT\n");
       return retval;
     }
-
+  
   for (int count = 0; count < NumModules; count++) {
     if (continue_run == 1)
       retval = Pixie16StartListModeRun (count,0x100, NEW_RUN);
@@ -122,36 +461,25 @@ int Detector::StartLSMRun (int continue_run)
       retval = Pixie16StartListModeRun (count, 0x100,RESUME_RUN);
     if (retval < 0)
       {
-    fprintf (stderr, "Failed to start ListMode run in module");
-    return retval;
+	fprintf (stderr, "Failed to start ListMode run in module");
+	return retval;
       }
   }
-
+  
   return 1;
-}
-
-int Detector::synchronize(int modnum) {
-
-    int retval = 0;
-    char pSYNCH_WAIT[]="SYNCH_WAIT";
-
-//    Syncronise();
-
-    retval = Pixie16WriteSglModPar (/*"SYNCH_WAIT"*/pSYNCH_WAIT, 0, modnum);
-    if (retval < 0) {
-        fprintf (stderr, "Failed to write SYNCH_WAIT\n");
-    }
-    return retval;
 }
 
 int Detector::StartRun (int continue_run, int modnum)
 {
   int retval = 0;
   int retval2 = 0;
+  char pSYNCH_WAIT[]="SYNCH_WAIT";
   char pHOST_RT_PRESET[]="HOST_RT_PRESET";
 
-  if (!booted) {
-      throw std::runtime_error("Cannot start a run before the system has been booted");
+  retval = Pixie16WriteSglModPar (/*"SYNCH_WAIT"*/pSYNCH_WAIT, 0, modnum);
+  if (retval < 0) {
+    fprintf (stderr, "Failed to write SYNCH_WAIT\n");
+    return retval;
   }
 
   // Remove the preset run length in both module 0 and the current one
@@ -171,6 +499,8 @@ int Detector::StartRun (int continue_run, int modnum)
     }
   }
 
+  // Start list mode run
+  // retval = Pixie16StartListModeRun(modnum, 0x100, NEW_RUN);
   // Start MCA run
   retval = Pixie16StartHistogramRun(modnum, NEW_RUN);
 

@@ -71,12 +71,60 @@ DDAS_SHARE environment variables.
 
 \subsection nscope_cfgPixie16 The cfgPixie16.txt file 
 
-The cfgPixie16.txt file provides information about the system when nscope is started.
-It is expected that it resides in the same directory nscope is launched from. It 
-contains information about which slots modules are situated in and also some extra
-firmware information.
+The next step in setting up nscope is the creation of a cfgPixie16.txt file.
+This file is a simple text file that contains the location of the Pixie-16
+cards in the crate. The nscope program
+reads this file at start up and it must therefore exist prior to running
+nscope. The cfgPixie16.txt file has the basic general structure:
 
-The details of the cfgPixie16.txt format can be found in \ref cfgPixie_format.
+\verbatim
+Crate Id (not used)
+Number of modules in crate
+Slot of 1st module
+Slot of 2nd module
+...
+Slot of Nth module
+Path to parameter file (.set)
+
+# the remaining sections are optional
+[100MSPS]
+Path to FPGA firmware file
+Path to fippi firmware file
+Path to dsp firmware file
+Path to dsp parameter file
+[250MSPS]
+Path to FPGA firmware file
+Path to fippi firmware file
+Path to dsp firmware file
+Path to dsp parameter file
+[500MSPS]
+Path to FPGA firmware file
+Path to fippi firmware file
+Path to dsp firmware file
+Path to dsp parameter file
+\endverbatim
+
+To be more illustrative, consider a DDAS system with two Pixie-16 modules. One
+module resides in slot 2 and the other in slot 4. Furthermore, the settings
+file that will be used is located at /path/to/my/params.set. The cfgPixie16.txt
+file for such a setup would look like:
+
+\verbatim
+1                       # crate id
+2                       # number of cards
+2                       # slot of first card
+4                       # slot of second card
+/path/to/my/params.set  # path to params
+\endverbatim
+
+The human-readable notes at the end of each line are actually allowed in the
+file, because all characters after the first whitespace character in each line
+are ignored. If this is the first time that you have set up a DDAS system and
+you have no preexisting parameter settings file, then you can find one at
+$DDAS_SHARE/crate_1.set.
+
+\note The cfgPixie16.txt and pxisys.ini files must exist and be readable in the directory the
+user is launching nscope from. 
 
 \subsection nscope_launchBoot Launching Nscope and Booting the Devices
 
@@ -310,15 +358,6 @@ The CFD implementation used by the Pixie-16 digitizers is described in detail
 in the manual. It will not be repeated here. The manual is silent, however, on
 the logic surrounding when the CFD is in use. Here we will describe more of the
 practical details associated with the CFD algorithm. 
-
-
-The CFD algorithm is governed by a few parameters. There is a leading
-trapezoidal filter and a trailing trapezoidal filter that are subtracted from each
-other. The distance between these trapezoidal filters is configured by the CFD delay
-setting. Prior to subtraction, the trailing filter is scaled by (1/2)^(W+1), where
-W is the CFD scale factor. Along with these two parameters, there is also a 
-threshold that must be overcome. All three of these parameters are adjustable
-from the CFD dialog.
 
 The user can enable or disable use of the CFD algorithm in the CSRA register.
 If CFD mode is disabled, then the algorithm is never used and the user will get

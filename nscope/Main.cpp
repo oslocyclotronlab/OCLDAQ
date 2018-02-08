@@ -959,9 +959,12 @@ void Main::GetHistogram(unsigned short module, unsigned short ChanNum)
   ymin = 4096;
   
   memset(histdata, 0, MCA_SIZE * sizeof(/*unsigned long*/uint32_t));
-  
+  int xmin=0,xmax=MCA_SIZE;
   if (fhisto == NULL) {
     fhisto = new TH1D ("EHist", "Energy histogram", MCA_SIZE, 0, MCA_SIZE);
+  } else {
+    xmin = fhisto->GetMinimumBin();
+    xmax = fhisto->GetMaximumBin();
   }
   
   int retval;
@@ -980,15 +983,20 @@ void Main::GetHistogram(unsigned short module, unsigned short ChanNum)
   for (int i = 0; i < MCA_SIZE; i++) {
     fhisto->Fill(i, histdata[i]);
   }
-  
+
+   
+
+
   dCanvasF1->Clear();
   dCanvasF1->cd();
   fhisto->DrawCopy();
   dCanvasF1->Modified();
   dCanvasF1->Update();
-  
+
+  if (xmin != xmax && xmax != 0)
+    fhisto->GetXaxis()->SetRange(xmin, xmax);
+  dCanvasF1->Update();
   gSystem->ProcessEvents();
-  
 }
 
 void Main::GetBaseline(unsigned short int module, unsigned short int ChanNum)

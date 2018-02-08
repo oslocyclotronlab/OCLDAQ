@@ -4,7 +4,6 @@
 #include "TG3DLine.h"
 #include "pixie16app_export.h"
 #include <iostream>
-#include <stdint.h>
 
 using namespace std;
 
@@ -337,161 +336,161 @@ TrigConfig::load_info (Long_t mod)
 	ckBtn[i]->SetState (kButtonDown);
       gt = 0;
       ///////////////test mil/////////////////////////
-      gt = APP32_TstBit (1, (uint32_t) ModParData);
+      gt = APP32_TstBit (1, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_1[i]->SetState (kButtonUp);
       else
 	ckBtn_1[i]->SetState (kButtonDown);
       gt = 0;
       ////////////////test gc////////////////////////////
-      gt = APP32_TstBit (2, (uint32_t) ModParData);
+      gt = APP32_TstBit (2, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_2[i]->SetState (kButtonUp);
       else
 	ckBtn_2[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test ra///////////////////////////
-      gt = APP32_TstBit (3, (uint32_t) ModParData);
+      gt = APP32_TstBit (3, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_3[i]->SetState (kButtonUp);
       else
 	ckBtn_3[i]->SetState (kButtonDown);
       gt = 0;
       //////////////////test ea//////////////////////////
-      gt = APP32_TstBit (4, (uint32_t) ModParData);
+      gt = APP32_TstBit (4, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_4[i]->SetState (kButtonUp);
       else
 	ckBtn_4[i]->SetState (kButtonDown);
       gt = 0;
       //////////////////test ha///////////////////////////
-      gt = APP32_TstBit (5, (uint32_t) ModParData);
+      gt = APP32_TstBit (5, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_5[i]->SetState (kButtonUp);
       else
 	ckBtn_5[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test gt//////////////////////////////
-      gt = APP32_TstBit (6, (uint32_t) ModParData);
+      gt = APP32_TstBit (6, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_6[i]->SetState (kButtonUp);
       else
 	ckBtn_6[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test gt//////////////////////////////
-      gt = APP32_TstBit (7, (uint32_t) ModParData);
+      gt = APP32_TstBit (7, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_7[i]->SetState (kButtonUp);
       else
 	ckBtn_7[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test gt//////////////////////////////
-      gt = APP32_TstBit (8, (uint32_t) ModParData);
+      gt = APP32_TstBit (8, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_8[i]->SetState (kButtonUp);
       else
 	ckBtn_8[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test gt//////////////////////////////
-      gt = APP32_TstBit (9, (uint32_t) ModParData);
+      gt = APP32_TstBit (9, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_9[i]->SetState (kButtonUp);
       else
 	ckBtn_9[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test gt//////////////////////////////
-      gt = APP32_TstBit (10, (uint32_t) ModParData);
+      gt = APP32_TstBit (10, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_10[i]->SetState (kButtonUp);
       else
 	ckBtn_10[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test gt//////////////////////////////
-      gt = APP32_TstBit (11, (uint32_t) ModParData);
+      gt = APP32_TstBit (11, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_11[i]->SetState (kButtonUp);
       else
 	ckBtn_11[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test gt//////////////////////////////
-      gt = APP32_TstBit (12, (uint32_t) ModParData);
+      gt = APP32_TstBit (12, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_12[i]->SetState (kButtonUp);
       else
 	ckBtn_12[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test gt//////////////////////////////
-      gt = APP32_TstBit (13, (uint32_t) ModParData);
+      gt = APP32_TstBit (13, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_13[i]->SetState (kButtonUp);
       else
 	ckBtn_13[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test gt//////////////////////////////
-      gt = APP32_TstBit (14, (uint32_t) ModParData);
+      gt = APP32_TstBit (14, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_14[i]->SetState (kButtonUp);
       else
 	ckBtn_14[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test gt//////////////////////////////
-      gt = APP32_TstBit (15, (uint32_t) ModParData);
+      gt = APP32_TstBit (15, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_15[i]->SetState (kButtonUp);
       else
 	ckBtn_15[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test gt//////////////////////////////
-      gt = APP32_TstBit (16, (uint32_t) ModParData);
+      gt = APP32_TstBit (16, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_16[i]->SetState (kButtonUp);
       else
 	ckBtn_16[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test gt//////////////////////////////
-      gt = APP32_TstBit (17, (uint32_t) ModParData);
+      gt = APP32_TstBit (17, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_17[i]->SetState (kButtonUp);
       else
 	ckBtn_17[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test gt//////////////////////////////
-      gt = APP32_TstBit (18, (uint32_t) ModParData);
+      gt = APP32_TstBit (18, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_18[i]->SetState (kButtonUp);
       else
 	ckBtn_18[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test gt//////////////////////////////
-      gt = APP32_TstBit (19, (uint32_t) ModParData);
+      gt = APP32_TstBit (19, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_19[i]->SetState (kButtonUp);
       else
 	ckBtn_19[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test gt//////////////////////////////
-      gt = APP32_TstBit (20, (uint32_t) ModParData);
+      gt = APP32_TstBit (20, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_20[i]->SetState (kButtonUp);
       else
 	ckBtn_20[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test gt//////////////////////////////
-      gt = APP32_TstBit (21, (uint32_t) ModParData);
+      gt = APP32_TstBit (21, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_21[i]->SetState (kButtonUp);
       else
 	ckBtn_21[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test gt//////////////////////////////
-      gt = APP32_TstBit (22, (uint32_t) ModParData);
+      gt = APP32_TstBit (22, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_22[i]->SetState (kButtonUp);
       else
 	ckBtn_22[i]->SetState (kButtonDown);
       gt = 0;
       /////////////////test gt//////////////////////////////
-      gt = APP32_TstBit (23, (uint32_t) ModParData);
+      gt = APP32_TstBit (23, (unsigned long) ModParData);
       if (gt == 0)
 	ckBtn_23[i]->SetState (kButtonUp);
       else
@@ -516,124 +515,124 @@ TrigConfig::change_values (Long_t mod)
     {
       Pixie16ReadSglModPar (pTrigConfig, &ModParData, /*module_number1*/i);
       if (ckBtn[i]->IsDown())
-	ModParData = APP32_SetBit (0, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (0, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (0, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (0, (unsigned short) ModParData);
 
       if (ckBtn_1[i]->IsDown())
-	ModParData = APP32_SetBit (1, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (1, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (1, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (1, (unsigned short) ModParData);
 
       if (ckBtn_2[i] ->IsDown())
-	ModParData = APP32_SetBit (2, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (2, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (2, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (2, (unsigned short) ModParData);
  
      if (ckBtn_3[i] ->IsDown())
-	ModParData = APP32_SetBit (3, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (3, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (3, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (3, (unsigned short) ModParData);
 
       if (ckBtn_4[i] ->IsDown())
-	ModParData = APP32_SetBit (4, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (4, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (4, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (4, (unsigned short) ModParData);
 
       if (ckBtn_5[i] ->IsDown())
-	ModParData = APP32_SetBit (5, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (5, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (5, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (5, (unsigned short) ModParData);
 
     if (ckBtn_6[i] ->IsDown())
-	ModParData = APP32_SetBit (6, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (6, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (6, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (6, (unsigned short) ModParData);
 
     if (ckBtn_7[i] ->IsDown())
-	ModParData = APP32_SetBit (7, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (7, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (7, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (7, (unsigned short) ModParData);
 
     if (ckBtn_8[i] ->IsDown())
-	ModParData = APP32_SetBit (8, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (8, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (8, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (8, (unsigned short) ModParData);
 
     if (ckBtn_9[i] ->IsDown())
-	ModParData = APP32_SetBit (9, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (9, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (9, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (9, (unsigned short) ModParData);
 
     if (ckBtn_10[i] ->IsDown())
-	ModParData = APP32_SetBit (10, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (10, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (10, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (10, (unsigned short) ModParData);
 
     if (ckBtn_11[i] ->IsDown())
-	ModParData = APP32_SetBit (11, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (11, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (11, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (11, (unsigned short) ModParData);
 
     if (ckBtn_12[i] ->IsDown())
-	ModParData = APP32_SetBit (12, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (12, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (12, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (12, (unsigned short) ModParData);
 
     if (ckBtn_13[i] ->IsDown())
-	ModParData = APP32_SetBit (13, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (13, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (13, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (13, (unsigned short) ModParData);
 
     if (ckBtn_14[i] ->IsDown())
-	ModParData = APP32_SetBit (14, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (14, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (14, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (14, (unsigned short) ModParData);
 
     if (ckBtn_15[i] ->IsDown())
-	ModParData = APP32_SetBit (15, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (15, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (15, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (15, (unsigned short) ModParData);
 
     if (ckBtn_16[i] ->IsDown())
-	ModParData = APP32_SetBit (16, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (16, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (16, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (16, (unsigned short) ModParData);
 
     if (ckBtn_17[i] ->IsDown())
-	ModParData = APP32_SetBit (17, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (17, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (17, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (17, (unsigned short) ModParData);
 
     if (ckBtn_18[i] ->IsDown())
-	ModParData = APP32_SetBit (18, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (18, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (18, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (18, (unsigned short) ModParData);
 
     if (ckBtn_19[i] ->IsDown())
-	ModParData = APP32_SetBit (19, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (19, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (19, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (19, (unsigned short) ModParData);
 
     if (ckBtn_20[i] ->IsDown())
-	ModParData = APP32_SetBit (20, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (20, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (20, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (20, (unsigned short) ModParData);
 
     if (ckBtn_21[i] ->IsDown())
-	ModParData = APP32_SetBit (21, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (21, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (21, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (21, (unsigned short) ModParData);
 
     if (ckBtn_22[i] ->IsDown())
-	ModParData = APP32_SetBit (22, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (22, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (22, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (22, (unsigned short) ModParData);
 
     if (ckBtn_23[i] ->IsDown())
-	ModParData = APP32_SetBit (23, (uint32_t) ModParData);
+	ModParData = APP32_SetBit (23, (unsigned short) ModParData);
       else
-	ModParData = APP32_ClrBit (23, (uint32_t) ModParData);
+	ModParData = APP32_ClrBit (23, (unsigned short) ModParData);
 
 
     Pixie16WriteSglModPar (pTrigConfig, ModParData, i/*module_number1*/);

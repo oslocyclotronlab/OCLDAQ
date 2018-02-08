@@ -13,8 +13,7 @@ INCLUDES	+=	$(ROOTINC)
 
 LIBS		=	-L/home/vetlewi/Desktop/Pixie16_software_linux/software \
 				-L/home/vetlewi/Desktop/PlxSdk_7.10/PlxApi/Library \
-				-L./booter -L./configuration \
-				-lPixie16App -lPixie16Sys -lPlxApi -lBooter -lConfiguration
+				-lPixie16App -lPixie16Sys -lPlxApi
 LIBS		+=	$(ROOTLIBS)
 
 CXX			=	g++
