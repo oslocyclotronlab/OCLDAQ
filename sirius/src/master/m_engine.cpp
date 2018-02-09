@@ -84,11 +84,12 @@ static void m_engine_have_line(line_channel*, void*)
         getline(line, message);
         log_message(LOG_ERR, "engine: ERROR %s\n", message.c_str());
         break; }
-    case 503: { // XIA problem
+    
+    case 504: { // XIA problem
     	std::string message = "?";
     	getline(line, message);
     	log_message(LOG_ERR, "engine: ERROR %s\n", message.c_str());
-    }
+    	break; }
     default:
         log_message(LOG_ERR, "engine: Unknown message '%s'\n", l.c_str());
     }
