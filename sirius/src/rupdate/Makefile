@@ -8,7 +8,7 @@ LIBS			= -lm $(RLIBS) -L../lib -lsirius
 RFLAGS			= $(shell root-config --cflags)
 DEFINES			=
 INCLUDES		= -I../../include -I../sort
-CXXFLAGS		= -Wall -W -O2 -g -fPIC $(RFLAGS) $(INCLUDES) $(DEFINES)
+CXXFLAGS		= -Wall -W -O2 -g -fPIC -DXIA=1 $(RFLAGS) $(INCLUDES) $(DEFINES)
 
 # Tools
 CC				= gcc
