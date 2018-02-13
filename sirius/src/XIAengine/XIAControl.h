@@ -11,6 +11,8 @@
 #include <mutex>
 #include <atomic>
 
+#include <sys/time.h>
+
 class WriteTerminal;
 
 #define XIA_MIN_READOUT 65536
@@ -61,11 +63,11 @@ public:
 
     // Poll to check if we have enough data to fill a buffer
     // (note, this will be false until we have 65536 32-bit words of data)
-    bool XIA_check_buffer();
+    bool XIA_check_buffer(int bufsize);
 
     // Poll to check if we have enough data to fill a buffer, single thread
     // (note, this will be false until we have 65536 32-bit words of data)
-    bool XIA_check_buffer_ST();
+    bool XIA_check_buffer_ST(int bufsize);
 
     // Ask for a buffer of data to be committed.
     bool XIA_fetch_buffer(uint32_t *buffer, int bufsize);
@@ -110,16 +112,20 @@ private:
     std::vector<uint32_t> overflow_fifo[PRESET_MAX_MODULES];
 
     // Flag to indicate that modules are initialized.
-    std::atomic_bool is_initialized;
+    //std::atomic_bool is_initialized;
+    bool is_initialized;
 
     // Flag to indicate that modules are booted.
-    std::atomic_bool is_booted;
+    //std::atomic_bool is_booted;
+    bool is_booted;
 
     // Flag to indicate that a run is active
-    std::atomic_bool is_running;
+    //std::atomic_bool is_running;
+    bool is_running;
 
     // Flag to indicate that the thread is running.
-    std::atomic_bool thread_is_running;
+    //std::atomic_bool thread_is_running;
+    bool thread_is_running;
 
     // Flag to indicate that firmware file has been successfully read.
     //bool Have_firmwares; // I don't think we ever check this flag...
@@ -182,6 +188,8 @@ private:
 
     // Temporary buffer for strings
     char errmsg[1024];
+
+    timeval last_time;
 
     // Some private functions that are needed.
 

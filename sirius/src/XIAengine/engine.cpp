@@ -228,7 +228,7 @@ static void command_start(line_channel* lc, const std::string&, void*)
     if( !open_file() )
         return;
     xiacontr->XIA_start_run();
-    if( xiacontr->XIA_check_status() ) {
+    if( !xiacontr->XIA_check_status() ) {
         close_file();
         lc->send("502 error_vme Could not connect to VME - eventbuilder stopped?.\n");
         return;
@@ -413,20 +413,17 @@ int main(int argc, char* argv[])
     while( leaveprog == 'n' ) {
         if( !stopped ) {
             #ifdef MULTITHREAD
-            if( xiacontr->XIA_check_buffer() ) {
+            if( xiacontr->XIA_check_buffer(datalen) ) {
             #else
-            if ( xiacontr->XIA_check_buffer_ST() ) {
+            if ( xiacontr->XIA_check_buffer_ST(datalen) ) {
             #endif // MULTITHREAD
                 // a buffer is available; reset timestamp
                 *time_us = *time_s = 0;
                 // transfer the buffer
-                if( xiacontr->XIA_fetch_buffer(data, datalen) ) {
+                if( !xiacontr->XIA_fetch_buffer(data, datalen) ) {
                     // the buffer was not transferred completely, stop
                     do_stop();
                 } else {
-                    // swap data
-                    for( unsigned int i=0; i<datalen; ++i )
-                        swap( data[i] );
 
                     // write actual timestamp
                     timeval t;
@@ -467,7 +464,7 @@ int main(int argc, char* argv[])
                 continue;
             }
             
-            if( xiacontr->XIA_check_status() )
+            if( !xiacontr->XIA_check_status() )
                 do_stop();
         }
         struct timeval timeout = { 0, 250 };

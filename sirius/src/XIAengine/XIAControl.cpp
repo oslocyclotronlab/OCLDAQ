@@ -123,7 +123,7 @@ bool XIAControl::SetSettingsFile(const std::string &SETname)
 }
 
 
-bool XIAControl::XIA_check_buffer()
+bool XIAControl::XIA_check_buffer(int bufsize)
 {
     // Check that we are actually running.
     if (!is_running)
@@ -131,27 +131,40 @@ bool XIAControl::XIA_check_buffer()
 
     // Lock the queue mutex such that we can check if we have enough data.
     std::lock_guard<std::mutex> queue_guard(queue_mutex);
-    if ( data_avalible + overflow_queue.size() - XIA_MIN_READOUT < SIRIUS_BUFFER_SIZE)
+    int have_data = data_avalible + overflow_queue.size();
+    have_data -= XIA_MIN_READOUT;
+    if ( have_data < bufsize)
         return false;
 
     return  true;
 }
 
-bool XIAControl::XIA_check_buffer_ST()
+bool XIAControl::XIA_check_buffer_ST(int bufsize)
 {
     // Check that we are actually running.
     if (!is_running)
         return false;
-
+    double t1=last_time.tv_sec + 1e-6*last_time.tv_usec;
+    double t2;
     if (CheckFIFO(XIA_FIFO_MIN_READOUT)){
 
         if (!ReadFIFO())
             StopRun();
     }
+    timeval tmp;
+    gettimeofday(&tmp, NULL);
+    t2 = tmp.tv_sec + 1e-6*tmp.tv_usec;
+    if (t2 - t1 > 5 ){
+        WriteScalers();
+        last_time = tmp;
+    }
+
 
     // Lock the queue mutex such that we can check if we have enough data.
     std::lock_guard<std::mutex> queue_guard(queue_mutex);
-    if ( data_avalible + overflow_queue.size() - XIA_MIN_READOUT < SIRIUS_BUFFER_SIZE)
+    int have_data = data_avalible + overflow_queue.size();
+    have_data -= XIA_MIN_READOUT;
+    if ( have_data < bufsize)
         return false;
 
     return  true;
@@ -163,9 +176,12 @@ bool XIAControl::XIA_fetch_buffer(uint32_t *buffer, int bufsize)
 {
     std::lock_guard<std::mutex> queue_guard(queue_mutex);
     int current_pos = 0;
+    int have_data = data_avalible + overflow_queue.size();
+    have_data -= XIA_MIN_READOUT;
+
     // This function should NEVER be called unless we have
     // enough data. However, in the case it happends.
-    if ( data_avalible + overflow_queue.size() - XIA_MIN_READOUT < bufsize ){
+    if ( have_data < bufsize ){
         return false;
     }
 
@@ -235,6 +251,9 @@ bool XIAControl::XIA_start_run()
 
     // Now we start the list mode for realz!
     is_running = StartLMR();
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
     return is_running; // OMG!!!
 }
 
@@ -313,9 +332,13 @@ bool XIAControl::XIA_reload()
 bool XIAControl::ReadConfigFile(const char *config)
 {
     std::ifstream input;
-    std::string line;
+    //std::string line;
+    sprintf(comFPGAConfigFile_RevF_500MHz_14Bit, "/home/vetlewi/Desktop/Firmware/syspixie16_revfgeneral_adc500mhz_r33341.bin");
+    sprintf(SPFPGAConfigFile_RevF_500MHz_14Bit, "/home/vetlewi/Desktop/Firmware/fippixie16_revfgeneral_14b500m_r34687.bin");
+    sprintf(DSPCodeFile_RevF_500MHz_14Bit, "/home/vetlewi/Desktop/DSP/Pixie16DSP_revfgeneral_14b500m_r35207.ldr");
+    sprintf(DSPVarFile_RevF_500MHz_14Bit, "/home/vetlewi/Desktop/DSP/Pixie16DSP_revfgeneral_14b500m_r35207.var");
 
-    if ( input.fail() ){
+    /*if ( input.fail() ){
         termWrite->WriteError("Couldn't open file '");
         termWrite->WriteError(config);
         termWrite->WriteError("'\n");
@@ -384,7 +407,7 @@ bool XIAControl::ReadConfigFile(const char *config)
                 input >> DSPVarFile_RevF_500MHz_14Bit;
             }
         }
-    }
+    }*/
     termWrite->Write("Done reading firmware files\n");
     input.close();
     return true;
@@ -831,7 +854,6 @@ bool XIAControl::CheckFIFO(unsigned int minReadout)
             Pixie_Print_MSG(errmsg);
             return false;
         }
-
         if (numFIFOwords < minReadout)
             continue;
         else
@@ -849,31 +871,30 @@ bool XIAControl::ReadFIFO()
     // thread from communicating with the modules.
     std::lock_guard<std::mutex> xia_guard(xia_mutex);
 
-    uint32_t *FIFOdata[PRESET_MAX_MODULES];
-    unsigned int fifoSize[PRESET_MAX_MODULES];
+    uint32_t *FIFOdata;
+    unsigned int fifoSize;
     int retval;
     for (int i = 0 ; i < num_modules ; ++i){
-        retval = Pixie16CheckExternalFIFOStatus(&fifoSize[i], i);
+        retval = Pixie16CheckExternalFIFOStatus(&fifoSize, i);
         if (retval == -1){
             sprintf(errmsg, "*ERROR* Pixie16CheckExternalFIFOStatus failed, retval = %d\n", i);
             termWrite->WriteError(errmsg);
             Pixie_Print_MSG(errmsg);
             return false;
         }
-
-        FIFOdata[i] = new uint32_t[fifoSize[i]];
-        retval = Pixie16ReadDataFromExternalFIFO(FIFOdata[i], fifoSize[i], i);
+        if (fifoSize < 16384)
+            continue;
+        FIFOdata = new uint32_t[fifoSize];
+        retval = Pixie16ReadDataFromExternalFIFO(FIFOdata, fifoSize, i);
         if (retval == -1){
             sprintf(errmsg, "*ERROR* Pixie16ReadDataFromExternalFIFO failed, retval = %d\n", i);
             termWrite->WriteError(errmsg);
             Pixie_Print_MSG(errmsg);
+            delete[] FIFOdata;
             return false;
         }
-    }
-
-    for (int i = 0 ; i < num_modules ; ++i){
-        ParseQueue(FIFOdata[i], fifoSize[i], i);
-        delete[] FIFOdata[i];
+        ParseQueue(FIFOdata, fifoSize, i);
+        delete[] FIFOdata;
     }
 
     return true;
