@@ -33,7 +33,7 @@ SOURCES += \
     event_sort/src/XIARoutine.cpp \
     main.cpp \
     utilities/src/spectrum_rw.cpp \
-    Sort_Funct.cpp
+    utilities/src/Sort_Funct.cpp
 
 
 HEADERS += \
@@ -51,5 +51,5 @@ HEADERS += \
     unpack_build/inc/Unpacker.h \
     event_sort/inc/XIARoutine.h \
     utilities/inc/spectrum_rw.h \
-    Sort_Funct.h
+    utilities/src/Sort_Funct.h
 
