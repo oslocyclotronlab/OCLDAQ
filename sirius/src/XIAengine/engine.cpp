@@ -393,8 +393,9 @@ int main(int argc, char* argv[])
         PXIMapping[i] = atoi(argv[i]);
 
     xiacontr = new XIAControl(&termWrite, PXIMapping);
+#ifdef MULTITHREAD
     std::thread poll_thread([](){ xiacontr->XIAthread(); } );
-
+#endif // MULTITHREAD
 
     // attach shared memory and initialize some variables
     unsigned int* buffer  = engine_shm_attach(true);
@@ -411,7 +412,11 @@ int main(int argc, char* argv[])
     // main loop
     while( leaveprog == 'n' ) {
         if( !stopped ) {
+            #ifdef MULTITHREAD
             if( xiacontr->XIA_check_buffer() ) {
+            #else
+            if ( xiacontr->XIA_check_buffer_ST() ) {
+            #endif // MULTITHREAD
                 // a buffer is available; reset timestamp
                 *time_us = *time_s = 0;
                 // transfer the buffer
@@ -471,11 +476,13 @@ int main(int argc, char* argv[])
 
     engine_shm_detach();
 
+#ifdef MULTITHREAD
     xiacontr->Terminate();
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     if ( poll_thread.joinable() )
         poll_thread.join();
+#endif // MULTITHREAD
     return 0;
 }
 
