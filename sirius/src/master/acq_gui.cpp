@@ -869,7 +869,7 @@ static Widget gui_setup_menubar(Widget parent)
     menu_run_stop   = create_item(RunPullDown, "Stop",   stop_pushed  );
     create_separator(RunPullDown);
     menu_run_status = create_item(RunPullDown, "Status", status_pushed);
-    menu_run_reload = create_item(RunPullDown, "Reload", status_pushed);
+    menu_run_reload = create_item(RunPullDown, "Reload", reload_pushed);
 
     // ------------------------------------------------------------------
     // create the "Spectra" menu
