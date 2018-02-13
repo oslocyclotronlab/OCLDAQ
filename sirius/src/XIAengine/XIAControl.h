@@ -129,6 +129,13 @@ private:
     // PXI mapping of the modules.
     unsigned short PXISlotMap[PRESET_MAX_MODULES];
 
+    // Timestamps needs to be multiplied by either 8 or 10 to
+    // get timestamp in ns. We will set these values when we
+    // read the sampling frequency from the modules.
+    // 250 MHz -> 8 ns
+    // 500 MHz -> 10 ns
+    int timestamp_factor[PRESET_MAX_MODULES];
+
     // Com. firmware files of the various models.
     char comFPGAConfigFile_RevBCD[2048];
     char comFPGAConfigFile_RevF_100MHz_14Bit[2048];
@@ -178,10 +185,20 @@ private:
     void flushQueue();
 
     // Function for reading and parsing Firmware file.
+    // Needs attention!!! Currently does not work :(
     bool ReadConfigFile(const char *config);
 
     // Function to initialize the XIA modules.
     bool InitializeXIA();
+
+    // Helper function to decide which firmware files to use
+    bool GetFirmwareFile(const unsigned short &revision,    /*!< Module revision                                    */
+                         const unsigned short &ADCbits,     /*!< Bit depth of the ADC                               */
+                         const unsigned short &ADCMSPS,     /*!< Number of MSPS of the ADC                          */
+                         char *comFPGA,                     /*!< String to fill with path to comFPGA firmware file  */
+                         char *SPFPGA,                      /*!< String to fill with path to SPFPGA firmware file   */
+                         char *DSPcode,                     /*!< String to fill with path to DSPcode file           */
+                         char *DSPVar                       /*!< String to fill with path to DSPvar file            */);
 
     // Function to boot the XIA modules.
     bool BootXIA();

@@ -385,6 +385,110 @@ bool XIAControl::InitializeXIA()
     return true;
 }
 
+bool XIAControl::GetFirmwareFile(const unsigned short &revision,
+                                 const unsigned short &ADCbits,
+                                 const unsigned short &ADCMSPS,
+                                 char *ComFPGA, char *SPFPGA,
+                                 char *DSPCode, char *DSPVar)
+{
+    // First we check the what revision we have:
+
+    switch (revision) {
+    case 11:
+    case 12:
+    case 13:
+        strcpy(ComFPGA, comFPGAConfigFile_RevBCD);
+        strcpy(SPFPGA, SPFPGAConfigFile_RevBCD);
+        strcpy(DSPCode, DSPCodeFile_RevBCD);
+        strcpy(DSPVar, DSPVarFile_RevBCD);
+        return true;
+    case 15: // We have rev. F. Here there are a lot of different options in terms of MSPS & ADCBits. We handle these later
+        break;
+    default:
+        // We return false... Unable to determine what module we are reading from...
+        return false;
+    }
+
+    // We will only reach this part of the code if revision is 15!!!
+    switch (ADCMSPS) {
+    case 100:
+    {
+        if (ADCbits == 12){
+            // This option is actually not possible.
+            // returning false!
+            return false;
+        } else if (ADCbits == 14){
+            strcpy(ComFPGA, comFPGAConfigFile_RevF_100MHz_14Bit);
+            strcpy(SPFPGA, SPFPGAConfigFile_RevF_100MHz_14Bit);
+            strcpy(DSPCode, DSPCodeFile_RevF_100MHz_14Bit);
+            strcpy(DSPVar, DSPVarFile_RevF_100MHz_14Bit);
+            return true;
+        } else if (ADCbits == 16){
+            strcpy(ComFPGA, comFPGAConfigFile_RevF_100MHz_16Bit);
+            strcpy(SPFPGA, SPFPGAConfigFile_RevF_100MHz_16Bit);
+            strcpy(DSPCode, DSPCodeFile_RevF_100MHz_16Bit);
+            strcpy(DSPVar, DSPVarFile_RevF_100MHz_16Bit);
+            return true;
+        } else {
+            return false; // Unable to determine the type of the module.
+        }
+
+        break;
+    }
+    case 250:
+    {
+        if (ADCbits == 12){
+            strcpy(ComFPGA, comFPGAConfigFile_RevF_250MHz_12Bit);
+            strcpy(SPFPGA, SPFPGAConfigFile_RevF_250MHz_12Bit);
+            strcpy(DSPCode, DSPCodeFile_RevF_250MHz_12Bit);
+            strcpy(DSPVar, DSPVarFile_RevF_250MHz_12Bit);
+            return true;
+        } else if (ADCbits == 14){
+            strcpy(ComFPGA, comFPGAConfigFile_RevF_250MHz_14Bit);
+            strcpy(SPFPGA, SPFPGAConfigFile_RevF_250MHz_14Bit);
+            strcpy(DSPCode, DSPCodeFile_RevF_250MHz_14Bit);
+            strcpy(DSPVar, DSPVarFile_RevF_250MHz_14Bit);
+            return true;
+        } else if (ADCbits == 16){
+            strcpy(ComFPGA, comFPGAConfigFile_RevF_250MHz_16Bit);
+            strcpy(SPFPGA, SPFPGAConfigFile_RevF_250MHz_16Bit);
+            strcpy(DSPCode, DSPCodeFile_RevF_250MHz_16Bit);
+            strcpy(DSPVar, DSPVarFile_RevF_250MHz_16Bit);
+            return true;
+        } else {
+            return false; // Unable to determine the type of the module.
+        }
+        break;
+    }
+    case 500:
+    {
+        if (ADCbits == 12){
+            strcpy(ComFPGA, comFPGAConfigFile_RevF_500MHz_12Bit);
+            strcpy(SPFPGA, SPFPGAConfigFile_RevF_500MHz_12Bit);
+            strcpy(DSPCode, DSPCodeFile_RevF_500MHz_12Bit);
+            strcpy(DSPVar, DSPVarFile_RevF_500MHz_12Bit);
+            return true;
+        } else if (ADCbits == 14){
+            strcpy(ComFPGA, comFPGAConfigFile_RevF_500MHz_14Bit);
+            strcpy(SPFPGA, SPFPGAConfigFile_RevF_500MHz_14Bit);
+            strcpy(DSPCode, DSPCodeFile_RevF_500MHz_14Bit);
+            strcpy(DSPVar, DSPVarFile_RevF_500MHz_14Bit);
+            return true;
+        } else if (ADCbits == 16){
+            // This option is currently not possible, returning false.
+            return false;
+        } else {
+            return false; // Unable to determine the type of the module.
+        }
+    }
+    default:
+        return false;
+    }
+
+    // We should never reach this point. If we do, something went wrong and we should return false.
+    return false;
+}
+
 bool XIAControl::BootXIA()
 {
 
@@ -414,64 +518,29 @@ bool XIAControl::BootXIA()
     }
 
     for (int i = 0 ; i < num_modules ; ++i){
-        switch (rev[i]) {
-        case 11:
-        case 12:
-        case 13:
-            strcpy(ComFPGA, comFPGAConfigFile_RevBCD);
-            strcpy(SPFPGA, SPFPGAConfigFile_RevBCD);
-            strcpy(DSPCode, DSPCodeFile_RevBCD);
-            strcpy(DSPVar, DSPVarFile_RevBCD);
-            break;
-
-        case 15:
-            if ( bit[i] == 14 && MHz[i] == 100 ){
-                strcpy(ComFPGA, comFPGAConfigFile_RevF_100MHz_14Bit);
-                strcpy(SPFPGA, SPFPGAConfigFile_RevF_100MHz_14Bit);
-                strcpy(DSPCode, DSPCodeFile_RevF_100MHz_14Bit);
-                strcpy(DSPVar, DSPVarFile_RevF_100MHz_14Bit);
-            } else if ( bit[i] == 16 && MHz[i] == 100 ){
-                strcpy(ComFPGA, comFPGAConfigFile_RevF_100MHz_16Bit);
-                strcpy(SPFPGA, SPFPGAConfigFile_RevF_100MHz_16Bit);
-                strcpy(DSPCode, DSPCodeFile_RevF_100MHz_16Bit);
-                strcpy(DSPVar, DSPVarFile_RevF_100MHz_16Bit);
-            } else if ( bit[i] == 12 && MHz[i] == 250 ){
-                strcpy(ComFPGA, comFPGAConfigFile_RevF_250MHz_12Bit);
-                strcpy(SPFPGA, SPFPGAConfigFile_RevF_250MHz_12Bit);
-                strcpy(DSPCode, DSPCodeFile_RevF_250MHz_12Bit);
-                strcpy(DSPVar, DSPVarFile_RevF_250MHz_12Bit);
-            } else if ( bit[i] == 14 && MHz[i] == 250 ){
-                strcpy(ComFPGA, comFPGAConfigFile_RevF_250MHz_14Bit);
-                strcpy(SPFPGA, SPFPGAConfigFile_RevF_250MHz_14Bit);
-                strcpy(DSPCode, DSPCodeFile_RevF_250MHz_14Bit);
-                strcpy(DSPVar, DSPVarFile_RevF_250MHz_14Bit);
-            } else if ( bit[i] == 16 && MHz[i] == 250 ){
-                strcpy(ComFPGA, comFPGAConfigFile_RevF_250MHz_16Bit);
-                strcpy(SPFPGA, SPFPGAConfigFile_RevF_250MHz_16Bit);
-                strcpy(DSPCode, DSPCodeFile_RevF_250MHz_16Bit);
-                strcpy(DSPVar, DSPVarFile_RevF_250MHz_16Bit);
-            }  else if ( bit[i] == 12 && MHz[i] == 500 ){
-                strcpy(ComFPGA, comFPGAConfigFile_RevF_500MHz_12Bit);
-                strcpy(SPFPGA, SPFPGAConfigFile_RevF_500MHz_12Bit);
-                strcpy(DSPCode, DSPCodeFile_RevF_500MHz_12Bit);
-                strcpy(DSPVar, DSPVarFile_RevF_500MHz_12Bit);
-            }  else if ( bit[i] == 14 && MHz[i] == 500 ){
-                strcpy(ComFPGA, comFPGAConfigFile_RevF_500MHz_14Bit);
-                strcpy(SPFPGA, SPFPGAConfigFile_RevF_500MHz_14Bit);
-                strcpy(DSPCode, DSPCodeFile_RevF_500MHz_14Bit);
-                strcpy(DSPVar, DSPVarFile_RevF_500MHz_14Bit);
-            } else  {
-                sprintf(errmsg, "Unknown module\n");
-                termWrite->Write(errmsg);
-                return false;
-            }
-            break;
-        default:
-            sprintf(errmsg, "Unknown module\n");
+        if (!GetFirmwareFile(rev[i], bit[i], MHz[i],
+                             ComFPGA, SPFPGA,
+                             DSPCode, DSPVar)) {
+            sprintf(errmsg, "Module %d: Unknown module\n", i);
             termWrite->Write(errmsg);
             return false;
+        }
+
+        switch (MHz[i]) {
+        case 100:
+            timestamp_factor[i] = 10;
+            break;
+        case 250:
+            timestamp_factor[i] = 8;
+            break;
+        case 500:
+            timestamp_factor[i] = 10;
+            break;
+        default:
+            timestamp_factor[i] = 10;
             break;
         }
+
 
         sprintf(errmsg, "Booting Pixie-16 module #%d, Rev=%d, S/N=%d, Bits=%d, MSPS=%d\n", i, rev[i], sn[i], bit[i], MHz[i]);
         termWrite->Write(errmsg);
@@ -843,6 +912,7 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
         thigh = (tmp[2] & 0x0000FFFF);
         evt.timestamp = thigh << 32;
         evt.timestamp |= tlow;
+        evt.timestamp *= timestamp_factor[module];
 
         for (int i = 0 ; i < header_length ; ++i){
             evt.raw_data[i] = tmp[i];
@@ -883,6 +953,12 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
             evt.raw_data[i] = raw_data[current_position+i];
         }
         evt.size_raw = header_length;
+
+        tlow = evt.raw_data[1];
+        thigh = (evt.raw_data[2] & 0x0000FFFF);
+        evt.timestamp = thigh << 32;
+        evt.timestamp |= tlow;
+        evt.timestamp *= timestamp_factor[module];
 
         // Remove trace
         if (event_length != header_length){
