@@ -63,6 +63,10 @@ public:
     // (note, this will be false until we have 65536 32-bit words of data)
     bool XIA_check_buffer();
 
+    // Poll to check if we have enough data to fill a buffer, single thread
+    // (note, this will be false until we have 65536 32-bit words of data)
+    bool XIA_check_buffer_ST();
+
     // Ask for a buffer of data to be committed.
     bool XIA_fetch_buffer(uint32_t *buffer, int bufsize);
 

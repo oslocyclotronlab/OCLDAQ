@@ -137,6 +137,27 @@ bool XIAControl::XIA_check_buffer()
     return  true;
 }
 
+bool XIAControl::XIA_check_buffer_ST()
+{
+    // Check that we are actually running.
+    if (!is_running)
+        return false;
+
+    if (CheckFIFO(XIA_FIFO_MIN_READOUT)){
+
+        if (!ReadFIFO())
+            StopRun();
+    }
+
+    // Lock the queue mutex such that we can check if we have enough data.
+    std::lock_guard<std::mutex> queue_guard(queue_mutex);
+    if ( data_avalible + overflow_queue.size() - XIA_MIN_READOUT < SIRIUS_BUFFER_SIZE)
+        return false;
+
+    return  true;
+}
+
+
 
 bool XIAControl::XIA_fetch_buffer(uint32_t *buffer, int bufsize)
 {
