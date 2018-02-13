@@ -248,8 +248,17 @@ int main (int argc, char *[])
                     if (evt_status == EventBuilder::END)
                         break;
                 }
+
+                broadcast_bufcount(0);
             }
         }
+
+        // check for commands, wait up to 0.5ms
+        struct timeval timeout = { 0, 500 };
+        ioc.run(&timeout);
     }
 
+    // detach shared memory
+    engine_shm_detach();
+    spectra_detach_all();
 }
