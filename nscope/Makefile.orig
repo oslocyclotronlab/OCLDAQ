@@ -1,0 +1,52 @@
+CXX=g++
+
+PIXIE16BASE = /user/ddas/ddasDaq/standard/LucidXIA/test500_2
+
+PLXBASE = /usr/opt/plx/PlxApi/Library/
+
+CXXFLAGS:=-g -Wall -I. -I$(PIXIE16BASE)/software/inc -I$(PIXIE16BASE)/software/app -I$(PIXIE16BASE)/software/sys -I$(PIXIE16BASE)/software/test
+
+ROOTLIBS = $(shell root-config --nonew --glibs)
+ROOTINC = -I$(shell root-config --nonew --incdir)
+CXXFLAGS+=$(ROOTINC)
+
+ifdef MCD_NOWRITE
+	CXXFLAGS += -DMCD_NOWRITE
+endif
+
+LIBS:= $(PIXIE16BASE)/test/libPixie16App.a  $(PIXIE16BASE)/test/libPixie16Sys.a  $(PLXBASE)/libPlxApi.a
+
+LIBDIRS = -L$(PIXIE16BASE)/test
+
+INCLUDES:=AnalogSignal.h Detector.h ExpertMod.h MaxEvent.h Table.h Baseline.h displayEdit.h Histogram.h PulseShape.h Tau.h Csra.h ModCsrb.h TrigConfig.h EnergyFilter.h ScopedT.h TriggerFilter.h CFD.h Popup.h lock.h MultCoincDialogue.h MultiplicityState.h TimingParamDialogue.h Main.h #NScopeDict.h
+
+OBJECTS:=AnalogSignal.o ExpertMod.o MaxEvent.o Baseline.o Histogram.o Csra.o ModCsrb.o TrigConfig.o Detector.o displayEdit.o EnergyFilter.o PulseShape.o ScopedT.o Table.o Tau.o TriggerFilter.o CFD.o Popup.o lock.o MultCoincDialogue.o MultiplicityState.o TimingParamDialogue.o Main.o nscope.o #NScopeDict.o
+
+SRCS:=AnalogSignal.cpp ExpertMod.cpp MaxEvent.cpp Baseline.cpp Histogram.cpp Csra.cpp ModCsrb.cpp TrigConfig.cpp Detector.cpp displayEdit.cpp EnergyFilter.cpp PulseShape.cpp ScopedT.cpp Table.cpp Tau.cpp TriggerFilter.cpp CFD.cpp Popup.cpp lock.cpp MultCoincDialogue.cpp MultiplicityState.cpp TimingParamDialogue.cpp Main.cpp nscope.cpp #NScopeDict.cpp
+
+all: nscope
+
+nscope: $(SRCS) $(OBJECTS) $(INCLUDES)
+	$(CXX) -o  $@  $(OBJECTS) $(CXXFLAGS) $(LIBS) $(ROOTLIBS) -I./inc -I./pixie16
+
+%.o: %.cpp 
+	$(CXX) $(CXXFLAGS) -c $< 
+%.o: %.cxx 
+	$(CXX) $(CXXFLAGS) -c $< 
+%.o: %.c
+	$(CXX) $(CXXFLAGS) -c $< 
+
+clean: 
+	rm -f *.o *~ nscope
+
+very-clean:
+	rm -f nscope *.o *~
+
+.PHONY: clean very-clean
+
+###
+#Main.o:Main.h
+
+#NScopeDict.cpp:Main.h
+#	@echo "Building dictionary ... "
+#	@rootcint NScopeDict.cpp -c Main.h

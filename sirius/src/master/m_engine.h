@@ -12,6 +12,7 @@ bool m_engine_quit();
 bool m_engine_stop();
 bool m_engine_start();
 bool m_engine_status();
+bool m_engine_reload();
 bool m_engine_output_none();
 bool m_engine_output_filename(const char* filename);
 bool m_engine_output_dir(const char* dirname);

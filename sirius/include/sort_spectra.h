@@ -5,6 +5,9 @@
 
 #include <sys/shm.h>
 
+#define XIA 1
+
+#ifndef XIA
 enum {
     SINGLES_ID =  1,
     ESP_ID     =  2,
@@ -19,6 +22,15 @@ enum {
     ALFGE_ID   = 11,
     MAT_ID     = 12
 };
+#else
+enum {
+    LABRSP_ID   =   1,
+    DESP_ID     =   2,
+    ESP_ID      =   3,
+    EDESP_ID    =   4,
+    TLABRSP_ID  =   5
+};
+#endif // XIA
 
 struct sort_spectrum_t {
     int specno;

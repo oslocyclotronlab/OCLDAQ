@@ -11,6 +11,7 @@ MASTERDIR="$TOPDIR/src/master"
 ENGINEDIR="$TOPDIR/src/engine"
 XIAENGINEDIR="$TOPDIR/src/XIAengine"
 RUPDATEDIR="$TOPDIR/src/rupdate"
+XIASORTDIR="$TOPDIR/src/XIAonline"
 SORTDIR="$TOPDIR/src/sort"
 USRSORTDIR="$TOPDIR/src/user_sort"
 
@@ -39,5 +40,9 @@ cd $SORTDIR
 make clean
 
 cd $USRSORTDIR
+make clean
+
+# Sort XIA directory
+cd $XIASORTDIR
 make clean
 

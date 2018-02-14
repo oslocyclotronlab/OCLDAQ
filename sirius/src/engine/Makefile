@@ -1,6 +1,6 @@
 # Makefile for engine
 
-LIBS		= -lm -lbz2
+LIBS		= -L../lib -lsirius -lm -lbz2
 #LIBS		+= -lbtp -lpthread -lCAENVME
 LIBS		+= -lpthread -lCAENVME
 INCLUDES	= -I../../include 

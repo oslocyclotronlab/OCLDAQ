@@ -21,10 +21,9 @@ CXX			=	g++
 CXXFLAGS	=	-Wall -W -O3 -g -fPIC -m64 -std=c++11 -pthread $(DEFINES) $(INCLUDES)
 
 
-OBJECTS		=	main.o \
-				DataMerger.o \
-				WriteTerminal.o \
-				XIAreader.o
+OBJECTS		=	engine.o \
+			XIAControl.o \
+			WriteTerminal.o
 
 TARGET		=	XIAengine
 
