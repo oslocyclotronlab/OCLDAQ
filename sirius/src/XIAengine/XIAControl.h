@@ -88,11 +88,6 @@ public:
     // Will return false if run is active.
     bool XIA_reload();
 
-    // Functions to test the import of Firmware.
-#ifdef TEST_FIRMWARE
-    bool TestFirmware(const char *fware);
-#endif // TEST_FIRMWARE
-
 private:
 
     // Object responsible for I/O to the stdout & stderr
