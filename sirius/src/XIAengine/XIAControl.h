@@ -5,6 +5,7 @@
 #include <queue>
 #include <vector>
 #include <string>
+#include <map>
 #include <functional>
 
 // Headers for handling threads
@@ -87,6 +88,11 @@ public:
     // Will return false if run is active.
     bool XIA_reload();
 
+    // Functions to test the import of Firmware.
+#ifdef TEST_FIRMWARE
+    bool TestFirmware(const char *fware);
+#endif // TEST_FIRMWARE
+
 private:
 
     // Object responsible for I/O to the stdout & stderr
@@ -146,45 +152,8 @@ private:
     // 500 MHz -> 10 ns
     int timestamp_factor[PRESET_MAX_MODULES];
 
-    // Com. firmware files of the various models.
-    char comFPGAConfigFile_RevBCD[2048];
-    char comFPGAConfigFile_RevF_100MHz_14Bit[2048];
-    char comFPGAConfigFile_RevF_100MHz_16Bit[2048];
-    char comFPGAConfigFile_RevF_250MHz_12Bit[2048];
-    char comFPGAConfigFile_RevF_250MHz_14Bit[2048];
-    char comFPGAConfigFile_RevF_250MHz_16Bit[2048];
-    char comFPGAConfigFile_RevF_500MHz_12Bit[2048];
-    char comFPGAConfigFile_RevF_500MHz_14Bit[2048];
-
-    // SP FPGA firmware files.
-    char SPFPGAConfigFile_RevBCD[2048];
-    char SPFPGAConfigFile_RevF_100MHz_14Bit[2048];
-    char SPFPGAConfigFile_RevF_100MHz_16Bit[2048];
-    char SPFPGAConfigFile_RevF_250MHz_12Bit[2048];
-    char SPFPGAConfigFile_RevF_250MHz_14Bit[2048];
-    char SPFPGAConfigFile_RevF_250MHz_16Bit[2048];
-    char SPFPGAConfigFile_RevF_500MHz_12Bit[2048];
-    char SPFPGAConfigFile_RevF_500MHz_14Bit[2048];
-
-    // DSP Code file
-    char DSPCodeFile_RevBCD[2048];
-    char DSPCodeFile_RevF_100MHz_14Bit[2048];
-    char DSPCodeFile_RevF_100MHz_16Bit[2048];
-    char DSPCodeFile_RevF_250MHz_12Bit[2048];
-    char DSPCodeFile_RevF_250MHz_14Bit[2048];
-    char DSPCodeFile_RevF_250MHz_16Bit[2048];
-    char DSPCodeFile_RevF_500MHz_12Bit[2048];
-    char DSPCodeFile_RevF_500MHz_14Bit[2048];
-
-    // DSP Var file
-    char DSPVarFile_RevBCD[2048];
-    char DSPVarFile_RevF_100MHz_14Bit[2048];
-    char DSPVarFile_RevF_100MHz_16Bit[2048];
-    char DSPVarFile_RevF_250MHz_12Bit[2048];
-    char DSPVarFile_RevF_250MHz_14Bit[2048];
-    char DSPVarFile_RevF_250MHz_16Bit[2048];
-    char DSPVarFile_RevF_500MHz_12Bit[2048];
-    char DSPVarFile_RevF_500MHz_14Bit[2048];
+    // Mapping of XIA firmware data.
+    std::map<std::string, std::string> firmwares;
 
     // Temporary buffer for strings
     char errmsg[1024];
@@ -207,7 +176,7 @@ private:
     bool GetFirmwareFile(const unsigned short &revision,    /*!< Module revision                                    */
                          const unsigned short &ADCbits,     /*!< Bit depth of the ADC                               */
                          const unsigned short &ADCMSPS,     /*!< Number of MSPS of the ADC                          */
-                         char *comFPGA,                     /*!< String to fill with path to comFPGA firmware file  */
+                         char *ComFPGA,                     /*!< String to fill with path to comFPGA firmware file  */
                          char *SPFPGA,                      /*!< String to fill with path to SPFPGA firmware file   */
                          char *DSPcode,                     /*!< String to fill with path to DSPcode file           */
                          char *DSPVar                       /*!< String to fill with path to DSPvar file            */);
