@@ -1,18 +1,41 @@
 #include "XIAControl.h"
 
 #include "WriteTerminal.h"
+#include "utilities.h"
 
 #include <thread>
 #include <chrono>
 #include <fstream>
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
 #include <sys/time.h>
 
 #include "pixie16app_export.h"
 #include "pixie16sys_export.h"
+
+
+const bool next_line(std::istream &in, std::string &line)
+{
+    line = "";
+
+    std::string tmp;
+    while ( std::getline(in, tmp) ){
+        size_t ls = tmp.size();
+        if ( ls == 0 ){
+            break;
+        } else if ( tmp[ls-1] != '\\' ){
+            line += tmp;
+            break;
+        } else {
+            line += tmp.substr(0, ls-1);
+        }
+    }
+    return in || !line.empty();
+}
+
+
 
 XIAControl::XIAControl(WriteTerminal *writeTerm,
                        const unsigned short PXImap[PRESET_MAX_MODULES],
@@ -331,85 +354,55 @@ bool XIAControl::XIA_reload()
 
 bool XIAControl::ReadConfigFile(const char *config)
 {
-    std::ifstream input;
-    //std::string line;
-    sprintf(comFPGAConfigFile_RevF_500MHz_14Bit, "/home/vetlewi/Desktop/Firmware/syspixie16_revfgeneral_adc500mhz_r33341.bin");
-    sprintf(SPFPGAConfigFile_RevF_500MHz_14Bit, "/home/vetlewi/Desktop/Firmware/fippixie16_revfgeneral_14b500m_r34687.bin");
-    sprintf(DSPCodeFile_RevF_500MHz_14Bit, "/home/vetlewi/Desktop/DSP/Pixie16DSP_revfgeneral_14b500m_r35207.ldr");
-    sprintf(DSPVarFile_RevF_500MHz_14Bit, "/home/vetlewi/Desktop/DSP/Pixie16DSP_revfgeneral_14b500m_r35207.var");
+    // We expect the file to have the following setup.
+    /*
+     * # - Indicates a comment
+     * \\ - Indicates that the input continues on the next line
+     * "comFPGAConfigFile_Rev<R>_<S>MHz_<B>Bit = /path/to/com/syspixie16_xx.bin" - R: Revision, S: ADC freqency and B: ADC bits
+     * "SPFPGAConfigFile_Rev<R>_<S>MHz_<B>Bit = /path/to/SPFPGA/fippixie16_xx.bin" - R: Revision, S: ADC freqency and B: ADC bits
+     * "DSPCodeFile_Rev<R>_<S>MHz_<B>Bit = /path/to/DSPCode/Pixie16DSP_xx.ldr" - R: Revision, S: ADC freqency and B: ADC bits
+     * "DSPVarFile_Rev<R>_<S>MHz_<B>Bit = /path/to/DSPVar/Pixie16DSP_xx.var" - R: Revision, S: ADC freqency and B: ADC bits
+     */
 
-    /*if ( input.fail() ){
-        termWrite->WriteError("Couldn't open file '");
-        termWrite->WriteError(config);
-        termWrite->WriteError("'\n");
+    std::ifstream input(config);
+    std::string line;
+
+    std::map<std::string, std::string> fw;
+    termWrite->Write("Reading firmware file... \n");
+
+    if ( !input.is_open() ){
+        termWrite->WriteError("Error: Couldn't read firmware config. file\n");
         return false;
-    } else {
-        termWrite->Write("Reading firmware file... \n");
     }
 
-    while ( !input.eof() ){
+    while ( next_line(input, line) ){
+        if ( line.empty() || line[0] == '#' )
+            continue; // Ignore empty lines or comments.
 
-        input >> line;
-        if ( line == "[FPGAFirmwarefiles]" ){
+        // Search for "=" sign on the line.
+        std::string::size_type pos_eq = line.find("=");
 
-            input >> line;
-            if ( line == "***Rev-B/C/D***" ){
-                input >> comFPGAConfigFile_RevBCD;
-                input >> SPFPGAConfigFile_RevBCD;
-            } else if ( line == "***Rev-F-14Bit-100MSPS***" ){
-                input >> comFPGAConfigFile_RevF_100MHz_14Bit;
-                input >> SPFPGAConfigFile_RevF_100MHz_14Bit;
-            } else if ( line == "***Rev-F-16Bit-100MSPS***" ){
-                input >> comFPGAConfigFile_RevF_100MHz_16Bit;
-                input >> SPFPGAConfigFile_RevF_100MHz_16Bit;
-            } else if ( line == "***Rev-F-12Bit-250MSPS***" ){
-                input >> comFPGAConfigFile_RevF_250MHz_12Bit;
-                input >> SPFPGAConfigFile_RevF_250MHz_12Bit;
-            } else if ( line == "***Rev-F-14Bit-250MSPS***" ){
-                input >> comFPGAConfigFile_RevF_250MHz_14Bit;
-                input >> SPFPGAConfigFile_RevF_250MHz_14Bit;
-            } else if ( line == "***Rev-F-16Bit-250MSPS***" ){
-                input >> comFPGAConfigFile_RevF_250MHz_16Bit;
-                input >> SPFPGAConfigFile_RevF_250MHz_16Bit;
-            }  else if ( line == "***Rev-F-12Bit-500MSPS***" ){
-                input >> comFPGAConfigFile_RevF_500MHz_12Bit;
-                input >> SPFPGAConfigFile_RevF_500MHz_12Bit;
-            }  else if ( line == "***Rev-F-14Bit-500MSPS***" ){
-                input >> comFPGAConfigFile_RevF_500MHz_14Bit;
-                input >> SPFPGAConfigFile_RevF_500MHz_14Bit;
-            }
-        } else if ( line == "[DSPCodefiles]" ){
-
-            input >> line;
-            if ( line == "***Rev-B/C/D***" ){
-                input >> DSPCodeFile_RevBCD;
-                input >> DSPVarFile_RevBCD;
-            } else if ( line == "***Rev-F-14Bit-100MSPS***" ){
-                input >> DSPCodeFile_RevF_100MHz_14Bit;
-                input >> DSPVarFile_RevF_100MHz_14Bit;
-            } else if ( line == "***Rev-F-16Bit-100MSPS***" ){
-                input >> DSPCodeFile_RevF_100MHz_16Bit;
-                input >> DSPVarFile_RevF_100MHz_16Bit;
-            } else if ( line == "***Rev-F-12Bit-250MSPS***" ){
-                input >> DSPCodeFile_RevF_250MHz_12Bit;
-                input >> DSPVarFile_RevF_250MHz_12Bit;
-            } else if ( line == "***Rev-F-14Bit-250MSPS***" ){
-                input >> DSPCodeFile_RevF_250MHz_14Bit;
-                input >> DSPVarFile_RevF_250MHz_14Bit;
-            } else if ( line == "***Rev-F-16Bit-250MSPS***" ){
-                input >> DSPCodeFile_RevF_250MHz_16Bit;
-                input >> DSPVarFile_RevF_250MHz_16Bit;
-            }  else if ( line == "***Rev-F-12Bit-500MSPS***" ){
-                input >> DSPCodeFile_RevF_500MHz_12Bit;
-                input >> DSPVarFile_RevF_500MHz_12Bit;
-            }  else if ( line == "***Rev-F-14Bit-500MSPS***" ){
-                input >> DSPCodeFile_RevF_500MHz_14Bit;
-                input >> DSPVarFile_RevF_500MHz_14Bit;
-            }
+        // If not found, write a warning and continue to next line.
+        if ( pos_eq == std::string::npos ){
+            sprintf(errmsg, "Could not understand line '%s', continuing...\n", line.c_str());
+            termWrite->WriteError(errmsg);
+            continue;
         }
-    }*/
+
+        std::string key = strip(line.substr(0, pos_eq));
+        std::string val = strip(line.substr(pos_eq+1));
+
+        // If the key have already been entered.
+        if ( fw.find(key) != fw.end() ){
+            sprintf(errmsg, "Mutiple definitions of '%s'\n", key.c_str());
+            termWrite->WriteError(errmsg);
+            return false;
+        }
+
+        fw[key] = val;
+    }
     termWrite->Write("Done reading firmware files\n");
-    input.close();
+    firmwares.swap(fw);
     return true;
 }
 
@@ -429,108 +422,65 @@ bool XIAControl::InitializeXIA()
     return true;
 }
 
-bool XIAControl::GetFirmwareFile(const unsigned short &revision,
-                                 const unsigned short &ADCbits,
-                                 const unsigned short &ADCMSPS,
-                                 char *ComFPGA, char *SPFPGA,
-                                 char *DSPCode, char *DSPVar)
+bool XIAControl::GetFirmwareFile(const unsigned short &revision, const unsigned short &ADCbits, const unsigned short &ADCMSPS,
+                                 char *ComFPGA, char *SPFPGA, char *DSPcode, char *DSPVar)
 {
-    // First we check the what revision we have:
+    std::string key_Com, key_SPFPGA, key_DSPcode, key_DSPVar;
 
-    switch (revision) {
-    case 11:
-    case 12:
-    case 13:
-        strcpy(ComFPGA, comFPGAConfigFile_RevBCD);
-        strcpy(SPFPGA, SPFPGAConfigFile_RevBCD);
-        strcpy(DSPCode, DSPCodeFile_RevBCD);
-        strcpy(DSPVar, DSPVarFile_RevBCD);
-        return true;
-    case 15: // We have rev. F. Here there are a lot of different options in terms of MSPS & ADCBits. We handle these later
-        break;
-    default:
-        // We return false... Unable to determine what module we are reading from...
+    // First, if Rev 11, 12 or 13.
+    if ( (revision == 11 || revision == 12 || revision == 13) ){
+
+        // We set the keys.
+        key_Com = "comFPGAConfigFile_RevBCD";
+        key_SPFPGA = "SPFPGAConfigFile_RevBCD";
+        key_DSPcode = "DSPCodeFile_RevBCD";
+        key_DSPVar = "DSPVarFile_RevBCD";
+
+    } else if ( revision == 15 ){
+
+        key_Com = "comFPGAConfigFile_RevF_" + std::to_string(ADCMSPS) + "MHz_" + std::to_string(ADCbits) + "Bit";
+        key_SPFPGA = "SPFPGAConfigFile_RevF_" + std::to_string(ADCMSPS) + "MHz_" + std::to_string(ADCbits) + "Bit";
+        key_DSPcode = "DSPCodeFile_RevF_" + std::to_string(ADCMSPS) + "MHz_" + std::to_string(ADCbits) + "Bit";
+        key_DSPVar = "DSPVarFile_RevF_" + std::to_string(ADCMSPS) + "MHz_" + std::to_string(ADCbits) + "Bit";
+
+    } else {
+        sprintf(errmsg, "Unknown Pixie-16 revision, rev=%d\n", revision);
+        termWrite->WriteError(errmsg);
         return false;
     }
 
-    // We will only reach this part of the code if revision is 15!!!
-    switch (ADCMSPS) {
-    case 100:
-    {
-        if (ADCbits == 12){
-            // This option is actually not possible.
-            // returning false!
-            return false;
-        } else if (ADCbits == 14){
-            strcpy(ComFPGA, comFPGAConfigFile_RevF_100MHz_14Bit);
-            strcpy(SPFPGA, SPFPGAConfigFile_RevF_100MHz_14Bit);
-            strcpy(DSPCode, DSPCodeFile_RevF_100MHz_14Bit);
-            strcpy(DSPVar, DSPVarFile_RevF_100MHz_14Bit);
-            return true;
-        } else if (ADCbits == 16){
-            strcpy(ComFPGA, comFPGAConfigFile_RevF_100MHz_16Bit);
-            strcpy(SPFPGA, SPFPGAConfigFile_RevF_100MHz_16Bit);
-            strcpy(DSPCode, DSPCodeFile_RevF_100MHz_16Bit);
-            strcpy(DSPVar, DSPVarFile_RevF_100MHz_16Bit);
-            return true;
-        } else {
-            return false; // Unable to determine the type of the module.
-        }
-
-        break;
-    }
-    case 250:
-    {
-        if (ADCbits == 12){
-            strcpy(ComFPGA, comFPGAConfigFile_RevF_250MHz_12Bit);
-            strcpy(SPFPGA, SPFPGAConfigFile_RevF_250MHz_12Bit);
-            strcpy(DSPCode, DSPCodeFile_RevF_250MHz_12Bit);
-            strcpy(DSPVar, DSPVarFile_RevF_250MHz_12Bit);
-            return true;
-        } else if (ADCbits == 14){
-            strcpy(ComFPGA, comFPGAConfigFile_RevF_250MHz_14Bit);
-            strcpy(SPFPGA, SPFPGAConfigFile_RevF_250MHz_14Bit);
-            strcpy(DSPCode, DSPCodeFile_RevF_250MHz_14Bit);
-            strcpy(DSPVar, DSPVarFile_RevF_250MHz_14Bit);
-            return true;
-        } else if (ADCbits == 16){
-            strcpy(ComFPGA, comFPGAConfigFile_RevF_250MHz_16Bit);
-            strcpy(SPFPGA, SPFPGAConfigFile_RevF_250MHz_16Bit);
-            strcpy(DSPCode, DSPCodeFile_RevF_250MHz_16Bit);
-            strcpy(DSPVar, DSPVarFile_RevF_250MHz_16Bit);
-            return true;
-        } else {
-            return false; // Unable to determine the type of the module.
-        }
-        break;
-    }
-    case 500:
-    {
-        if (ADCbits == 12){
-            strcpy(ComFPGA, comFPGAConfigFile_RevF_500MHz_12Bit);
-            strcpy(SPFPGA, SPFPGAConfigFile_RevF_500MHz_12Bit);
-            strcpy(DSPCode, DSPCodeFile_RevF_500MHz_12Bit);
-            strcpy(DSPVar, DSPVarFile_RevF_500MHz_12Bit);
-            return true;
-        } else if (ADCbits == 14){
-            strcpy(ComFPGA, comFPGAConfigFile_RevF_500MHz_14Bit);
-            strcpy(SPFPGA, SPFPGAConfigFile_RevF_500MHz_14Bit);
-            strcpy(DSPCode, DSPCodeFile_RevF_500MHz_14Bit);
-            strcpy(DSPVar, DSPVarFile_RevF_500MHz_14Bit);
-            return true;
-        } else if (ADCbits == 16){
-            // This option is currently not possible, returning false.
-            return false;
-        } else {
-            return false; // Unable to determine the type of the module.
-        }
-    }
-    default:
+    // Search our map for the firmware files.
+    if ( firmwares.find(key_Com) == firmwares.end() ){
+        sprintf(errmsg, "Missing firmware file '%s'\n", key_Com.c_str());
+        termWrite->WriteError(errmsg);
         return false;
     }
 
-    // We should never reach this point. If we do, something went wrong and we should return false.
-    return false;
+    if ( firmwares.find(key_SPFPGA) == firmwares.end() ){
+        sprintf(errmsg, "Missing firmware file '%s'\n", key_SPFPGA.c_str());
+        termWrite->WriteError(errmsg);
+        return false;
+    }
+
+    if ( firmwares.find(key_DSPcode) == firmwares.end() ){
+        sprintf(errmsg, "Missing firmware file '%s'\n", key_DSPcode.c_str());
+        termWrite->WriteError(errmsg);
+        return false;
+    }
+
+    if ( firmwares.find(key_DSPVar) == firmwares.end() ){
+        sprintf(errmsg, "Missing firmware file '%s'\n", key_DSPVar.c_str());
+        termWrite->WriteError(errmsg);
+        return false;
+    }
+
+    // If we reach this point, we know that we have all the firmwares!
+    strcpy(ComFPGA, firmwares[key_Com].c_str());
+    strcpy(SPFPGA, firmwares[key_SPFPGA].c_str());
+    strcpy(DSPcode, firmwares[key_DSPcode].c_str());
+    strcpy(DSPVar, firmwares[key_DSPVar].c_str());
+
+    return true;
 }
 
 bool XIAControl::BootXIA()
@@ -1020,3 +970,83 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
     }
     return;
 }
+
+
+
+// #######################################################################
+// #######################################################################
+#ifdef TEST_FIRMWARE
+bool XIAControl::TestFirmware(const char *fware)
+{
+    if ( !ReadConfigFile(fware) ){
+        termWrite->WriteError("Failed at ReadConfigFile()\n");
+        return false;
+    }
+
+    char ComFPGA[2048], SPFPGA[2048], DSPcode[2048], DSPVar[2048];
+
+    // Check that rev. B/C/D works.
+    if ( !( GetFirmwareFile(11, 12, 100, ComFPGA, SPFPGA, DSPcode, DSPVar) &&
+            GetFirmwareFile(12, 12, 100, ComFPGA, SPFPGA, DSPcode, DSPVar) &&
+            GetFirmwareFile(13, 12, 100, ComFPGA, SPFPGA, DSPcode, DSPVar) ) ) {
+        termWrite->WriteError("Failed getting firmware for rev. B/C/D\n");
+        return false;
+    }
+
+    if ( !GetFirmwareFile(15, 14, 100, ComFPGA, SPFPGA, DSPcode, DSPVar) ){
+        termWrite->WriteError("Failed geting firmware for rev. F, 14 bit, 100 MHz\n");
+        return false;
+    }
+
+    if ( !GetFirmwareFile(15, 16, 100, ComFPGA, SPFPGA, DSPcode, DSPVar) ){
+        termWrite->WriteError("Failed geting firmware for rev. F, 16 bit, 100 MHz\n");
+        return false;
+    }
+
+    if ( !GetFirmwareFile(15, 12, 250, ComFPGA, SPFPGA, DSPcode, DSPVar) ){
+        termWrite->WriteError("Failed geting firmware for rev. F, 12 bit, 250 MHz\n");
+        return false;
+    }
+
+    if ( !GetFirmwareFile(15, 14, 250, ComFPGA, SPFPGA, DSPcode, DSPVar) ){
+        termWrite->WriteError("Failed geting firmware for rev. F, 14 bit, 250 MHz\n");
+        return false;
+    }
+
+    if ( !GetFirmwareFile(15, 16, 250, ComFPGA, SPFPGA, DSPcode, DSPVar) ){
+        termWrite->WriteError("Failed geting firmware for rev. F, 16 bit, 250 MHz\n");
+        return false;
+    }
+
+    if ( !GetFirmwareFile(15, 12, 500, ComFPGA, SPFPGA, DSPcode, DSPVar) ){
+        termWrite->WriteError("Failed geting firmware for rev. F, 12 bit, 500 MHz\n");
+        return false;
+    }
+
+    if ( !GetFirmwareFile(15, 14, 500, ComFPGA, SPFPGA, DSPcode, DSPVar) ){
+        termWrite->WriteError("Failed geting firmware for rev. F, 14 bit, 500 MHz\n");
+        return false;
+    }
+
+    return true;
+}
+
+int main()
+{
+    const char *testfile = "/home/vetlewi/Desktop/OCLDAQ/sirius/src/build-XIAengine/testFirmware.txt";
+    WriteTerminal wt;
+    unsigned short pxi[] = {2, 3};
+    XIAControl obj(&wt, pxi, testfile, "");
+
+    if ( obj.TestFirmware(testfile) ){
+        wt.Write("Test PASSED\n");
+        exit(EXIT_SUCCESS);
+    } else {
+        wt.Write("Test FAILED\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+
+
+#endif // TEST_FIRMWARE
