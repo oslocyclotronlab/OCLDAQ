@@ -9,6 +9,7 @@
 // ######################################################################## 
 // ######################################################################## 
 
+#ifndef XIA
 sort_spectrum_t sort_spectra[] = {
     {  0, 0, 0, 0, 0, 0, 0, 0 },
     { SINGLES_ID,  SINGLES_KEY, SINGLES_SIZE, 0, SINGLES_XSIZE, SINGLES_YSIZE, "SINGLES", "singles" },
@@ -25,6 +26,16 @@ sort_spectrum_t sort_spectra[] = {
     { MAT_ID,      MAT_KEY,     MAT_SIZE,     0, MAT_XSIZE,     MAT_YSIZE,     "MAT",     "general purpose" },
     {  0, 0, 0, 0, 0, 0, 0, 0 }
 };
+#else
+sort_spectrum_t sort_spectra[] = {
+    {  0, 0, 0, 0, 0, 0, 0, 0 },
+    { LABRSP_ID,  LABRSP_KEY,   LABRSP_SIZE,    0,  LABRSP_XSIZE,   LABRSP_YSIZE,   "LABRSP",   "LaBr-energy" },
+    { DESP_ID,    DESP_KEY,     DESP_SIZE,      0,  DESP_XSIZE,     DESP_YSIZE,     "DESP",     "DE"},
+    { ESP_ID,     ESP_KEY,      ESP_SIZE,       0,  ESP_XSIZE,      ESP_YSIZE,      "ESP",      "E"},
+    { EDESP_ID,   EDESP_KEY,    EDESP_SIZE,     0,  EDESP_XSIZE,    EDESP_YSIZE,    "EDESP",    "E-DE"},
+    { TLABRSP_ID, TLABRSP_KEY,  TLABRSP_SIZE,   0,  TLABRSP_XSIZE,  TLABRSP_YSIZE,  "TLABRSP",  "LaBr-time"}
+};
+#endif // XIA
 
 const int NSPEC = sizeof(sort_spectra)/sizeof(sort_spectra[0]);
 

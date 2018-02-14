@@ -1,5 +1,5 @@
 RLIBS			= $(shell root-config --glibs)
-LIBS			= -lm -L../lib -lsirius -L../sort -lsort
+LIBS			=  -L../sort -lsort -L../lib -lsirius -lm
 LIBS			+= $(RLIBS)
 
 RFLAGS			= $(shell root-config --cflags)
