@@ -832,7 +832,7 @@ bool XIAControl::ReadFIFO()
             Pixie_Print_MSG(errmsg);
             return false;
         }
-        if (fifoSize < 16384)
+        if (fifoSize > 0) // Make sure we don't read from an empty FIFO.
             continue;
         FIFOdata = new uint32_t[fifoSize];
         retval = Pixie16ReadDataFromExternalFIFO(FIFOdata, fifoSize, i);
