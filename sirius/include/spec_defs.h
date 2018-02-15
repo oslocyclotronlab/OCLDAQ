@@ -15,7 +15,7 @@
 #define  DESP_YSIZE             64      /* E-counter spectra        */
 #define  ESP_YSIZE              16      /* DE-counter spectra       */
 #define  EDESP_YSIZE            2048    /* DE-E-counter spectra     */
-#define  TLABRSP_YSIZE          64      /* Thickness spectra        */
+#define  TLABRSP_YSIZE          48      /* Thickness spectra        */
 
 
 #define  LABRSP_SIZE    (4*LABRSP_XSIZE*LABRSP_YSIZE)   /* 6291456  6 MB    */
