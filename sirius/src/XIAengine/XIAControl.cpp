@@ -42,6 +42,11 @@ XIAControl::XIAControl(WriteTerminal *writeTerm,
                        const std::string &FWname,
                        const std::string &SETname)
     : termWrite( writeTerm )
+    , data_avalible( 0 )
+    , is_initialized( false )
+    , is_booted( false )
+    , is_running( false )
+    , thread_is_running( false )
     , settings_file( SETname )
 {
     ReadConfigFile(FWname.c_str());
@@ -50,6 +55,14 @@ XIAControl::XIAControl(WriteTerminal *writeTerm,
         if (PXImap[i] > 0)
             PXISlotMap[num_modules++] = PXImap[i];
     }
+
+    lmdata = (unsigned int *)malloc(sizeof(unsigned int) * EXTERNAL_FIFO_LENGTH);
+}
+
+XIAControl::~XIAControl()
+{
+    free(lmdata);
+    ExitXIA();
 }
 
 
@@ -82,7 +95,7 @@ void XIAControl::XIAthread()
                     StopRun();
                 t1 = t2;
             }
-
+            std::this_thread::sleep_for(std::chrono::microseconds(5));
         } else {
             std::this_thread::sleep_for(std::chrono::seconds(1)); // We sleep for 1 second at a time... Maybe a bit much?
         }
@@ -171,14 +184,15 @@ bool XIAControl::XIA_check_buffer_ST(int bufsize)
     double t2;
     if (CheckFIFO(XIA_FIFO_MIN_READOUT)){
 
-        if (!ReadFIFO())
+        if ( !ReadFIFO() )
             StopRun();
     }
     timeval tmp;
     gettimeofday(&tmp, NULL);
     t2 = tmp.tv_sec + 1e-6*tmp.tv_usec;
     if (t2 - t1 > 5 ){
-        WriteScalers();
+        if (!WriteScalers())
+            StopRun();
         last_time = tmp;
     }
 
@@ -269,8 +283,8 @@ bool XIAControl::XIA_start_run()
     termWrite->Write("... Awake again\n");
 
     // Write synch to the modules.
-    if (!SynchModules()) // We won't start running unless all modules are in synch and ready for action...
-        return false;
+    //if (!SynchModules()) // We won't start running unless all modules are in synch and ready for action...
+    //    return false;
 
     // Now we start the list mode for realz!
     is_running = StartLMR();
@@ -294,7 +308,7 @@ bool XIAControl::XIA_end_run(FILE *output_file)
         return true;
 
     // Now we will end the list mode run.
-    is_running = StopRun();
+    is_running = !StopRun();
 
     // We will wait for 0.5 seconds to make sure that all data
     // has been processed by the XIA DSP/FPGA.
@@ -645,6 +659,16 @@ bool XIAControl::StartLMR()
     }
     termWrite->Write("... Done.\n");
 
+    termWrite->Write("Trying to write IN_SYNCH...\n");
+    retval = Pixie16WriteSglModPar("IN_SYNCH", 0, 0);
+    if (retval < 0){
+        sprintf(errmsg, "*ERROR* Pixie16WriteSglModPar writing IN_SYNCH failed, retval = %d\n", retval);
+        termWrite->WriteError(errmsg);
+        Pixie_Print_MSG(errmsg);
+        return false;
+    }
+    termWrite->Write("... Done.\n");
+
     termWrite->Write("About to start list mode run...\n");
     retval = Pixie16StartListModeRun(num_modules, 0x100, NEW_RUN);
     if (retval < 0){
@@ -821,30 +845,31 @@ bool XIAControl::ReadFIFO()
     // thread from communicating with the modules.
     std::lock_guard<std::mutex> xia_guard(xia_mutex);
 
-    uint32_t *FIFOdata;
+    uint32_t *FIFOdata = lmdata;
     unsigned int fifoSize;
     int retval;
     for (int i = 0 ; i < num_modules ; ++i){
         retval = Pixie16CheckExternalFIFOStatus(&fifoSize, i);
-        if (retval == -1){
+        if (retval < 0){
             sprintf(errmsg, "*ERROR* Pixie16CheckExternalFIFOStatus failed, retval = %d\n", i);
             termWrite->WriteError(errmsg);
             Pixie_Print_MSG(errmsg);
             return false;
         }
-        if (fifoSize > 0) // Make sure we don't read from an empty FIFO.
+        if (fifoSize < 16384/*EXTFIFO_READ_THRESH*/) // Make sure we don't read from an empty FIFO.
             continue;
-        FIFOdata = new uint32_t[fifoSize];
+        //FIFOdata = new uint32_t[fifoSize];
+        //retval = Pixie_ExtFIFO_Read(lmdata)
         retval = Pixie16ReadDataFromExternalFIFO(FIFOdata, fifoSize, i);
-        if (retval == -1){
-            sprintf(errmsg, "*ERROR* Pixie16ReadDataFromExternalFIFO failed, retval = %d\n", i);
+        if (retval < 0){
+            sprintf(errmsg, "*ERROR* Pixie16ReadDataFromExternalFIFO failed, retval = %d\n", retval);
             termWrite->WriteError(errmsg);
             Pixie_Print_MSG(errmsg);
-            delete[] FIFOdata;
+            //delete[] FIFOdata;
             return false;
         }
         ParseQueue(FIFOdata, fifoSize, i);
-        delete[] FIFOdata;
+        //delete[] FIFOdata;
     }
 
     return true;
@@ -875,16 +900,16 @@ bool XIAControl::ExitXIA()
 
 void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
 {
-    int event_length, header_length;
-    int current_position;
+    int event_length=0, header_length=0;
+    int current_position=0;
     int64_t tlow, thigh;
     Event_t evt;
 
     if (overflow_fifo[module].size() > 0){
         event_length = (overflow_fifo[module][0] & 0x3FFE0000) >> 17;
         header_length = (overflow_fifo[module][0] & 0x0001F000) >> 12;
-
-        if (event_length - overflow_fifo[module].size() > size) { // Event spans several FIFOs :O
+        int evtsize = event_length - overflow_fifo[module].size();
+        if (evtsize > size) { // Event spans several FIFOs :O
             for (int i = 0 ; i < size ; ++i){
                 overflow_fifo[module].push_back(raw_data[i]);
             }

@@ -17,7 +17,7 @@
 class WriteTerminal;
 
 #define XIA_MIN_READOUT 65536
-#define XIA_FIFO_MIN_READOUT 16384
+#define XIA_FIFO_MIN_READOUT 32768
 #define SIRIUS_BUFFER_SIZE 32768
 #define SCALER_FILE_NAME_IN "scalers_in.dat"
 #define SCALER_FILE_NAME_OUT "scalers_out.dat"
@@ -45,7 +45,7 @@ public:
     // class, as it will release all resorces
     // related to the XIA modules and make sure
     // the thread is terminated.
-    ~XIAControl(){ ExitXIA(); }
+    ~XIAControl();
 
     // Function containing the thread loop.
     void XIAthread();
@@ -216,6 +216,8 @@ private:
     // Parse data and commit to the queue.
     void ParseQueue(uint32_t *raw_data, int size, int module);
 
+    // A small test...
+    unsigned int *lmdata;
 };
 
 #endif // XIACONTROL_H
