@@ -3,11 +3,12 @@ CONFIG += console c++11
 CONFIG -= app_bundle
 CONFIG -= qt
 
-ROOTFLAGS = $$system( root-config --cflags )
-ROOTLIBS = $$system( root-config --libs )
+#ROOTFLAGS = $$system( root-config --cflags )
+#ROOTLIBS = $$system( root-config --libs )
 
 
-QMAKE_CXXFLAGS += $$ROOTFLAGS
+QMAKE_CXXFLAGS += -O3 $$ROOTFLAGS
+QMAKE_CFLAGS += -O3
 LIBS += $$ROOTLIBS
 
 INCLUDEPATH +=  ./ \
@@ -51,5 +52,5 @@ HEADERS += \
     unpack_build/inc/Unpacker.h \
     event_sort/inc/XIARoutine.h \
     utilities/inc/spectrum_rw.h \
-    utilities/src/Sort_Funct.h
+    utilities/inc/Sort_Funct.h
 

@@ -66,12 +66,13 @@ std::vector<word_t> Unpacker::ParseBuffer(const volatile uint32_t *buffer, const
 
         uint32_t *tmp = new uint32_t[event_length];
 
-        for (int i = 0 ; i < overflow.size() ; ++i){
+        for (size_t i = 0 ; i < overflow.size() ; ++i){
             tmp[i] = overflow[i];
         }
 
         // Take data from buffer
-        for (int i =0 ; i < event_length - overflow.size() ; ++i){
+        int diff = event_length - overflow.size();
+        for (int i =0 ; i < diff ; ++i){
             tmp[i+overflow.size()] = buffer[i];
         }
 

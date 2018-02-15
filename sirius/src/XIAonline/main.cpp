@@ -220,9 +220,11 @@ int main (int argc, char *[])
     Event event;
     std::vector<word_t> data_p;
 
+    Setup();
+
     bool error = false;
-    int last_tus;
-    int last_t;
+    int last_tus=0;
+    int last_t=0;
 
     while ( leaveprog == 'n' ){
         const int tus = *time_us;
@@ -261,4 +263,5 @@ int main (int argc, char *[])
     // detach shared memory
     engine_shm_detach();
     spectra_detach_all();
+    End();
 }
