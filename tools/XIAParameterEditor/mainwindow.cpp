@@ -334,6 +334,23 @@ void MainWindow::setupContents(int module)
             }
         }
 
+        // TrigConfigX is four consequtive entries. This is not reflected in the var file.
+        // we get the rest by catching that entry.
+        if (it->first == "TrigConfig"){
+            for (int i = 0 ; i < 4 ; ++i){
+                sprintf(tmp, "%s%d", it->first.c_str(), i);
+                table->setItem(row, 0, new QTableWidgetItem(tr(tmp)));
+                unsigned int value = DSP_var[module][it->second + i - DATA_MEMORY_ADDRESS];
+                row_address[row] = it->second - DATA_MEMORY_ADDRESS;
+                row_value[row] = value;
+                QTableWidgetItem *itm = new QTableWidgetItem();
+                itm->setData(Qt::EditRole, value);
+                table->setItem(row++, 1, itm);
+            }
+            continue;
+        }
+
+
         if (is_chan_par){
             sprintf(tmp, "%s %d", it->first.c_str(), 0);
             table->setItem(row, 0, new QTableWidgetItem(tr(tmp)));
