@@ -535,6 +535,7 @@ Bool_t Main::ProcessMessage(Long_t msg, Long_t parm1, Long_t parm2)
 		    delete trace_float;
 		  }
 		  if (RUN_IN_PROGRESS == 1) {
+        GetHistogram(moduleNr, channelNr); // Update the histogram to latest version...
 		    unsigned long *mca_data = new unsigned long[MCA_SIZE];
         for (int i = 0 ; i < MCA_SIZE ; ++i)
           mca_data[i] = fhisto->GetBinContent(i);

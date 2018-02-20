@@ -5,7 +5,12 @@
             "includePath": [
                 "/usr/include",
                 "/usr/local/include",
-                "${workspaceRoot}"
+                "${workspaceRoot}",
+                "/Users/vetlewi/.local/include",
+                "/Users/vetlewi/Desktop/Pixie16_software_linux/software/inc",
+                "/Users/vetlewi/Desktop/Pixie16_software_linux/software/app",
+                "/Users/vetlewi/Desktop/Pixie16_software_linux/software/sys",
+                "/Users/vetlewi/Desktop/OCLDAQ/nscope"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
