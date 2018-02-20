@@ -534,11 +534,18 @@ Bool_t Main::ProcessMessage(Long_t msg, Long_t parm1, Long_t parm2)
 		  if (trace_float != NULL) {
 		    delete trace_float;
 		  }
-		  trace_float = new float[size];
-		  for (int i = 0; i < size; i++) {
-		    trace_float[i] = fHpx_wave->GetBinContent(i);
-		  }
-		  writeSpe(fInput1.fFilename, trace_float, size);
+		  if (RUN_IN_PROGRESS == 1) {
+		    unsigned long *mca_data = new unsigned long[MCA_SIZE];
+        for (int i = 0 ; i < MCA_SIZE ; ++i)
+          mca_data[i] = fhisto->GetBinContent(i);
+        writeSpect(fInput1.fFilename, mca_data, MCA_SIZE);
+	 	  } else {
+		    trace_float = new float[size];	
+		    for (int i = 0; i < size; i++) {
+		      trace_float[i] = fHpx_wave->GetBinContent(i);
+		    }
+		    writeSpe(fInput1.fFilename, trace_float, size);
+      }
 		} else {
 		  cout << "No file name entered !\n" << flush;
 		}
@@ -959,12 +966,12 @@ void Main::GetHistogram(unsigned short module, unsigned short ChanNum)
   ymin = 4096;
   
   memset(histdata, 0, MCA_SIZE * sizeof(/*unsigned long*/uint32_t));
-  int xmin=0,xmax=MCA_SIZE;
+  int xmin=0,xmax=0;
   if (fhisto == NULL) {
     fhisto = new TH1D ("EHist", "Energy histogram", MCA_SIZE, 0, MCA_SIZE);
   } else {
-    xmin = fhisto->GetMinimumBin();
-    xmax = fhisto->GetMaximumBin();
+    xmin = fhisto->GetXaxis()->GetXmin();
+    xmax = fhisto->GetXaxis()->GetXmax();
   }
   
   int retval;
@@ -1396,6 +1403,8 @@ void Main::AnlyTrace(unsigned long size, unsigned short module,
 
 }
 
+
+
 void Main::writeSpe(const char *filename, float buf[], int dim)
 {
   struct spePrefix
@@ -1420,6 +1429,18 @@ void Main::writeSpe(const char *filename, float buf[], int dim)
   out.write(reinterpret_cast < char *>(&recl), sizeof (recl));
   out.close();
 }
+
+void Main::writeSpect(const char *filename, unsigned long buf[], int dim)
+{
+  char tmp[1024];
+  ofstream out(filename, ios::out);
+  for (int i = 0 ; i < dim ; ++i){
+    out << buf[i] << endl;
+  }
+  out.close();
+}
+
+
 
 void Main::save_setup(char *name)
 {

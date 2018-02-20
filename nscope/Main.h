@@ -216,6 +216,7 @@ class Main:public TGMainFrame
   void AnlyTrace(unsigned long size, unsigned short module,
 		 unsigned short ChanNum);
   void writeSpe(const char *filename, float buf[], int dim);
+  void writeSpect(const char *filename, unsigned long buf[], int dim);
   void save_setup(char *name);
   int  IdentifyTracePulse (unsigned short *trace, unsigned int traceSize,
 			   unsigned int trigLen, unsigned int trigGap,
