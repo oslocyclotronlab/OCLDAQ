@@ -37,6 +37,8 @@
 #define GAP_SIZE 500
 #define MAX_TDIFF 500
 
+#define SINGLES 1
+
 EventBuilder::EventBuilder()
 	: buffer( 0 )
     , curr_pos( 0 )

@@ -1,5 +1,13 @@
 1
-1
+9
 2
+3
+4
+5
+6
+7
+8
+9
+10
 
-/home/vetlewi/Desktop/Configuration/Test_RevF14-500_labr3.set
+/home/vetlewi/Desktop/settings_new.set
