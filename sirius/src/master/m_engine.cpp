@@ -132,6 +132,29 @@ bool m_engine_connect(io_control& ioc)
 
 // ########################################################################
 
+bool m_engine_connect(io_control& ioc, const char *host)
+{
+    if( lc_engine )
+        return true;
+
+    lc_engine = line_connect(ioc, host, 32009,
+                 new line_cb(m_engine_disconnected),
+                 new line_cb(m_engine_have_line));
+    if( !lc_engine ) {
+    commands->run("engine");
+    #ifndef __APPLE__
+        sleep(1);
+    #endif // __APPLE__
+    lc_engine = line_connect(ioc, host, 32009,
+                 new line_cb(m_engine_disconnected),
+                 new line_cb(m_engine_have_line));
+    }
+    gui_update_state();
+    return lc_engine != 0;
+}
+
+// ########################################################################
+
 bool m_engine_disconnect()
 {
     delete lc_engine;

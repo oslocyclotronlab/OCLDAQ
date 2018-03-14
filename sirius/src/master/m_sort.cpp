@@ -195,6 +195,31 @@ bool m_sort_connect(io_control& ioc)
 
 // ########################################################################
 
+bool m_sort_connect(io_control& ioc, const char* host)
+{
+    if( lc_sort )
+        return true;
+
+
+    lc_sort = line_connect(ioc, host, 32010,
+               new line_cb(m_sort_disconnected),
+               new line_cb(m_sort_have_line));
+    if( !lc_sort ) {
+    commands->run("sort");
+    #ifndef __APPLE__
+        sleep(1);
+    #endif // __APPLE__
+    lc_sort = line_connect(ioc, host, 32010,
+                   new line_cb(m_sort_disconnected),
+                   new line_cb(m_sort_have_line));
+    }
+    gui_update_state();
+
+    return lc_sort != 0;
+}
+
+// ########################################################################
+
 bool m_sort_disconnect()
 {
     delete lc_sort;
