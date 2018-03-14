@@ -14,6 +14,7 @@ RUPDATEDIR="$TOPDIR/src/rupdate"
 XIASORTDIR="$TOPDIR/src/XIAonline"
 SORTDIR="$TOPDIR/src/sort"
 USRSORTDIR="$TOPDIR/src/user_sort"
+BINDIR="$TOPDIR/../bin"
 
 # We are navigating to the lib director and build!
 cd $LIBDIR
@@ -38,3 +39,10 @@ make
 # Sort XIA directory
 cd $XIASORTDIR
 make
+
+cd $TOPDIR
+cp $MASTERDIR/acq_master $BINDIR/acq_master
+#cp $MASTERDIR/acq_master_commands.txt $BINDIR/acq_master_commands.txt
+cp $XIAENGINEDIR/XIAengine $BINDIR/XIAengine
+cp $XIASORTDIR/XIAsort $BINDIR/XIAsort
+cp $RUPDATEDIR/rupdate $BINDIR/rupdate

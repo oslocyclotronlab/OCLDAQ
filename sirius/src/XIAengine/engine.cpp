@@ -25,7 +25,8 @@
 #error must compile with _FILE_OFFSET_BITS == 64
 #endif
 
-static const int MAX_BUFFER_COUNT = 8192; // max 2GB files
+//static const int MAX_BUFFER_COUNT = 8192; // max 2GB files
+static const int MAX_BUFFER_COUNT = 16384; // max 2GB files
 
 char leaveprog='n'; // leave program (Ctrl-C / INT)
 
@@ -395,7 +396,7 @@ int main(int argc, char* argv[])
 
     xiacontr = new XIAControl(&termWrite, PXIMapping);
 #ifdef MULTITHREAD
-    std::thread poll_thread([](){ xiacontr->XIAthread(); } );
+    std::thread poll_thread(static const int MAX_BUFFER_COUNT = 8192; // max 2GB files[](){ xiacontr->XIAthread(); } );
 #endif // MULTITHREAD
 
     // attach shared memory and initialize some variables

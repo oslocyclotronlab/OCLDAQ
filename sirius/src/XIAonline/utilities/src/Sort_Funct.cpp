@@ -56,8 +56,8 @@ void sort_coincidence(Event &event)
 {
 
     // Check if only one E and one DE.
-    if (event.tot_dEdet != 1 && event.tot_Edet != 1)
-        return;
+    //if (event.tot_dEdet != 1 && event.tot_Edet != 1)
+    //    return;
 /*
     // Fill E:DE matrix
 
@@ -91,16 +91,7 @@ void sort_coincidence(Event &event)
             tdiff_c = event.w_labr[i][j].timestamp - de_word.timestamp;
             tdiff_f = event.w_labr[i][j].cfdcorr - de_word.cfdcorr;
             tdiff = tdiff_c + tdiff_f;
-            thist[i]->Fill(tdiff);
-        }
-    }
-
-    // Update shared stuff.
-    const sort_spectrum_t* s = &sort_spectra[TLABRSP_ID];
-    memset(s->ptr, 0, s->ydim*s->xdim*sizeof(*s->ptr));
-    for (int i = 0 ; i < NUM_LABR_DETECTORS ; ++i){
-        for (int j = 0 ; j < s->xdim ; ++j){
-            spec_set(TLABRSP_ID, j, i, thist[i]->GetBinContent(j));
+            spec_fill(TLABRSP_ID, tdiff + 16384, i);
         }
     }
 }

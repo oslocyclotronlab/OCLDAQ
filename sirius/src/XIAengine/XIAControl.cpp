@@ -277,6 +277,8 @@ bool XIAControl::XIA_start_run()
 
     // Adjust baseline.
     AdjustBaseline(); // At the moment, this isn't a critical error. We can keep on running.
+    //AdjustBlCut();
+
     // We will wait a second before moving on.
     termWrite->Write("Sleeping for 1 second");
     std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -633,7 +635,7 @@ bool XIAControl::AdjustBlCut()
         sprintf(errmsg, "%d:", i);
         termWrite->Write(errmsg);
         for (int j = 0 ; j < 16 ; ++j){
-            sprintf(errmsg, "\t%d", i);
+            sprintf(errmsg, "\t%d", BLcut[i][j]);
             termWrite->Write(errmsg);
         }
         termWrite->Write("\n");
@@ -782,8 +784,8 @@ bool XIAControl::WriteScalers()
     std::ofstream scaler_file_in(SCALER_FILE_NAME_IN);
     std::ofstream scaler_file_out(SCALER_FILE_NAME_OUT);
 
-    scaler_file_in << "Module:/Ch.:";
-    scaler_file_out << "Module:/Ch.:";
+    scaler_file_in << "Module:/Ch.:\n";
+    scaler_file_out << "Module:/Ch.:\n";
     for (int i = 0 ; i < 16 ; ++i){
         scaler_file_in << "\t" << i;
         scaler_file_out << "\t" << i;

@@ -255,8 +255,8 @@ int main (int argc, char *[])
             }
         }
 
-        // check for commands, wait up to 0.5ms
-        struct timeval timeout = { 0, 500 };
+        // check for commands, wait up to 0.02ms
+        struct timeval timeout = { 0, 20 };
         ioc.run(&timeout);
     }
 
