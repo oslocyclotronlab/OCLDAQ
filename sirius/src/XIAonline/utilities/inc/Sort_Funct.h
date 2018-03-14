@@ -5,8 +5,6 @@
 
 #include "Event.h"
 
-void Setup();
-void End();
 void sort_singles(std::vector<word_t> buffer);
 void sort_coincidence(Event &event);
 

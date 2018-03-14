@@ -3,27 +3,10 @@
 #include "sort_spectra.h"
 #include "experimentsetup.h"
 
-#include "Histogram1D.h"
-#include "Histograms.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-Histograms hists;
-Histogram1Dp thist[128];
-
-void Setup()
-{
-    char tmp[1024];
-    for (int i = 0 ; i < 128 ; ++i){
-        sprintf(tmp, "t_labr_%d", i);
-        thist[i] = hists.Create1D(tmp, tmp, 32768, -500, 500, "time");
-    }
-}
-
-void End()
-{
-}
 
 void sort_singles(std::vector<word_t> buffer)
 {
@@ -91,7 +74,7 @@ void sort_coincidence(Event &event)
             tdiff_c = event.w_labr[i][j].timestamp - de_word.timestamp;
             tdiff_f = event.w_labr[i][j].cfdcorr - de_word.cfdcorr;
             tdiff = tdiff_c + tdiff_f;
-            spec_fill(TLABRSP_ID, tdiff + 16384, i);
+            spec_fill(TLABRSP_ID, 1000*tdiff + 16384, i);
         }
     }
 }

@@ -17,21 +17,26 @@ listOfDetectors = empty(num_channels, dtype=list)
 for i in range(0, num_channels):
 	listOfDetectors[i] = [i, "f000MHz", "unused", 0]
 
+labr_start = 32
+labr_stop = 32+16*2
+
+de_start = labr_stop
+de_stop = de_start + 64
+
+e_start = de_stop
+e_stop = e_start + 16
+
 # Set LaBr channels (we will figure out about this in more detail later)
-for i in range(32, 32+16*3):
-	listOfDetectors[i] = [i, "f500MHz", "labr", i-32]
+for i in range(labr_start, labr_stop):
+	listOfDetectors[i] = [i, "f500MHz", "labr", i-labr_start]
 
 # Set de channels
-for i in range(32+16*3, 32+16*3+64):
-	listOfDetectors[i] = [i, "f250MHz", "deDet", i-(32+16*3)]
+for i in range(de_start, de_stop):
+	listOfDetectors[i] = [i, "f250MHz", "deDet", i-de_start]
 
 # Set e channels
-for i in range(32+16*3+64, 32+16*3+64+8):
-	listOfDetectors[i] = [i, "f250MHz", "deDet", i-(32+16*3+64)]
-
-# Set e guard channels
-for i in range(32+16*3+64+8, 32+16*3+64+8+8):
-	listOfDetectors[i] = [i, "f250MHz", "deDet", i-(32+16*3+64+8)]
+for i in range(e_start, e_stop):
+	listOfDetectors[i] = [i, "f250MHz", "deDet", i-e_start]
 
 
 for i in range(0, num_channels):
