@@ -6,14 +6,14 @@
 
 #define NUM_LABR_DETECTORS 48   //!< Number of LaBr detectors
 #define NUM_SI_DE_DET 64        //!< Number of Si dE sections
-#define NUM_SI_E_DET 8          //!< Number of E Si rings
-#define NUM_SI_E_GUARD 8        //!< Number of E guard rings
+#define NUM_SI_E_DET 16          //!< Number of E Si rings
+#define NUM_SI_E_GUARD 16        //!< Number of E guard rings
 
 #define MAX_WORDS_PER_DET 32    //!< Maximum number of words per detector in each event
 
-#define TOTAL_NUMBER_OF_MODULES 10   //!< Number of modules
+#define TOTAL_NUMBER_OF_MODULES 7   //!< Number of modules
 
-#define TOTAL_NUMBER_OF_ADDRESSES 160   //! Total number of address that needs to be defined
+#define TOTAL_NUMBER_OF_ADDRESSES 175   //! Total number of address that needs to be defined
 
 #if __cplusplus
 extern "C" {
@@ -44,6 +44,7 @@ struct DetectorInfo_ {
     enum ADCSamplingFreq sfreq; //!< ADC sampling frequency
     enum DetectorType type;     //!< Type of detector
     int detectorNum;            //!< 'Linear' number of the detector
+    int telNum;                 //!< Telescope number, ie. which e detector the de word belongs to!
 };
 
 typedef struct DetectorInfo_ DetectorInfo_t;

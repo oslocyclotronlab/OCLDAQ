@@ -89,15 +89,15 @@ std::vector<word_t> Unpacker::ParseBuffer(const volatile uint32_t *buffer, const
         switch (GetSamplingFrequency(curr_w.address)) {
         case f100MHz:
             curr_w.cfdcorr = XIA_CFD_Fraction_100MHz(curr_w.cfddata, &curr_w.cfdfail);
-            curr_w.timestamp *= 10;
+            //curr_w.timestamp *= 10;
             break;
         case f250MHz:
             curr_w.cfdcorr = XIA_CFD_Fraction_250MHz(curr_w.cfddata, &curr_w.cfdfail);
-            curr_w.timestamp *= 8;
+            //curr_w.timestamp *= 8;
             break;
         case f500MHz:
             curr_w.cfdcorr = XIA_CFD_Fraction_500MHz(curr_w.cfddata, &curr_w.cfdfail);
-            curr_w.timestamp *= 10;
+            //curr_w.timestamp *= 10;
         default:
             curr_w.timestamp *= 10;
             error = true;

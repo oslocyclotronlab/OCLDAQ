@@ -4,6 +4,7 @@
 // Header for containers
 #include <queue>
 #include <vector>
+#include <deque>
 #include <string>
 #include <map>
 #include <functional>
@@ -17,7 +18,7 @@
 class WriteTerminal;
 
 #define XIA_MIN_READOUT 65536
-#define XIA_FIFO_MIN_READOUT 32768
+#define XIA_FIFO_MIN_READOUT 2048
 #define SIRIUS_BUFFER_SIZE 32768
 #define SCALER_FILE_NAME_IN "scalers_in.dat"
 #define SCALER_FILE_NAME_OUT "scalers_out.dat"
@@ -30,6 +31,11 @@ typedef struct {
     int size_raw;                       //! Size of the raw data in number of 32 bit words.
 } Event_t;
 inline bool operator>(const Event_t &a, const Event_t &b) { return (a.timestamp>b.timestamp); }
+
+typedef struct {
+    int pos;
+    uint32_t raw_data[32768];
+} Temp_Buf_t;
 
 class XIAControl
 {
@@ -94,10 +100,17 @@ private:
     WriteTerminal *termWrite;
 
     // Ordered queue to fill with data as it arrives
+    //std::vector<Event_t> sorted_events;
     std::priority_queue<Event_t, std::vector<Event_t>, std::greater<Event_t> > sorted_events;
+
+    // List of temporary buffers ready for readout.
+    std::deque<Temp_Buf_t> ready_bufs;
 
     // Number of 32-bit words in the queue
     int data_avalible;
+
+    // Most recent timestamp of each module
+    int64_t most_recent_t[PRESET_MAX_MODULES];
 
     // Mutex to make sure that only one of the threads will be able to write to the queue.
     std::mutex queue_mutex;

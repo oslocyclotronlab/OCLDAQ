@@ -32,6 +32,8 @@ ui_*.h
 Makefile*
 *build-*
 
+*Pixie16msg.*
+
 # Qt unit tests
 target_wrapper.*
 

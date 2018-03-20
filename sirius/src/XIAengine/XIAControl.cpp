@@ -3,6 +3,7 @@
 #include "WriteTerminal.h"
 #include "utilities.h"
 
+#include <algorithm>
 #include <thread>
 #include <chrono>
 #include <fstream>
@@ -14,6 +15,10 @@
 
 #include "pixie16app_export.h"
 #include "pixie16sys_export.h"
+
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+
 
 
 const bool next_line(std::istream &in, std::string &line)
@@ -178,6 +183,8 @@ bool XIAControl::XIA_check_buffer(int bufsize)
 bool XIAControl::XIA_check_buffer_ST(int bufsize)
 {
     // Check that we are actually running.
+    //if (ready_bufs.size() > 1)
+    //    return true;
     if (!is_running)
         return false;
     double t1=last_time.tv_sec + 1e-6*last_time.tv_usec;
@@ -199,12 +206,46 @@ bool XIAControl::XIA_check_buffer_ST(int bufsize)
 
     // Lock the queue mutex such that we can check if we have enough data.
     std::lock_guard<std::mutex> queue_guard(queue_mutex);
+
+    // Here we decide if we have one or more buffers for the engine to process.
     int have_data = data_avalible + overflow_queue.size();
     have_data -= XIA_MIN_READOUT;
-    if ( have_data < bufsize)
+    if ( have_data < bufsize) // First test to determine if we have enough data to make an actual buffer.
         return false;
+    return true;
+    // New we start moving data into the "temporary" buffer
+    Event_t current_word;
 
-    return  true;
+    // We check what the smallest most recent timestamp of each module is.
+    int64_t min_t=most_recent_t[0];
+    for (int i = 0 ; i < num_modules ; ++i){
+        min_t = MIN(min_t, most_recent_t[i]);
+    }
+
+    while (data_avalible > XIA_MIN_READOUT) {
+        current_word = sorted_events.top();
+        if (current_word.timestamp > min_t)
+            break;
+        if (ready_bufs.empty()){
+            Temp_Buf_t end;
+            end.pos = 0;
+            ready_bufs.push_back(end);
+        }
+
+        for (int i = 0 ; i < current_word.size_raw ; ++i){
+            ready_bufs.back().raw_data[ready_bufs.back().pos++] = current_word.raw_data[i];
+            if (ready_bufs.back().pos == 32767){
+                Temp_Buf_t end;
+                end.pos = 0;
+                ready_bufs.push_back(end);
+            }
+        }
+        
+        data_avalible -= current_word.size_raw;
+        sorted_events.pop();
+    }
+
+    return (ready_bufs.size() > 1);
 }
 
 
@@ -212,6 +253,17 @@ bool XIAControl::XIA_check_buffer_ST(int bufsize)
 bool XIAControl::XIA_fetch_buffer(uint32_t *buffer, int bufsize)
 {
     std::lock_guard<std::mutex> queue_guard(queue_mutex);
+
+    /*if (ready_bufs.size() <= 1)
+        return false;
+
+    // Now we will transfere the zeroth built buffer!
+    for (int i = 0 ; i < bufsize ; ++i){
+        buffer[i] = ready_bufs.front().raw_data[i];
+    }
+    ready_bufs.pop_front();
+    return true;*/
+
     int current_pos = 0;
     int have_data = data_avalible + overflow_queue.size();
     have_data -= XIA_MIN_READOUT;
@@ -227,9 +279,15 @@ bool XIAControl::XIA_fetch_buffer(uint32_t *buffer, int bufsize)
     }
     overflow_queue.clear();
     Event_t current_word;
+
+    // Use std::sort to sort all data before we do the readout of the internal buffer.
+    //std::sort(sorted_events.begin(), sorted_events.end(), std::greater<Event_t>());
+
     while (current_pos < bufsize){
+        //current_word = sorted_events.back();
         current_word = sorted_events.top();
         data_avalible -= current_word.size_raw;
+        //sorted_events.pop_back();
         sorted_events.pop();
 
         for (int i = 0 ; i < current_word.size_raw ; ++i){
@@ -274,6 +332,12 @@ bool XIAControl::XIA_start_run()
     // Check that the module was in fact booted
     if (!is_booted)
         return false;
+
+    for (int i = 0 ; i < num_modules ; ++i){
+        most_recent_t[i] = 0;
+    }
+
+    ready_bufs.clear();
 
     // Adjust baseline.
     AdjustBaseline(); // At the moment, this isn't a critical error. We can keep on running.
@@ -334,7 +398,9 @@ bool XIAControl::XIA_end_run(FILE *output_file)
         buf[current_pos++] = overflow_queue[i];
     overflow_queue.clear();
     Event_t evt;
+    //std::sort(sorted_events.begin(), sorted_events.end(), std::greater<Event_t>());
     while (current_pos < size){
+        //evt = sorted_events.back();
         evt = sorted_events.top();
         for (int i = 0 ; i < evt.size_raw ; ++i){
             buf[current_pos++] = evt.raw_data[i];
@@ -562,9 +628,10 @@ bool XIAControl::BootXIA()
         termWrite->Write(DSPCode);
         termWrite->Write("\nDSPVarFile:\t");
         termWrite->Write(DSPVar);
-        termWrite->Write("\n----------------------------------------\n\n");
-
+        termWrite->Write("\n");
         retval = Pixie16BootModule(ComFPGA, SPFPGA, TrigFPGA, DSPCode, DSPSet, DSPVar, i, 0x7F);
+        termWrite->Write("\n----------------------------------------\n\n");
+        
         if (retval < 0){
             sprintf(errmsg, "*ERROR* Pixie16BootModule failed, retval = %d\n", retval);
             termWrite->WriteError(errmsg);
@@ -858,7 +925,7 @@ bool XIAControl::ReadFIFO()
             Pixie_Print_MSG(errmsg);
             return false;
         }
-        if (fifoSize < 16384/*EXTFIFO_READ_THRESH*/) // Make sure we don't read from an empty FIFO.
+        if (fifoSize < 4/*EXTFIFO_READ_THRESH*/) // Make sure we don't read from an empty FIFO.
             continue;
         //FIFOdata = new uint32_t[fifoSize];
         //retval = Pixie_ExtFIFO_Read(lmdata)
@@ -950,6 +1017,7 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
         {   // Creating a scope for the guard to live.
             std::lock_guard<std::mutex> queue_guard(queue_mutex);
             sorted_events.push(evt);
+            most_recent_t[module] = MAX(most_recent_t[module], evt.timestamp);
             data_avalible += evt.size_raw;
         }
 
@@ -990,6 +1058,7 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
         {   // Creating a scope for the guard to live.
             std::lock_guard<std::mutex> queue_guard(queue_mutex);
             sorted_events.push(evt);
+            most_recent_t[module] = MAX(most_recent_t[module], evt.timestamp);
             data_avalible += evt.size_raw;
         }   // Should be released here...
 

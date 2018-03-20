@@ -18,27 +18,27 @@ BINDIR="$TOPDIR/../bin"
 
 # We are navigating to the lib director and build!
 cd $LIBDIR
-make
+make -j4
 
 # Now for the master code OOOooOOO 'MASTER' :p
 cd $MASTERDIR
-make
+make -j4
 
 # Next engine directory
 cd $ENGINEDIR
-make
+make -j4
 
 # Next XIAengine directory
 cd $XIAENGINEDIR
-make
+make -j4
 
 # Rupdate
 cd $RUPDATEDIR
-make
+make -j4
 
 # Sort XIA directory
 cd $XIASORTDIR
-make
+make -j4
 
 cd $TOPDIR
 cp $MASTERDIR/acq_master $BINDIR/acq_master
