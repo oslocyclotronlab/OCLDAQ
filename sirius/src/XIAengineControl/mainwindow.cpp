@@ -4,7 +4,6 @@
 #include "pixie16app_defs.h"
 #include "pixie16app_export.h"
 
-
 const char *ch_par_names[] =
 {
     "TRIGGER_RISETIME",
@@ -58,12 +57,13 @@ MainWindow::MainWindow(int num_mod, QWidget *parent) :
     ui->current_channel->setMaximum(NUMBER_OF_CHANNELS-1);
 
     // Set format of the line inputs.
-    ui->multMaskL->setInputMask("HH HH HH HH");
-    ui->multMaskH->setInputMask("HH HH HH HH");
-    ui->trigConfig0->setInputMask("HH HH HH HH");
-    ui->trigConfig1->setInputMask("HH HH HH HH");
-    ui->trigConfig2->setInputMask("HH HH HH HH");
-    ui->trigConfig3->setInputMask("HH HH HH HH");
+    ui->multMaskL->setInputMask("HHHHHHHH");
+    ui->multMaskH->setInputMask("HHHHHHHH");
+    ui->trigConfig0->setInputMask("HHHHHHHH");
+    ui->trigConfig1->setInputMask("HHHHHHHH");
+    ui->trigConfig2->setInputMask("HHHHHHHH");
+    ui->trigConfig3->setInputMask("HHHHHHHH");
+
 
     // We set the current view to reflect the values set in the XIA module.
     UpdateView();
@@ -442,6 +442,7 @@ void MainWindow::on_pushButton_clicked()
     unsigned int trigConfig1 = std::strtoul(ui->trigConfig1->text().toStdString().c_str(), 0, 16);
     unsigned int trigConfig2 = std::strtoul(ui->trigConfig2->text().toStdString().c_str(), 0, 16);
     unsigned int trigConfig3 = std::strtoul(ui->trigConfig3->text().toStdString().c_str(), 0, 16);
+
     Pixie16WriteSglModPar("TrigConfig0", trigConfig0, current_module);
     Pixie16WriteSglModPar("TrigConfig1", trigConfig1, current_module);
     Pixie16WriteSglModPar("TrigConfig2", trigConfig2, current_module);
