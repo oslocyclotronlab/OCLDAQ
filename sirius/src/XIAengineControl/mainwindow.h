@@ -19,7 +19,10 @@ private slots:
     void on_current_mod_valueChanged(int arg1);
 
     void on_current_channel_valueChanged(int arg1);
-    void on_pushButton_clicked();
+
+    void on_WriteButton_clicked();
+
+    void on_SaveButton_clicked();
 
 private:
     Ui::MainWindow *ui;

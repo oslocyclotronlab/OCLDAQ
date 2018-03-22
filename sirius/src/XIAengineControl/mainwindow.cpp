@@ -391,7 +391,7 @@ void MainWindow::on_current_channel_valueChanged(int arg1)
     UpdateView();
 }
 
-void MainWindow::on_pushButton_clicked()
+void MainWindow::on_WriteButton_clicked()
 {
 
     unsigned short module = current_module, channel = current_channel;
@@ -480,4 +480,9 @@ void MainWindow::on_pushButton_clicked()
     unsigned long chanMultMaskH = std::strtoul(ui->multMaskL->text().toStdString().c_str(), 0, 16);
     Pixie16WriteSglChanPar("MultiplicityMaskL", chanMultMaskL, module, channel);
     Pixie16WriteSglChanPar("MultiplicityMaskH", chanMultMaskH, module, channel);
+}
+
+void MainWindow::on_SaveButton_clicked()
+{
+    Pixie16SaveDSPParametersToFile("settings.set");
 }
