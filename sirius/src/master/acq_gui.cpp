@@ -42,7 +42,7 @@ XtAppContext app_context;
 
 static Widget toplevel;
 static Widget menu_file_engine, menu_file_sort;
-static Widget menu_run_start, menu_run_stop, menu_run_status, menu_run_reload;
+static Widget menu_run_start, menu_run_stop, menu_run_status, menu_run_GUI;
 static Widget menu_output_device, menu_output_change;
 static Widget menu_spectra_clear, menu_spectra_dump;
 static Widget menu_gain_init, menu_gain_file, menu_gain_show;
@@ -242,7 +242,7 @@ void gui_update_state()
     bool engine_started   = m_engine_is_started();
     XtSetSensitive( button_start,        engine_connected && !engine_started );
     XtSetSensitive( menu_run_start,      engine_connected && !engine_started );
-    XtSetSensitive( menu_run_reload,	 engine_connected && !engine_started );
+    XtSetSensitive( menu_run_GUI,	     engine_connected );
     XtSetSensitive( button_stop,         engine_started );
     XtSetSensitive( menu_run_stop,       engine_started );
     XtSetSensitive( menu_output_device,  engine_connected /*&& !engine_started*/ );
@@ -464,7 +464,7 @@ static void status_pushed(Widget, XtPointer, XtPointer)
 
 // ########################################################################
 
-static void reload_pushed(Widget, XtPointer, XtPointer)
+static void reload_GUI(Widget, XtPointer, XtPointer)
 {
     if( m_engine_is_connected() ){
 	if ( !m_engine_is_started() )
@@ -869,7 +869,7 @@ static Widget gui_setup_menubar(Widget parent)
     menu_run_stop   = create_item(RunPullDown, "Stop",   stop_pushed  );
     create_separator(RunPullDown);
     menu_run_status = create_item(RunPullDown, "Status", status_pushed);
-    menu_run_reload = create_item(RunPullDown, "Reload", reload_pushed);
+    menu_run_GUI = create_item(RunPullDown, "Launch GUI", reload_GUI);
 
     // ------------------------------------------------------------------
     // create the "Spectra" menu

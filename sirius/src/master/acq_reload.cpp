@@ -7,9 +7,9 @@
 void acq_reload()
 {
 	if ( m_engine_reload() ){
-		log_message(LOG_INFO, "Requested RELOAD.\n");
+		log_message(LOG_INFO, "Requested GUI.\n");
 	} else {
-		log_message(LOG_ERR, "Problem when requesting reload.\n");
+		log_message(LOG_ERR, "Problem when requesting GUI.\n");
 	}
 
 }

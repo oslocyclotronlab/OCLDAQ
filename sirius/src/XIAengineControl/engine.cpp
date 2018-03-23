@@ -6,6 +6,10 @@
 #include "WriteTerminal.h"
 #include "XIAControl.h"
 
+#include "mainwindow.h"
+
+#include <QApplication>
+
 #include <algorithm>
 #include <iostream>
 #include <sstream>
@@ -42,6 +46,10 @@ static line_server* ls_engine = 0;
 
 static WriteTerminal termWrite;
 static XIAControl *xiacontr;
+static std::thread gui_thread;
+static int gui_is_running;
+static int globargc;
+static char **globargv;
 
 // ########################################################################
 // ######################################################################## 
@@ -56,6 +64,20 @@ void keyb_int(int sig_num)
 
 // ########################################################################
 // ########################################################################
+
+
+int GUI_thread(int nmod)
+{
+    QApplication a(globargc, globargv);
+    MainWindow w(nmod);
+    w.show();
+    gui_is_running = 1;
+    int foo = a.exec();
+    gui_is_running = 0;
+    return foo;
+}
+
+
 
 static void close_file()
 {
@@ -277,9 +299,36 @@ static void command_status(line_channel* lc, const std::string&, void*)
     }
 }
 
+// ########################################################################
+
+static void command_launch_GUI(line_channel* lc, const std::string&, void*)
+{
+    // We need to open the GUI. First check if the GUI is in fact open, if so
+    // we will need to give information back to the user that we have the GUI
+    // open.
+
+    // Check if we are running, if still in 'main loop' we do not want to try to join the threads. Return something else for now...
+    if ( gui_is_running == 1 ) {
+            lc->send("403 error_state GUI is already launched");
+            return;
+    }
+
+
+    if ( gui_thread.joinable() ){
+        gui_thread.join();
+    }
+
+    // If we reach this point we can safely launch the gui :D
+    gui_thread = std::thread(GUI_thread, xiacontr->GetNumMod());
+
+}
+
+// ########################################################################
+
 static void command_reload(line_channel *lc, const std::string&, void *)
 {
-    if ( !stopped ){
+    command_launch_GUI(lc,"",nullptr);
+    /*if ( !stopped ){
         lc->send("403 error_state cannot reload while running.\n");
         return;
     }
@@ -287,8 +336,9 @@ static void command_reload(line_channel *lc, const std::string&, void *)
     if (xiacontr->XIA_reload()){
         lc->send("504 error_xia Couldn't reload parameters\n");
         return;
-    }
+    }*/
 }
+
 
 // ########################################################################
 
@@ -411,6 +461,16 @@ int main(int argc, char* argv[])
     const unsigned int datalen = buffer[ENGINE_DATA_SIZE];
     /*const unsigned int*/ datalen_char = datalen*sizeof(int);
 
+    // We will now boot before anything else will happend.
+    if ( !xiacontr->XIA_boot_all() )
+        leaveprog = 'y';
+
+    // Now we can start the GUI.
+    globargc = argc;
+    globargv = argv;
+
+    //gui_thread(GUI_thread, argc, argv, xiacontr->GetNumMod());
+
     // main loop
     while( leaveprog == 'n' ) {
         if( !stopped ) {
@@ -482,6 +542,10 @@ int main(int argc, char* argv[])
     if ( poll_thread.joinable() )
         poll_thread.join();
 #endif // MULTITHREAD
+
+    if (gui_thread.joinable())
+        gui_thread.join();
+
     return 0;
 }
 

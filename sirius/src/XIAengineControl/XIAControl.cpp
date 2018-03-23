@@ -301,6 +301,34 @@ bool XIAControl::XIA_fetch_buffer(uint32_t *buffer, int bufsize)
     return true;
 }
 
+bool XIAControl::XIA_boot_all()
+{
+    if (is_running)
+        return true;
+
+    // Check if initialized, if not, initialize.
+    if (!is_initialized)
+        is_initialized = InitializeXIA();
+
+    // Check that we successfully initialized.
+    if ( !is_initialized )
+        return is_initialized; // We failed :'(
+
+    // Check if the module is booted.
+    if ( !is_booted )
+        is_booted = BootXIA();
+
+    // Check that we successfully booted.
+    if ( !is_booted )
+        return is_booted;
+
+    // Now we need to adjust the baseline.
+    AdjustBaseline();
+
+    // Done booting :D
+    return true;
+}
+
 bool XIAControl::XIA_start_run()
 {
     // We should NOT try to lock the XIA resources at this
@@ -494,7 +522,7 @@ bool XIAControl::InitializeXIA()
     // thread from communicating with the modules.
     std::lock_guard<std::mutex> xia_guard(xia_mutex);
 
-    int retval = Pixie16InitSystem(num_modules, PXISlotMap, 0);
+    int retval = Pixie16InitSystem(num_modules, PXISlotMap, 1);
     if (retval < 0){
         sprintf(errmsg, "*ERROR* Pixie16InitSystem failed, retval = %d\n", retval);
         termWrite->WriteError(errmsg);
@@ -718,7 +746,6 @@ bool XIAControl::StartLMR()
     // thread from communicating with the modules.
     std::lock_guard<std::mutex> xia_guard(xia_mutex);
 
-    // We will only synch the modules once, when we boot...
     termWrite->Write("Trying to write SYNCH_WAIT...\n");
     int retval = Pixie16WriteSglModPar("SYNCH_WAIT", 1, 0);
     if (retval < 0){

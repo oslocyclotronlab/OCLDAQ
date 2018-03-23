@@ -37,7 +37,7 @@
 #define GAP_SIZE 500
 #define MAX_TDIFF 500
 
-#define SINGLES 1
+#define SINGLES 0
 
 EventBuilder::EventBuilder()
 	: buffer( 0 )
@@ -106,7 +106,7 @@ bool EventBuilder::UnpackOneEvent(Event &event)
 bool EventBuilder::UnpackOneEvent(Event &event)
 {
     event.Reset();
-
+    int factor = 10;
     if ( curr_pos >= buffer.size() )
         return false;
 
@@ -121,7 +121,15 @@ bool EventBuilder::UnpackOneEvent(Event &event)
             // We find all events that are within MAX_TDIFF before the
             // E event.
             for (int j = curr_pos ; j > 0 ; --j){
+                /*if (GetSamplingFrequency(buffer[j-1].address) == f250MHz)
+                    factor=8;
+                else
+                    factor=10;*/
                 timediff = buffer[j-1].timestamp - curr_w.timestamp;
+
+                /*if ( GetDetector(buffer[j-1].address).type == labr)
+                    std::cout << timediff << std::endl;
+                */
                 if (std::abs(timediff) > MAX_TDIFF){
                     start = j;
                     break;
@@ -130,7 +138,11 @@ bool EventBuilder::UnpackOneEvent(Event &event)
 
             // We find all events that are withn MAX_TDIFF after the
             // E event
-            for (int j = curr_pos ; j < buffer.size() - 1 ; --j){
+            for (int j = curr_pos ; j < buffer.size() - 1 ; ++j){
+                /*if (GetSamplingFrequency(buffer[j+1].address) == f250MHz)
+                    factor=8;
+                else
+                    factor=10;*/
                 timediff = buffer[j+1].timestamp - curr_w.timestamp;
                 if (std::abs(timediff) > MAX_TDIFF){
                     stop = j+1;
@@ -180,7 +192,7 @@ bool EventBuilder::PackEvent(Event& event, int start, int stop)
                 event.w_Edet[dinfo.detectorNum][event.n_Edet[dinfo.detectorNum]++] = buffer[i];
                 ++event.tot_Edet;
             } else {
-                std::cerr << __PRETTY_FUNCTION__ << ": Could not populate dEdet word, run debugger with appropriate break point for more details" << std::endl;
+                std::cerr << __PRETTY_FUNCTION__ << ": Could not populate eDet word, run debugger with appropriate break point for more details" << std::endl;
             }
             break;
         }
@@ -190,7 +202,7 @@ bool EventBuilder::PackEvent(Event& event, int start, int stop)
                 event.w_Eguard[dinfo.detectorNum][event.n_Eguard[dinfo.detectorNum]++] = buffer[i];
                 ++event.tot_Eguard;
             } else {
-                std::cerr << __PRETTY_FUNCTION__ << ": Could not populate dEdet word, run debugger with appropriate break point for more details" << std::endl;
+                std::cerr << __PRETTY_FUNCTION__ << ": Could not populate eGuard word, run debugger with appropriate break point for more details" << std::endl;
             }
             break;
         }
@@ -198,7 +210,7 @@ bool EventBuilder::PackEvent(Event& event, int start, int stop)
             if ( event.n_RFpulse < MAX_WORDS_PER_DET )
                 event.w_RFpulse[event.n_RFpulse++] = buffer[i];
             else
-                std::cerr << __PRETTY_FUNCTION__ << ": Could not populate eSect word, run debugger with appropriate break point for more details" << std::endl;
+                std::cerr << __PRETTY_FUNCTION__ << ": Could not populate rfchan word, run debugger with appropriate break point for more details" << std::endl;
             break;
         }
         default:

@@ -15,28 +15,37 @@ listOfDetectors = empty(num_channels, dtype=list)
 
 # Set everything to "zero"
 for i in range(0, num_channels):
-	listOfDetectors[i] = [i, "f000MHz", "unused", 0]
+	listOfDetectors[i] = [i, "f000MHz", "unused", 0, 0]
+
+labr_start = 32
+labr_stop = 32+16*2
+
+de_start = labr_stop
+de_stop = de_start + 64
+
+e_start = de_stop
+e_stop = e_start + 8
 
 # Set LaBr channels (we will figure out about this in more detail later)
-for i in range(32, 32+16*3):
-	listOfDetectors[i] = [i, "f500MHz", "labr", i-32]
+for i in range(labr_start, labr_stop):
+	listOfDetectors[i] = [i, "f500MHz", "labr", i-labr_start, 0]
 
 # Set de channels
-for i in range(32+16*3, 32+16*3+64):
-	listOfDetectors[i] = [i, "f250MHz", "deDet", i-(32+16*3)]
+tel = 0
+for i in range(de_start, de_stop):
+	if i - de_start - 8*tel >= 8: tel += 1
+	listOfDetectors[i] = [i, "f250MHz", "deDet", i-de_start, tel]
 
 # Set e channels
-for i in range(32+16*3+64, 32+16*3+64+8):
-	listOfDetectors[i] = [i, "f250MHz", "deDet", i-(32+16*3+64)]
+for i in range(8):
+	listOfDetectors[2*i + e_start] = [2*i+e_start, "f250MHz", "eGuard", i, 0]
+	listOfDetectors[2*i + e_start+1] = [2*i+e_start+1, "f250MHz", "eDet", i, 0]
 
-# Set e guard channels
-for i in range(32+16*3+64+8, 32+16*3+64+8+8):
-	listOfDetectors[i] = [i, "f250MHz", "deDet", i-(32+16*3+64+8)]
 
 
 for i in range(0, num_channels):
 	det = listOfDetectors[i]
-	outfile.write("\t{%d, %s, %s, %d},\n" % (det[0], det[1], det[2], det[3]) )
+	outfile.write("\t{%d, %s, %s, %d, %d},\n" % (det[0], det[1], det[2], det[3], det[4]) )
 
 outfile.write("};\n")
 

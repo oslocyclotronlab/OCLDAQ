@@ -7,6 +7,7 @@ class io_control;
 
 void m_sort_read();
 bool m_sort_connect(io_control& ioc);
+bool m_sort_connect(io_control& ioc, const char *host);
 bool m_sort_disconnect();
 bool m_sort_quit();
 bool m_sort_clear();

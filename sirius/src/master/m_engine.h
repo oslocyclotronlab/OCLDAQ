@@ -7,6 +7,7 @@ class io_control;
 
 void m_engine_read();
 bool m_engine_connect(io_control& ioc);
+bool m_engine_connect(io_control& ioc, const char *host);
 bool m_engine_disconnect();
 bool m_engine_quit();
 bool m_engine_stop();
