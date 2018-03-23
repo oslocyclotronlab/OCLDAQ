@@ -718,6 +718,7 @@ bool XIAControl::StartLMR()
     // thread from communicating with the modules.
     std::lock_guard<std::mutex> xia_guard(xia_mutex);
 
+    // We will only synch the modules once, when we boot...
     termWrite->Write("Trying to write SYNCH_WAIT...\n");
     int retval = Pixie16WriteSglModPar("SYNCH_WAIT", 1, 0);
     if (retval < 0){

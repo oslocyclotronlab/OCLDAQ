@@ -94,6 +94,9 @@ public:
     // Will return false if run is active.
     bool XIA_reload();
 
+    // Measure the BLineCut of all channels/modules.
+    bool XIA_BLineCut();
+
 private:
 
     // Object responsible for I/O to the stdout & stderr
