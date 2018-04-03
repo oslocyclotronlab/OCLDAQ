@@ -148,7 +148,7 @@ void MainWindow::UpdateLimits()
     ui->fastTrigBackLen->setMinimum( FASTTRIGBACKLEN_MIN_100MHZFIPCLK / adcFactor );
     ui->fastTrigBackLen->setMaximum( FASTTRIGBACKLEN_MAX / adcFactor );
     ui->extTrigStrech->setMinimum( EXTTRIGSTRETCH_MIN / adcFactor );
-    ui->extTrigStrech->setMinimum( EXTTRIGSTRETCH_MAX / adcFactor );
+    ui->extTrigStrech->setMaximum( EXTTRIGSTRETCH_MAX / adcFactor );
 
     ui->ExternDelayLen->setMinimum( EXTDELAYLEN_MIN / adcFactor );
     ui->FtrigoutDelay->setMinimum( FASTTRIGBACKDELAY_MIN / adcFactor );
