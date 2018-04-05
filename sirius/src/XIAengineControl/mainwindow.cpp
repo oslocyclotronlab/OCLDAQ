@@ -4,6 +4,8 @@
 #include "pixie16app_defs.h"
 #include "pixie16app_export.h"
 
+#include <iostream>
+
 const char *ch_par_names[] =
 {
     "TRIGGER_RISETIME",
@@ -395,7 +397,7 @@ void MainWindow::on_WriteButton_clicked()
 {
 
     unsigned short module = current_module, channel = current_channel;
-
+    std::cout << "Writing parameters to module "<< module << ", channel " << channel;
 
     // First we will read the CSRA value
     unsigned long csra;
@@ -480,9 +482,12 @@ void MainWindow::on_WriteButton_clicked()
     unsigned long chanMultMaskH = std::strtoul(ui->multMaskL->text().toStdString().c_str(), 0, 16);
     Pixie16WriteSglChanPar("MultiplicityMaskL", chanMultMaskL, module, channel);
     Pixie16WriteSglChanPar("MultiplicityMaskH", chanMultMaskH, module, channel);
+
+    std::cout << " ... Done! " << std::endl;
 }
 
 void MainWindow::on_SaveButton_clicked()
 {
+    std::cout << "Saved settings to file 'settings.set'" << std::endl;
     Pixie16SaveDSPParametersToFile("settings.set");
 }

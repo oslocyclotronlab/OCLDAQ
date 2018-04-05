@@ -63,6 +63,10 @@ struct Event {
     int n_Eguard[NUM_SI_E_GUARD];                          //!< Number of Si words populated from the E sectors
     int tot_Eguard;                                         //!< Total number of Si words from the dE sectors
 
+    word_t w_PPAC[NUM_PPAC][MAX_WORDS_PER_DET];
+    int n_PPAC[NUM_PPAC];
+    int tot_PPAC;
+
     word_t w_RFpulse[MAX_WORDS_PER_DET];                    //!< Array to contain RF pulse words
     int n_RFpulse;                                          //!< Number of RF pulses populated
 
@@ -100,6 +104,10 @@ struct Event {
         tot_Eguard = 0;
         for (i = 0 ; i < NUM_SI_E_GUARD ; ++i)
             n_Eguard[i] = 0;
+
+        tot_PPAC = 0;
+        for (i = 0 ; i < NUM_PPAC ; ++i)
+            n_PPAC[i] = 0;
 
         // Clearing RF pulses
         n_RFpulse = 0;

@@ -33,7 +33,9 @@ sort_spectrum_t sort_spectra[] = {
     { DESP_ID,    DESP_KEY,     DESP_SIZE,      0,  DESP_XSIZE,     DESP_YSIZE,     "DESP",     "DE"},
     { ESP_ID,     ESP_KEY,      ESP_SIZE,       0,  ESP_XSIZE,      ESP_YSIZE,      "ESP",      "E"},
     { EDESP_ID,   EDESP_KEY,    EDESP_SIZE,     0,  EDESP_XSIZE,    EDESP_YSIZE,    "EDESP",    "E-DE"},
-    { TLABRSP_ID, TLABRSP_KEY,  TLABRSP_SIZE,   0,  TLABRSP_XSIZE,  TLABRSP_YSIZE,  "TLABRSP",  "LaBr-time"}
+    { TLABRSP_ID, TLABRSP_KEY,  TLABRSP_SIZE,   0,  TLABRSP_XSIZE,  TLABRSP_YSIZE,  "TLABRSP",  "LaBr-time"},
+    { PPAC_ID,    PPAC_KEY,     PPAC_SIZE,      0,  PPAC_XSIZE,     PPAC_YSIZE,     "PPACSP",   "PPAC spec"},
+    {  0, 0, 0, 0, 0, 0, 0, 0 }
 };
 #endif // XIA
 
