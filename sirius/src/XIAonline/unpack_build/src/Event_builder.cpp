@@ -213,6 +213,16 @@ bool EventBuilder::PackEvent(Event& event, int start, int stop)
                 std::cerr << __PRETTY_FUNCTION__ << ": Could not populate rfchan word, run debugger with appropriate break point for more details" << std::endl;
             break;
         }
+        case ppac: {
+            if ( event.n_PPAC[dinfo.detectorNum] < MAX_WORDS_PER_DET &&
+                 dinfo.detectorNum < NUM_PPAC){
+                event.w_PPAC[dinfo.detectorNum][event.n_PPAC[dinfo.detectorNum]++] = buffer[i];
+                ++event.tot_PPAC;
+            } else {
+                std::cerr << __PRETTY_FUNCTION__ << ": Could not populate ppac word, run debugger with appropriate break point for more details" << std::endl;
+            }
+            break;
+        }
         default:
             break;
         }

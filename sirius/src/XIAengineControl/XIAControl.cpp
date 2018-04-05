@@ -522,7 +522,7 @@ bool XIAControl::InitializeXIA()
     // thread from communicating with the modules.
     std::lock_guard<std::mutex> xia_guard(xia_mutex);
 
-    int retval = Pixie16InitSystem(num_modules, PXISlotMap, 1);
+    int retval = Pixie16InitSystem(num_modules, PXISlotMap, 0);
     if (retval < 0){
         sprintf(errmsg, "*ERROR* Pixie16InitSystem failed, retval = %d\n", retval);
         termWrite->WriteError(errmsg);

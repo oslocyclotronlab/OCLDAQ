@@ -8,6 +8,7 @@
 #define NUM_SI_DE_DET 64        //!< Number of Si dE sections
 #define NUM_SI_E_DET 16          //!< Number of E Si rings
 #define NUM_SI_E_GUARD 16        //!< Number of E guard rings
+#define NUM_PPAC       4
 
 #define MAX_WORDS_PER_DET 32    //!< Maximum number of words per detector in each event
 
