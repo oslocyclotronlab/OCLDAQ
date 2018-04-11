@@ -588,6 +588,15 @@ void MainWindow::SaveSettings(char *filename)
 void MainWindow::on_SaveButton_clicked()
 {
     SaveSettings(const_cast<char *>("settings.set"));
+
+    std::vector<std::string> args;
+    args.push_back("-f");
+    args.push_back("settings.set");
+    args.push_back(std::string("Subject=Settings"));
+    args.push_back(std::string("Settings file for XIA modules\nPlease add comment here!"));
+    commands.run("elog", args);
+    std::cout << "Writing 'settings.set' to elog" << std::endl;
+
 }
 
 void MainWindow::on_SaveAsButton_clicked()
@@ -672,4 +681,14 @@ void MainWindow::on_CopyButton_clicked()
 
     // Clear...
     on_ClearButton_clicked();
+}
+
+
+void MainWindow::ReadCommands()
+{
+    if( commands.read("acq_master_commands.txt") ) {
+        std::cout << "Using commands from acq_master_commands.txt." << std::endl;
+    } else {
+        std::cout << "Could not read commands from acq_master_commands.txt." << std::endl;
+    }
 }
