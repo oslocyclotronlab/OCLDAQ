@@ -14,13 +14,13 @@ TEMPLATE = app
 INCLUDEPATH += ../../include
 
 unix:!macx {
-INCLUDEPATH += /home/vetlewi/Desktop/Pixie16_software_linux/software/app \
-               /home/vetlewi/Desktop/Pixie16_software_linux/software/sys \
-               /home/vetlewi/Desktop/Pixie16_software_linux/software/inc
+INCLUDEPATH += /opt/xia/current/inc \
+               /opt/xia/current/sys \
+               /opt/xia/current/app \
 
-LIBS += -L/home/vetlewi/Desktop/OCLDAQ/sirius/src/lib \
-        -L/home/vetlewi/Desktop/PlxSdk_7.10/PlxApi/Library \
-        -L/home/vetlewi/Desktop/Pixie16_software_linux/software/
+LIBS += -L/opt/xia/current \
+        -L/opt/plx/current/PlxSdk/PlxApi/Library \
+        -L../lib
 }
 
 macx {

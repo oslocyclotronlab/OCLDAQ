@@ -10,6 +10,7 @@ LIBDIR="$TOPDIR/src/lib"
 MASTERDIR="$TOPDIR/src/master"
 ENGINEDIR="$TOPDIR/src/engine"
 XIAENGINEDIR="$TOPDIR/src/XIAengine"
+XIAGUIENGINEDIR="$TOPDIR/src/XIAengineControl"
 RUPDATEDIR="$TOPDIR/src/rupdate"
 XIASORTDIR="$TOPDIR/src/XIAonline"
 SORTDIR="$TOPDIR/src/sort"
@@ -25,11 +26,16 @@ cd $MASTERDIR
 make -j4
 
 # Next engine directory
-cd $ENGINEDIR
-make -j4
+#cd $ENGINEDIR
+#make -j4
 
 # Next XIAengine directory
 cd $XIAENGINEDIR
+make -j4
+
+# Next XIAGUIengine directory
+cd $XIAGUIENGINEDIR
+/home/vetlewi/Qt/5.10.1/gcc_64/bin/qmake
 make -j4
 
 # Rupdate
@@ -42,7 +48,7 @@ make -j4
 
 cd $TOPDIR
 cp $MASTERDIR/acq_master $BINDIR/acq_master
-#cp $MASTERDIR/acq_master_commands.txt $BINDIR/acq_master_commands.txt
 cp $XIAENGINEDIR/XIAengine $BINDIR/XIAengine
+cp $XIAGUIENGINEDIR/XIAengineControl $BINDIR/XIAengineControl
 cp $XIASORTDIR/XIAsort $BINDIR/XIAsort
 cp $RUPDATEDIR/rupdate $BINDIR/rupdate

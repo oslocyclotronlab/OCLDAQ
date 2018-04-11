@@ -10,6 +10,7 @@ LIBDIR="$TOPDIR/src/lib"
 MASTERDIR="$TOPDIR/src/master"
 ENGINEDIR="$TOPDIR/src/engine"
 XIAENGINEDIR="$TOPDIR/src/XIAengine"
+XIAGUIENGINEDIR="$TOPDIR/src/XIAengineControl"
 RUPDATEDIR="$TOPDIR/src/rupdate"
 XIASORTDIR="$TOPDIR/src/XIAonline"
 SORTDIR="$TOPDIR/src/sort"
@@ -30,6 +31,11 @@ make clean
 # Next XIAengine directory
 cd $XIAENGINEDIR
 make clean
+
+# Next XIAGUIengine directory
+cd $XIAGUIENGINEDIR
+make clean
+rm -f XIAengineControl Makefile
 
 # Rupdate
 cd $RUPDATEDIR

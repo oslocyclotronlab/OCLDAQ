@@ -1,8 +1,3 @@
-
-
-#LIBS		=	-L/path/to/XIA/SDK -L/path/to/PXI/SDK -lPixie16App -lPixie16Sys -lPxiApi -ldl -lm -lpthread
-#INCLUDES	=	-I/path/to/xia/inc -I/path/to/XIA/SDK/app -I/path/to/XIA/SDK/sys -I/path/to/PXI/include -I../../include
-
 LIBS		=	-L/opt/xia/current \
 			-L/opt/plx/current/PlxSdk/PlxApi/Library \
 			-L../lib \
@@ -37,4 +32,4 @@ $(TARGET): $(OBJECTS)
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
 clean:
-	rm -f $(TARGET) $(OBJECTS)
+rm -f $(TARGET) $(OBJECTS)
