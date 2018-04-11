@@ -21,7 +21,7 @@
 
 
 
-const bool next_line(std::istream &in, std::string &line)
+bool next_line(std::istream &in, std::string &line)
 {
     line = "";
 
@@ -523,6 +523,7 @@ bool XIAControl::InitializeXIA()
     std::lock_guard<std::mutex> xia_guard(xia_mutex);
 
     int retval = Pixie16InitSystem(num_modules, PXISlotMap, 0);
+
     if (retval < 0){
         sprintf(errmsg, "*ERROR* Pixie16InitSystem failed, retval = %d\n", retval);
         termWrite->WriteError(errmsg);
@@ -654,7 +655,7 @@ bool XIAControl::BootXIA()
         termWrite->Write(SPFPGA);
         termWrite->Write("\nDSPCodeFile:\t");
         termWrite->Write(DSPCode);
-        termWrite->Write("\nDSPVarFile:\t");
+        termWrite->Write("\nDSPVarFile:\t\t");
         termWrite->Write(DSPVar);
         termWrite->Write("\n");
         retval = Pixie16BootModule(ComFPGA, SPFPGA, TrigFPGA, DSPCode, DSPSet, DSPVar, i, 0x7F);
@@ -747,7 +748,7 @@ bool XIAControl::StartLMR()
     std::lock_guard<std::mutex> xia_guard(xia_mutex);
 
     termWrite->Write("Trying to write SYNCH_WAIT...\n");
-    int retval = Pixie16WriteSglModPar("SYNCH_WAIT", 1, 0);
+    int retval = Pixie16WriteSglModPar(const_cast<char *>("SYNCH_WAIT"), 1, 0);
     if (retval < 0){
         sprintf(errmsg, "*ERROR* Pixie16WriteSglModPar writing SYNCH_WAIT failed, retval = %d\n", retval);
         termWrite->WriteError(errmsg);
@@ -757,7 +758,7 @@ bool XIAControl::StartLMR()
     termWrite->Write("... Done.\n");
 
     termWrite->Write("Trying to write IN_SYNCH...\n");
-    retval = Pixie16WriteSglModPar("IN_SYNCH", 0, 0);
+    retval = Pixie16WriteSglModPar(const_cast<char *>("IN_SYNCH"), 0, 0);
     if (retval < 0){
         sprintf(errmsg, "*ERROR* Pixie16WriteSglModPar writing IN_SYNCH failed, retval = %d\n", retval);
         termWrite->WriteError(errmsg);
@@ -839,7 +840,7 @@ bool XIAControl::SynchModules()
     std::lock_guard<std::mutex> xia_guard(xia_mutex);
 
     termWrite->Write("Trying to write IN_SYNCH...\n");
-    int retval = Pixie16WriteSglModPar("IN_SYNCH", 0, 0);
+    int retval = Pixie16WriteSglModPar(const_cast<char *>("IN_SYNCH"), 0, 0);
     if (retval < 0){
         sprintf(errmsg, "*ERROR* Pixie16WriteSglModPar writing IN_SYNCH failed, retval = %d\n", retval);
         termWrite->WriteError(errmsg);
