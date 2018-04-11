@@ -35,9 +35,9 @@
 #include <iostream>
 
 #define GAP_SIZE 500
-#define MAX_TDIFF 500
+#define MAX_TDIFF 5000
 
-#define SINGLES 0
+#define SINGLES 1
 
 EventBuilder::EventBuilder()
 	: buffer( 0 )

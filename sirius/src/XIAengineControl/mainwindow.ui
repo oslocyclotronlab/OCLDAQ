@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>XIA settings</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
@@ -1477,7 +1477,7 @@
      <x>0</x>
      <y>0</y>
      <width>602</width>
-     <height>25</height>
+     <height>19</height>
     </rect>
    </property>
   </widget>

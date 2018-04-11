@@ -99,6 +99,7 @@ std::vector<word_t> Unpacker::ParseBuffer(const volatile uint32_t *buffer, const
         case f500MHz:
             curr_w.cfdcorr = XIA_CFD_Fraction_500MHz(curr_w.cfddata, &curr_w.cfdfail);
             curr_w.timestamp *= 10;
+            break;
         default:
             curr_w.timestamp *= 10;
             error = true;
@@ -155,6 +156,7 @@ std::vector<word_t> Unpacker::ParseBuffer(const volatile uint32_t *buffer, const
         case f500MHz:
             curr_w.cfdcorr = XIA_CFD_Fraction_500MHz(curr_w.cfddata, &curr_w.cfdfail);
             curr_w.timestamp *= 10;
+            break;
         default:
             curr_w.timestamp *= 10;
             error = true;
