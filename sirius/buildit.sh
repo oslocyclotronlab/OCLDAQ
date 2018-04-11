@@ -14,7 +14,7 @@ RUPDATEDIR="$TOPDIR/src/rupdate"
 XIASORTDIR="$TOPDIR/src/XIAonline"
 SORTDIR="$TOPDIR/src/sort"
 USRSORTDIR="$TOPDIR/src/user_sort"
-BINDIR="$TOPDIR/../bin"
+BINDIR="/usr/local/bin"
 
 # We are navigating to the lib director and build!
 cd $LIBDIR
