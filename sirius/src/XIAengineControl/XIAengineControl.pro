@@ -16,7 +16,7 @@ INCLUDEPATH += ../../include
 unix:!macx {
 INCLUDEPATH += /opt/xia/current/inc \
                /opt/xia/current/sys \
-               /opt/xia/current/app \
+               /opt/xia/current/app
 
 LIBS += -L/opt/xia/current \
         -L/opt/plx/current/PlxSdk/PlxApi/Library \

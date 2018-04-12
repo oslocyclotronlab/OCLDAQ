@@ -172,6 +172,9 @@ private:
     // Temporary buffer for strings
     char errmsg[1024];
 
+    // Last 'stats' read out.
+    unsigned int last_stats[PRESET_MAX_MODULES][448];
+
     timeval last_time;
 
     // Some private functions that are needed.
