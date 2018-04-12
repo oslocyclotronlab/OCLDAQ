@@ -32,4 +32,4 @@ $(TARGET): $(OBJECTS)
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
 clean:
-rm -f $(TARGET) $(OBJECTS)
+	rm -f $(TARGET) $(OBJECTS)

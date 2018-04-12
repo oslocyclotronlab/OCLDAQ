@@ -65,21 +65,10 @@ void sort_coincidence(Event &event)
                     tdiff_c = event.w_labr[n][m].timestamp - e_word.timestamp;
                     tdiff_f = event.w_labr[n][m].cfdcorr - e_word.cfdcorr;
                     tdiff = tdiff_c + tdiff_f;
-                    spec_fill(TLABRSP_ID, tdiff + 16384, n);
+                    spec_fill(TLABRSP_ID, tdiff*10 + 12000, n);
                 }
             }
 	}
-
-    if ( event.n_labr[0] == 1){
-        for (int n = 1 ; n < NUM_LABR_DETECTORS ; ++n){
-                for (int m = 0 ; m < event.n_labr[n] ; ++m){
-                    tdiff_c = event.w_labr[n][m].timestamp - event.w_labr[0][0].timestamp;
-                    tdiff_f = event.w_labr[n][m].cfdcorr - event.w_labr[0][0].cfdcorr;
-                    tdiff = tdiff_c + tdiff_f;
-                    //spec_fill(TLABRSP_ID, tdiff + 16384, n);
-                }
-            }
-    }
 
      
 
