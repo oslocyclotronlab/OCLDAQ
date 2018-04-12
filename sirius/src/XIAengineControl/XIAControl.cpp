@@ -7,6 +7,7 @@
 #include <thread>
 #include <chrono>
 #include <fstream>
+#include <iostream>
 
 #include <cstdlib>
 #include <cstdio>
@@ -21,7 +22,7 @@
 
 
 // Define some addresses...
-#define LIVETIMEA_ADDRESS 0x0004a340
+#define LIVETIMEA_ADDRESS 0x0004a37f
 #define LIVETIMEB_ADDRESS 0x0004a38f
 #define FASTPEAKSA_ADDRESS 0x0004a39f
 #define FASTPEAKSB_ADDRESS 0x0004a3af
@@ -914,13 +915,11 @@ bool XIAControl::WriteScalers()
 
             for (int j = 0 ; j < 16 ; ++j){
                 
-                uint64_t fastPeakN = stats[FASTPEAKSA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
-                fastPeakN = fastPeakN << 32;
-                fastPeakN |= stats[FASTPEAKSB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+                double fastPeakN = stats[FASTPEAKSA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER]*pow(2., 32.);
+                fastPeakN += stats[FASTPEAKSB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
 
-                uint64_t fastPeakP = last_stats[i][FASTPEAKSA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
-                fastPeakP = fastPeakP << 32;
-                fastPeakP |= last_stats[i][FASTPEAKSB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+                double fastPeakP = last_stats[i][FASTPEAKSA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER]*pow(2., 32.);
+                fastPeakP += last_stats[i][FASTPEAKSB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
 
                 double fastPeak = fastPeakN - fastPeakP;
 
@@ -933,6 +932,10 @@ bool XIAControl::WriteScalers()
                 LiveTimeP |= last_stats[i][LIVETIMEB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
 
                 double liveTime = LiveTimeN - LiveTimeP;
+                if (timestamp_factor[i] == 8)
+                    liveTime *= 2e-6/250.;
+                else
+                    liveTime *= 1e-6/100.;
 
                 uint64_t ChanEventsN = stats[CHANEVENTSA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
                 ChanEventsN = ChanEventsN << 32;
@@ -954,7 +957,12 @@ bool XIAControl::WriteScalers()
 
                 double runTime = runTimeN - runTimeP;
 
-                ICR[i][j] = (liveTime != 0) ? fastPeak/liveTime : 0;
+                if (timestamp_factor[i] == 8)
+                    runTime *= 2e-6/250.;
+                else
+                    runTime *= 1e-6/100.;
+
+                ICR[i][j] = (liveTime !=0) ? fastPeak/liveTime : 0;
                 OCR[i][j] = (runTime != 0) ? ChanEvents/runTime : 0;
             }
 
@@ -982,7 +990,7 @@ bool XIAControl::WriteScalers()
         fprintf(scaler_file_out, "%d", i);
         for (int j = 0 ; j < 16 ; ++j){
             fprintf(scaler_file_in, "\t%.2f", ICR[i][j]);
-            fprintf(scaler_file_in, "\t%.2f", OCR[i][j]);
+            fprintf(scaler_file_out, "\t%.2f", OCR[i][j]);
         }
         fprintf(scaler_file_in, "\n");
         fprintf(scaler_file_out, "\n");
