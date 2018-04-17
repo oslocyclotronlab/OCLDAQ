@@ -57,33 +57,10 @@ void sort_coincidence(Event &event)
         for (int j = 0 ; j < event.n_dEdet[i] ; ++j)
             de_word = event.w_dEdet[i][j];
     }
-    for (int i = 0 ; i < NUM_SI_E_DET ; ++i){
-        for (int j = 0 ; j < event.n_Edet[i] ; ++j)
-            e_word = event.w_Edet[i][j];
-	    for (int n = 0 ; n < NUM_LABR_DETECTORS ; ++n){
-                for (int m = 0 ; m < event.n_labr[n] ; ++m){
-                    tdiff_c = event.w_labr[n][m].timestamp - e_word.timestamp;
-                    tdiff_f = event.w_labr[n][m].cfdcorr - e_word.cfdcorr;
-                    tdiff = tdiff_c + tdiff_f;
-                    //spec_fill(TLABRSP_ID, tdiff + 16384, n);
-                }
-            }
-	}
 
-     
+    e_word = event.trigger;
 
-            /*for (int n = 0 ; n < NUM_SI_E_DET ; ++n){
-                for (int m = 0 ; m < event.n_Edet[n] ; ++m){
-                    tdiff_c = event.w_Edet[n][m].timestamp - event.w_PPAC[i][j].timestamp;
-                    tdiff_f = event.w_Edet[n][m].cfdcorr - event.w_PPAC[i][j].cfdcorr;
-                    tdiff = tdiff_c + tdiff_f;
-                    spec_fill(TLABRSP_ID, tdiff + 16384, 1);
-                }
-            }
-        }
-    }*/
-
-    if (event.tot_Edet == 1 && event.tot_dEdet == 1)
+    if (event.tot_dEdet != 1)
         return;
 
     if (GetDetector(de_word.address).telNum != GetDetector(e_word.address).telNum)
