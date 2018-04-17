@@ -915,10 +915,12 @@ bool XIAControl::WriteScalers()
 
             for (int j = 0 ; j < 16 ; ++j){
                 
-                double fastPeakN = stats[FASTPEAKSA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER]*pow(2., 32.);
+                uint64_t fastPeakN = stats[FASTPEAKSA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+                fastPeakN = fastPeakN << 32;
                 fastPeakN += stats[FASTPEAKSB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
 
-                double fastPeakP = last_stats[i][FASTPEAKSA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER]*pow(2., 32.);
+                uint64_t fastPeakP = last_stats[i][FASTPEAKSA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+                fastPeakP = fastPeakP << 32;
                 fastPeakP += last_stats[i][FASTPEAKSB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
 
                 double fastPeak = fastPeakN - fastPeakP;
@@ -957,10 +959,7 @@ bool XIAControl::WriteScalers()
 
                 double runTime = runTimeN - runTimeP;
 
-                if (timestamp_factor[i] == 8)
-                    runTime *= 2e-6/250.;
-                else
-                    runTime *= 1e-6/100.;
+                runTime *= 1.0e-6 / 100.;
 
                 ICR[i][j] = (liveTime !=0) ? fastPeak/liveTime : 0;
                 OCR[i][j] = (runTime != 0) ? ChanEvents/runTime : 0;

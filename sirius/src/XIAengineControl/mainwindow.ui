@@ -1695,6 +1695,13 @@
          </widget>
         </item>
         <item>
+         <widget class="QPushButton" name="AdjBLineC">
+          <property name="text">
+           <string>Adjust Baseline cut</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <spacer name="horizontalSpacer_3">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -1719,7 +1726,7 @@
      <x>0</x>
      <y>0</y>
      <width>672</width>
-     <height>22</height>
+     <height>19</height>
     </rect>
    </property>
   </widget>

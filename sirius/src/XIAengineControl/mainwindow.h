@@ -36,6 +36,8 @@ private slots:
 
     void on_CopyButton_clicked();
 
+    void on_AdjBLineC_clicked();
+
 private:
     Ui::MainWindow *ui;
 

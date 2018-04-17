@@ -35,6 +35,7 @@ sort_spectrum_t sort_spectra[] = {
     { EDESP_ID,   EDESP_KEY,    EDESP_SIZE,     0,  EDESP_XSIZE,    EDESP_YSIZE,    "EDESP",    "E-DE"},
     { TLABRSP_ID, TLABRSP_KEY,  TLABRSP_SIZE,   0,  TLABRSP_XSIZE,  TLABRSP_YSIZE,  "TLABRSP",  "LaBr-time"},
     { PPAC_ID,    PPAC_KEY,     PPAC_SIZE,      0,  PPAC_XSIZE,     PPAC_YSIZE,     "PPACSP",   "PPAC spec"},
+    { EDESS_ID,   EDESS_KEY,    EDESS_SIZE,     0,  EDESS_XSIZE,    EDESS_YSIZE,    "EDESS",    "E-DE single strip"},
     {  0, 0, 0, 0, 0, 0, 0, 0 }
 };
 #endif // XIA

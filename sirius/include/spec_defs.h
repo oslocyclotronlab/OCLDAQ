@@ -4,7 +4,7 @@
 #define  EDESP_KEY              1503     /* DE-E-counter spectra        (2048x2048) */
 #define  TLABRSP_KEY            1504     /* LaBr time spectra (1-48)    (32768x48)  */
 #define  PPAC_KEY               1505     /* PPAC spectra (32768x4)                  */
-
+#define	 EDESS_KEY		1506
 
 #define  LABRSP_XSIZE           32768   /* LaBr time spectra (1-48) */
 #define  DESP_XSIZE             32768   /* E-counter spectra        */
@@ -12,6 +12,7 @@
 #define  EDESP_XSIZE            2048    /* DE-E-counter spectra     */
 #define  TLABRSP_XSIZE          32768   /* Thickness spectra        */
 #define  PPAC_XSIZE             32768   /* PPAC spectra             */
+#define  EDESS_XSIZE		2048
 
 #define  LABRSP_YSIZE           48      /* LaBr time spectra (1-48) */
 #define  DESP_YSIZE             64      /* E-counter spectra        */
@@ -19,6 +20,7 @@
 #define  EDESP_YSIZE            2048    /* DE-E-counter spectra     */
 #define  TLABRSP_YSIZE          48      /* Thickness spectra        */
 #define  PPAC_YSIZE             4       /* PPAC spectra             */
+#define  EDESS_YSIZE		2048
 
 
 #define  LABRSP_SIZE    (4*LABRSP_XSIZE*LABRSP_YSIZE)   /* 6291456  6 MB    */
@@ -27,3 +29,4 @@
 #define  EDESP_SIZE     (4*EDESP_XSIZE  *EDESP_YSIZE)   /* 16777216 16 MB   */
 #define  TLABRSP_SIZE   (4*TLABRSP_XSIZE*TLABRSP_YSIZE) /* 6291456  6 MB    */
 #define  PPAC_SIZE      (4*PPAC_XSIZE   *PPAC_YSIZE)
+#define  EDESS_SIZE     (4*EDESS_XSIZE *EDESS_YSIZE)

@@ -29,7 +29,8 @@ enum {
     ESP_ID      =   3,
     EDESP_ID    =   4,
     TLABRSP_ID  =   5,
-    PPAC_ID     =   6
+    PPAC_ID     =   6,
+    EDESS_ID    =   7
 };
 #endif // XIA
 

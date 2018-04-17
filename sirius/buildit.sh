@@ -35,7 +35,7 @@ make -j4
 
 # Next XIAGUIengine directory
 cd $XIAGUIENGINEDIR
-/home/vetlewi/Qt/5.10.1/gcc_64/bin/qmake
+qmake-qt5
 make -j4
 
 # Rupdate
