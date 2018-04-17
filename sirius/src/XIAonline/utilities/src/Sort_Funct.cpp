@@ -58,7 +58,7 @@ void sort_coincidence(Event &event)
 
             if (GetDetector(event.trigger.address).telNum == GetDetector(event.w_dEdet[i][j].address).telNum){
 
-                if ( i == 0 )
+                if ( i == 60 )
                     spec_fill(EDESS_ID, event.trigger.adcdata / 8, event.w_dEdet[i][j].adcdata / 8);
 
                 spec_fill(EDESP_ID, event.trigger.adcdata / 8, event.w_dEdet[i][j].adcdata / 8);
