@@ -122,15 +122,10 @@ bool EventBuilder::UnpackOneEvent(Event &event)
             // We find all events that are within MAX_TDIFF before the
             // E event.
             for (int j = curr_pos ; j > 0 ; --j){
-                /*if (GetSamplingFrequency(buffer[j-1].address) == f250MHz)
-                    factor=8;
-                else
-                    factor=10;*/
+
                 timediff = buffer[j-1].timestamp - curr_w.timestamp;
 
-                /*if ( GetDetector(buffer[j-1].address).type == labr)
-                    std::cout << timediff << std::endl;
-                */
+
                 if (std::abs(timediff) > 0/*MAX_TDIFF*/){
                     start = j;
                     break;
@@ -150,7 +145,8 @@ bool EventBuilder::UnpackOneEvent(Event &event)
                     break;
                 }
             }
-            curr_pos = stop;
+            curr_pos = i+1;
+            event.trigger = curr_w;
             return PackEvent(event, start, stop);
         }
     }
