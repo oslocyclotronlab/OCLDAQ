@@ -54,39 +54,25 @@ void sort_coincidence(Event &event)
     double tdiff_f, tdiff;
 
     for (int i = 0 ; i < NUM_SI_DE_DET ; ++i){
-        for (int j = 0 ; j < event.n_dEdet[i] ; ++j)
-            de_word = event.w_dEdet[i][j];
-    }
+        for (int j = 0 ; j < event.n_dEdet[i] ; ++j){
 
-    e_word = event.trigger;
+            if (GetDetector(event.trigger.address).telNum == GetDetector(event.w_dEdet[i][j].address).telNum){
 
-    if (event.tot_dEdet != 1)
-        return;
+                if ( i == 23 )
+                    spec_fill(EDESS_ID, event.trigger.adcdata / 8, event.w_dEdet[i][j].adcdata / 8);
 
-    if (GetDetector(de_word.address).telNum != GetDetector(e_word.address).telNum)
-        return;
+                spec_fill(EDESP_ID, event.trigger.adcdata / 8, event.w_dEdet[i][j].adcdata / 8);
 
-    if (GetDetector(de_word.address).detectorNum == 23)
-        spec_fill(EDESS_ID, e_word.adcdata / 8, de_word.adcdata / 8);
-    
-    spec_fill(EDESP_ID, e_word.adcdata / 8, de_word.adcdata / 8);
-    
-    //spec_fill(TLABRSP_ID, e_word.adcdata / 2 + de_word.adcdata / 2, 5);
-    
-    // We use time of DE as start.
-    
-    //if (event.n_labr[0] != 1 && event.w_labr[0][0].cfdfail != 0)
-    //    return;
+                for (int n = 0 ; n < NUM_LABR_DETECTORS ; ++n){
+                    for (int m = 0 ; m < event.n_labr[n] ; ++m){
+                        tdiff_c = event.w_labr[n][m].timestamp - event.w_dEdet[i][j].timestamp;
+                        tdiff_f = event.w_labr[n][m].cfdcorr - event.w_dEdet[i][j].cfdcorr;
+                        tdiff = tdiff_c + tdiff_f;
+                        spec_fill(TLABRSP_ID, tdiff + 16384, n);
+                    }
+                }
 
-    //word_t de_word = event.w_labr[0][0];
-
-
-    for (int i = 0 ; i < NUM_LABR_DETECTORS ; ++i){
-        for (int j = 0 ; j < event.n_labr[i] ; ++j){
-            tdiff_c = event.w_labr[i][j].timestamp - de_word.timestamp;
-            tdiff_f = event.w_labr[i][j].cfdcorr - de_word.cfdcorr;
-            tdiff = tdiff_c + tdiff_f;
-            spec_fill(TLABRSP_ID, tdiff + 16384, i);
+            }
         }
     }
 }
