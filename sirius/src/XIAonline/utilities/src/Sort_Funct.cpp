@@ -66,7 +66,7 @@ void sort_coincidence(Event &event)
     if (GetDetector(de_word.address).telNum != GetDetector(e_word.address).telNum)
         return;
 
-    if (GetDetector(de_word.address).detectorNum == 10)
+    if (GetDetector(de_word.address).detectorNum == 23)
         spec_fill(EDESS_ID, e_word.adcdata / 8, de_word.adcdata / 8);
     
     spec_fill(EDESP_ID, e_word.adcdata / 8, de_word.adcdata / 8);
