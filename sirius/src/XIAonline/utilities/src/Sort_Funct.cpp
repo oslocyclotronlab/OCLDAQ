@@ -65,7 +65,7 @@ void sort_coincidence(Event &event)
                     tdiff_c = event.w_labr[n][m].timestamp - e_word.timestamp;
                     tdiff_f = event.w_labr[n][m].cfdcorr - e_word.cfdcorr;
                     tdiff = tdiff_c + tdiff_f;
-                    spec_fill(TLABRSP_ID, tdiff*10 + 12000, n);
+                    //spec_fill(TLABRSP_ID, tdiff + 16384, n);
                 }
             }
 	}
@@ -83,16 +83,16 @@ void sort_coincidence(Event &event)
         }
     }*/
 
-    if (event.tot_Edet != 1)
+    if (event.tot_Edet == 1 && event.tot_dEdet == 1)
         return;
 
-    if (GetDetector(de_word.address).telNum != GetDetector(e_word.address).detectorNum)
+    if (GetDetector(de_word.address).telNum != GetDetector(e_word.address).telNum)
         return;
 
-    if (GetDetector(de_word.address).detectorNum != 0)
-        return;
+    if (GetDetector(de_word.address).detectorNum == 10)
+        spec_fill(EDESS_ID, e_word.adcdata / 8, de_word.adcdata / 8);
     
-    spec_fill(EDESP_ID, e_word.adcdata / 8, de_word.adcdata / 4);
+    spec_fill(EDESP_ID, e_word.adcdata / 8, de_word.adcdata / 8);
     
     //spec_fill(TLABRSP_ID, e_word.adcdata / 2 + de_word.adcdata / 2, 5);
     
@@ -104,13 +104,12 @@ void sort_coincidence(Event &event)
     //word_t de_word = event.w_labr[0][0];
 
 
-    /*for (int i = 0 ; i < NUM_LABR_DETECTORS ; ++i){
+    for (int i = 0 ; i < NUM_LABR_DETECTORS ; ++i){
         for (int j = 0 ; j < event.n_labr[i] ; ++j){
-            tdiff_c = event.w_labr[i][j].timestamp - e_word.timestamp;
-            tdiff_f = event.w_labr[i][j].cfdcorr - e_word.cfdcorr;
+            tdiff_c = event.w_labr[i][j].timestamp - de_word.timestamp;
+            tdiff_f = event.w_labr[i][j].cfdcorr - de_word.cfdcorr;
             tdiff = tdiff_c + tdiff_f;
-            //std::cout << tdiff_c << std::endl;
             spec_fill(TLABRSP_ID, tdiff + 16384, i);
         }
-    }*/
+    }
 }
