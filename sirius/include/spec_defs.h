@@ -1,3 +1,6 @@
+#ifndef SPEC_DEFS
+#define SPEC_DEFS
+
 #define  LABRSP_KEY             1500     /* LaBr singles spectra (1-32) (32768x32)  */
 #define  DESP_KEY               1501     /* E-counter spectra           (32768x64)  */
 #define  ESP_KEY                1502     /* DE-counter spectra          (32768x16)  */
@@ -34,3 +37,5 @@
 #define  PPAC_SIZE      (4*PPAC_XSIZE   *PPAC_YSIZE)	/* 					*/
 #define  TPPAC_SIZE		(4*TPPAC_XSIZE  *TPPAC_YSIZE)	/*					*/
 #define  EDESS_SIZE     (4*EDESS_XSIZE *EDESS_YSIZE)	/*					*/
+
+#endif // SPEC_DEFS
