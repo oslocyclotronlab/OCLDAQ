@@ -79,6 +79,9 @@ public:
     // Ask for a buffer of data to be committed.
     bool XIA_fetch_buffer(uint32_t *buffer, int bufsize);
 
+    // Ask the class to boot the XIA modules.
+    bool XIA_boot_all();
+
     // Ask the class to start the run in the XIA modules.
     bool XIA_start_run();
 
@@ -94,8 +97,8 @@ public:
     // Will return false if run is active.
     bool XIA_reload();
 
-    // Measure the BLineCut of all channels/modules.
-    bool XIA_BLineCut();
+    // Get number of XIA modules.
+    inline int GetNumMod() const { return num_modules; }
 
 private:
 
@@ -168,6 +171,9 @@ private:
 
     // Temporary buffer for strings
     char errmsg[1024];
+
+    // Last 'stats' read out.
+    unsigned int last_stats[PRESET_MAX_MODULES][448];
 
     timeval last_time;
 
