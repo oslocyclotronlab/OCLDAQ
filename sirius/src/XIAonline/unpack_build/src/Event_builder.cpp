@@ -173,11 +173,22 @@ bool EventBuilder::PackEvent(Event& event, int start, int stop)
             }
             break;
         }
-        case deDet: {
+        /*case deDet: {
             if ( event.n_dEdet[dinfo.detectorNum] < MAX_WORDS_PER_DET &&
                  dinfo.detectorNum < NUM_SI_DE_DET){
                 event.w_dEdet[dinfo.detectorNum][event.n_dEdet[dinfo.detectorNum]++] = buffer[i];
                 ++event.tot_dEdet;
+            } else {
+                std::cerr << __PRETTY_FUNCTION__ << ": Could not populate dEdet word, run debugger with appropriate break point for more details" << std::endl;
+            }
+            break;
+        } */
+        case deDet: {
+            if ( event.n_dEdet[dinfo.telNum][dinfo.detectorNum] < MAX_WORDS_PER_DET &&
+                 dinfo.detectorNum < NUM_SI_DE_TEL){
+                event.w_dEdet[dinfo.telNum][dinfo.detectorNum][event.n_dEdet[dinfo.detectorNum][dinfo.detectorNum]++] = buffer[i];
+                ++event.tot_dEdet;
+                ++event.tot_dEdet_trap[dinfo.telNum];
             } else {
                 std::cerr << __PRETTY_FUNCTION__ << ": Could not populate dEdet word, run debugger with appropriate break point for more details" << std::endl;
             }

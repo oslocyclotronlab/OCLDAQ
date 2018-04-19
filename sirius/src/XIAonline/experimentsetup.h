@@ -4,10 +4,11 @@
 // Currently the sorting rutine will only support dE-E silicon telescopes.
 // This may change in the future if needed... I think...
 
-#define NUM_LABR_DETECTORS 48   //!< Number of LaBr detectors
+#define NUM_LABR_DETECTORS 32   //!< Number of LaBr detectors
 #define NUM_SI_DE_DET 64        //!< Number of Si dE sections
-#define NUM_SI_E_DET 16          //!< Number of E Si rings
-#define NUM_SI_E_GUARD 16        //!< Number of E guard rings
+#define NUM_SI_DE_TEL 8         //!< Number of si dE sections per trapezoidal
+#define NUM_SI_E_DET 8          //!< Number of E Si rings
+#define NUM_SI_E_GUARD 8        //!< Number of E guard rings
 #define NUM_PPAC       4
 
 #define MAX_WORDS_PER_DET 32    //!< Maximum number of words per detector in each event

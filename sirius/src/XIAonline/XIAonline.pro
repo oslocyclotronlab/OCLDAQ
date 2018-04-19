@@ -16,9 +16,11 @@ INCLUDEPATH +=  ./ \
                 types/inc \
                 unpack_build/inc \
                 utilities/inc \
+                /Users/vetlewi/Desktop/OCLDAQ/sirius/include \
                 /home/vetlewi/Desktop/OCLDAQ/sirius/include
 
-LIBS += -L/home/vetlewi/Desktop/OCLDAQ/sirius/src/lib -lsirius
+#LIBS += -L/home/vetlewi/Desktop/OCLDAQ/sirius/src/lib -lsirius
+LIBS += -L/Users/vetlewi/Desktop/OCLDAQ/sirius/src/lib -lsirius
 
 SOURCES += \ 
     experimentsetup.c \

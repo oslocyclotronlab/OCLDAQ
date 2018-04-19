@@ -34,7 +34,7 @@ for i in range(labr_start, labr_stop):
 tel = 0
 for i in range(de_start, de_stop):
 	if i - de_start - 8*tel >= 8: tel += 1
-	listOfDetectors[i] = [i, "f250MHz", "deDet", i-de_start, tel]
+	listOfDetectors[i] = [i, "f250MHz", "deDet", i - de_start - 8*tel, tel]
 
 # Set e channels
 for i in range(8):

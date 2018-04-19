@@ -51,8 +51,10 @@ struct Event {
     int n_labr[NUM_LABR_DETECTORS];                         //!< Number of LaBr words populated
     int tot_labr;                                           //!< Total number of LaBr words in the event
 
-    word_t w_dEdet[NUM_SI_DE_DET][MAX_WORDS_PER_DET];       //!< Array to contain Si words from the dE rings
-    int n_dEdet[NUM_SI_DE_DET];                            //!< Number of Si words populated from the dE rings
+    //word_t w_dEdet[NUM_SI_DE_DET][MAX_WORDS_PER_DET];       //!< Array to contain Si words from the dE rings
+    word_t w_dEdet[NUM_SI_E_DET][NUM_SI_DE_TEL][MAX_WORDS_PER_DET];            //!< Array to contain Si words from the dE rings
+    int n_dEdet[NUM_SI_E_DET][NUM_SI_DE_TEL];                            //!< Number of Si words populated from the dE rings
+    int tot_dEdet_trap[NUM_SI_E_DET];
     int tot_dEdet;                                          //!< Total number of Si words from the dE rings
 
     word_t w_Edet[NUM_SI_E_DET][MAX_WORDS_PER_DET];         //!< Array to contain Si words from the dE sectors
@@ -93,8 +95,11 @@ struct Event {
 
         // Clearing dE sections
         tot_dEdet = 0;
-        for (i = 0 ; i < NUM_SI_DE_DET ; ++i)
-            n_dEdet[i] = 0;
+        for (i = 0 ; i < NUM_SI_E_DET ; ++i){
+            tot_dEdet_trap[i] = 0;
+            for (int j = 0 ; j < NUM_SI_DE_TEL ; ++j)
+                n_dEdet[i][j] = 0;
+        }
 
         // Clearing E detectors
         tot_Edet = 0;
