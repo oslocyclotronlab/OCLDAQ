@@ -116,8 +116,8 @@ bool EventBuilder::UnpackOneEvent(Event &event)
     word_t curr_w;
     for (size_t i = curr_pos ; i < buffer.size() ; ++i){
         curr_w = buffer[i];
-        if ( ( GetDetector(curr_w.address).type == eDet ) ||
-             ( GetDetector(curr_w.address).type == ppac )   ){
+        if ( ( GetDetector(curr_w.address).type == eDet ) /*||
+             ( GetDetector(curr_w.address).type == ppac ) */  ){
 
             // We find all events that are within MAX_TDIFF before the
             // E event.
@@ -126,7 +126,7 @@ bool EventBuilder::UnpackOneEvent(Event &event)
                 timediff = buffer[j-1].timestamp - curr_w.timestamp;
 
 
-                if (std::abs(timediff) > 250/*MAX_TDIFF*/){
+                if (std::abs(timediff) > 0/*MAX_TDIFF*/){
                     start = j;
                     break;
                 }
@@ -135,10 +135,6 @@ bool EventBuilder::UnpackOneEvent(Event &event)
             // We find all events that are withn MAX_TDIFF after the
             // E event
             for (int j = curr_pos ; j < buffer.size() - 1 ; ++j){
-                /*if (GetSamplingFrequency(buffer[j+1].address) == f250MHz)
-                    factor=8;
-                else
-                    factor=10;*/
                 timediff = buffer[j+1].timestamp - curr_w.timestamp;
                 if (std::abs(timediff) > MAX_TDIFF){
                     stop = j+1;
@@ -184,9 +180,9 @@ bool EventBuilder::PackEvent(Event& event, int start, int stop)
             break;
         } */
         case deDet: {
-            if ( event.n_dEdet[dinfo.telNum][dinfo.detectorNum] < MAX_WORDS_PER_DET &&
-                 dinfo.detectorNum < NUM_SI_DE_TEL){
-                event.w_dEdet[dinfo.telNum][dinfo.detectorNum][event.n_dEdet[dinfo.detectorNum][dinfo.detectorNum]++] = buffer[i];
+            if ( event.n_dEdet[dinfo.telNum][dinfo.detectorNum] < MAX_WORDS_PER_DET /*&&
+                 dinfo.detectorNum < NUM_SI_DE_TEL*/){
+                event.w_dEdet[dinfo.telNum][dinfo.detectorNum][event.n_dEdet[dinfo.telNum][dinfo.detectorNum]++] = buffer[i];
                 ++event.tot_dEdet;
                 ++event.tot_dEdet_trap[dinfo.telNum];
             } else {
