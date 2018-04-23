@@ -23,7 +23,7 @@ void sort_singles(std::vector<word_t> buffer)
             spec_fill(LABRSP_ID, buffer[i].adcdata, dinfo.detectorNum);
             break;
         case deDet:
-            spec_fill(DESP_ID, buffer[i].adcdata, dinfo.detectorNum);
+            spec_fill(DESP_ID, buffer[i].adcdata, dinfo.detectorNum + 8*dinfo.telNum);
             break;
         case eDet:
             spec_fill(ESP_ID, buffer[i].adcdata, dinfo.detectorNum);
@@ -63,7 +63,7 @@ void Sort_Particle_Event(Event &event)
                         tdiff_c = event.w_labr[n][m].timestamp - event.w_dEdet[telNo][i][j].timestamp;
                         tdiff_f = event.w_labr[n][m].cfdcorr - event.w_dEdet[telNo][i][j].cfdcorr;
                         tdiff = tdiff_c + tdiff_f;
-                        spec_fill(TLABRSP_ID, tdiff*10 + 16384, n);
+                        spec_fill(TLABRSP_ID, tdiff + 16384, n);
                     }
                 }
             }
@@ -82,7 +82,7 @@ void Sort_PPAC_Event(Event &event)
             tdiff_c = event.w_labr[i][j].timestamp - event.trigger.timestamp;
             tdiff_f = event.w_labr[i][j].cfdcorr - event.trigger.cfdcorr;
             tdiff = tdiff_c + tdiff_f;
-            spec_fill(TPPAC_ID, tdiff*10 + 16384, i);
+            spec_fill(TPPAC_ID, tdiff + 16384, i);
         }
     }
 }
