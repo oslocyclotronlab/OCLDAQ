@@ -5,39 +5,11 @@
 #include "pixie16app_export.h"
 
 #include <iostream>
+#include <cmath>
+#include <stdio.h>
+#include <unistd.h>
 
-const char *ch_par_names[] =
-{
-    "TRIGGER_RISETIME",
-    "TRIGGER_FLATTOP",
-    "TRIGGER_THRESHOLD",
-    "ENERGY_RISETIME",
-    "ENERGY_FLATTOP",
-    "TAU",
-    "BASELINE_PERCENT",
-    "BLCUT",
-    "CFDDelay",
-    "CFDScale",
-    "CFDThresh",
-    "TRACE_LENGTH",
-    "TRACE_DELAY",
-    "FASTTRIGBACKLEN",
-    "ExtTrigStretch",
-    "ExternDelayLen",
-    "FtrigoutDelay",
-    "VetoStrech",
-    "ChanTrigStrech",
-    "MultiplicityMaskL",
-    "MultiplicityMaskH",
-    "QDCLen0",
-    "QDCLen1",
-    "QDCLen2",
-    "QDCLen3",
-    "QDCLen4",
-    "QDCLen5",
-    "QDCLen6",
-    "QDCLen7"
-};
+#include <QFileDialog>
 
 MainWindow::MainWindow(int num_mod, QWidget *parent) :
     QMainWindow(parent),
@@ -66,10 +38,89 @@ MainWindow::MainWindow(int num_mod, QWidget *parent) :
     ui->trigConfig2->setInputMask("HHHHHHHH");
     ui->trigConfig3->setInputMask("HHHHHHHH");
 
+    // Populate the 'copy' table.
+    MakeCopyTable();
 
     // We set the current view to reflect the values set in the XIA module.
     UpdateView();
 
+    // Force most compact view of the window!
+    setFixedHeight(606);
+    setFixedWidth(578);
+
+}
+
+void MainWindow::MakeCopyTable()
+{
+    // We have rows = n_modules
+    // We have columns = 16 (NUM_CHANNELS)
+    char tmp[1024];
+    ui->tableWidget->setColumnCount(NUMBER_OF_CHANNELS);
+    ui->tableWidget->setRowCount(n_modules);
+
+    for (int i = 0 ; i < NUMBER_OF_CHANNELS ; ++i){
+        sprintf(tmp, "%d", i);
+        ui->tableWidget->setHorizontalHeaderItem(i, new QTableWidgetItem(tr(tmp)));
+    }
+
+    for (int i = 0 ; i < n_modules ; ++i){
+        sprintf(tmp, "%d", i);
+        ui->tableWidget->setVerticalHeaderItem(i, new QTableWidgetItem(tr(tmp)));
+    }
+
+    for (int i = 0 ; i < n_modules ; ++i){
+        for (int j = 0 ; j < NUMBER_OF_CHANNELS ; ++j){
+            ui->tableWidget->setCellWidget(i, j, new QCheckBox());
+        }
+    }
+
+    ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tableWidget->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+    connect(ui->tableWidget->horizontalHeader(),
+            &QHeaderView::sectionDoubleClicked,
+            this,
+            &MainWindow::horizontalHeaderSectionDoubleClicked);
+    connect(ui->tableWidget->verticalHeader(),
+            &QHeaderView::sectionDoubleClicked,
+            this,
+            &MainWindow::verticalHeaderSectionDoubleClicked);
+}
+
+void MainWindow::horizontalHeaderSectionDoubleClicked(int sec)
+{
+    // If all is checked, then we uncheck.
+    int n_checked = 0;
+    for (int i = 0 ; i < n_modules ; ++i){
+        QCheckBox *box = (QCheckBox *)ui->tableWidget->cellWidget(i, sec);
+        if (box->isChecked())
+            ++n_checked;
+    }
+    for (int i = 0 ; i < n_modules ; ++i){
+        QCheckBox *box = (QCheckBox *)ui->tableWidget->cellWidget(i, sec);
+        if (n_checked == n_modules)
+            box->setChecked(false);
+        else
+            box->setChecked(true);
+    }
+}
+
+void MainWindow::verticalHeaderSectionDoubleClicked(int sec)
+{
+    // If all is checked, then we uncheck.
+    int n_checked = 0;
+    for (int i = 0 ; i < NUMBER_OF_CHANNELS ; ++i){
+        QCheckBox *box = (QCheckBox *)ui->tableWidget->cellWidget(sec, i);
+        if (box->isChecked())
+            ++n_checked;
+    }
+    for (int i = 0 ; i < NUMBER_OF_CHANNELS ; ++i){
+        QCheckBox *box = (QCheckBox *)ui->tableWidget->cellWidget(sec, i);
+        if (n_checked == NUMBER_OF_CHANNELS)
+            box->setChecked(false);
+        else
+            box->setChecked(true);
+    }
 }
 
 
@@ -79,7 +130,9 @@ void MainWindow::UpdateLimits()
     // First we need to get the module and its MHz
     unsigned short modRev=0xF, modADCBits=16, modADCMPS=500;
     unsigned int modSerNum=12;
-    //Pixie16ReadModuleInfo(ui->current_mod->value(), &modRev, &modSerNum, &modADCBits, &modADCMPS);
+#ifndef OFFLINE
+    Pixie16ReadModuleInfo(current_module, &modRev, &modSerNum, &modADCBits, &modADCMPS);
+#endif // OFFLINE
 
     int fastfilterrange = 0;
     int rev = 0xF;//modRev;
@@ -91,6 +144,9 @@ void MainWindow::UpdateLimits()
         adcFactor = msps / 2;
     else if ( msps == 500 )
         adcFactor = msps / 5;
+    else {
+        adcFactor = msps;
+    }
 
     // Update limits
     ui->slowRange->setMinimum(SLOWFILTERRANGE_MIN);
@@ -194,60 +250,60 @@ void MainWindow::UpdateLimits()
 void MainWindow::UpdateViewChannel()
 {
     // We get the module & channel number from the fields.
-    int module = current_module;
-    int channel = current_channel;
+    unsigned short module = current_module;
+    unsigned short channel = current_channel;
 
     double trigRiseTime, trigFlatTop;
-    unsigned long trigThreshold;
+    unsigned int trigThreshold;
     double energyRiseTime, energyFlatTop, tau;
-    unsigned long baselinePercent, baselineCut;
+    unsigned int baselinePercent, baselineCut;
     double cfdDelay;
-    unsigned long cfdScale, cfdThreshold;
+    unsigned int cfdScale, cfdThreshold;
     double trace_length, trace_delay;
     double fastTrigBackLen, extTrigStrech, ExternDelayLen, FtrigDelay, VetoStrech, ChanTrigStrech;
-    unsigned long chanMultMaskL, chanMultMaskH;
+    unsigned int chanMultMaskL, chanMultMaskH;
     double QDCLen0, QDCLen1, QDCLen2, QDCLen3, QDCLen4, QDCLen5, QDCLen6, QDCLen7;
-    unsigned long csra;
+    unsigned int csra;
 
     double tmp;
 
-    Pixie16ReadSglChanPar("TRIGGER_RISETIME", &trigRiseTime, module, channel);
-    Pixie16ReadSglChanPar("TRIGGER_FLATTOP", &trigFlatTop, module, channel);
-    Pixie16ReadSglChanPar("TRIGGER_THRESHOLD", &tmp, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("TRIGGER_RISETIME"), &trigRiseTime, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("TRIGGER_FLATTOP"), &trigFlatTop, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("TRIGGER_THRESHOLD"), &tmp, module, channel);
     trigThreshold = tmp;
-    Pixie16ReadSglChanPar("ENERGY_RISETIME", &energyRiseTime, module, channel);
-    Pixie16ReadSglChanPar("ENERGY_FLATTOP", &energyFlatTop, module, channel);
-    Pixie16ReadSglChanPar("TAU", &tau, module, channel);
-    Pixie16ReadSglChanPar("BASELINE_PERCENT", &tmp, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("ENERGY_RISETIME"), &energyRiseTime, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("ENERGY_FLATTOP"), &energyFlatTop, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("TAU"), &tau, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("BASELINE_PERCENT"), &tmp, module, channel);
     baselinePercent = tmp;
-    Pixie16ReadSglChanPar("BLCUT", &tmp, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("BLCUT"), &tmp, module, channel);
     baselineCut = tmp;
-    Pixie16ReadSglChanPar("CFDDelay", &cfdDelay, module, channel);
-    Pixie16ReadSglChanPar("CFDScale", &tmp, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("CFDDelay"), &cfdDelay, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("CFDScale"), &tmp, module, channel);
     cfdScale = tmp;
-    Pixie16ReadSglChanPar("CFDThresh", &tmp, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("CFDThresh"), &tmp, module, channel);
     cfdThreshold = tmp;
-    Pixie16ReadSglChanPar("TRACE_LENGTH", &trace_length, module, channel);
-    Pixie16ReadSglChanPar("TRACE_DELAY", &trace_delay, module, channel);
-    Pixie16ReadSglChanPar("FASTTRIGBACKLEN", &fastTrigBackLen, module, channel);
-    Pixie16ReadSglChanPar("ExtTrigStretch", &extTrigStrech, module, channel);
-    Pixie16ReadSglChanPar("ExternDelayLen", &ExternDelayLen, module, channel);
-    Pixie16ReadSglChanPar("FtrigoutDelay", &FtrigDelay, module, channel);
-    Pixie16ReadSglChanPar("VetoStretch", &VetoStrech, module, channel);
-    Pixie16ReadSglChanPar("ChanTrigStretch", &ChanTrigStrech, module, channel);
-    Pixie16ReadSglChanPar("MultiplicityMaskL", &tmp, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("TRACE_LENGTH"), &trace_length, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("TRACE_DELAY"), &trace_delay, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("FASTTRIGBACKLEN"), &fastTrigBackLen, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("ExtTrigStretch"), &extTrigStrech, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("ExternDelayLen"), &ExternDelayLen, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("FtrigoutDelay"), &FtrigDelay, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("VetoStretch"), &VetoStrech, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("ChanTrigStretch"), &ChanTrigStrech, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("MultiplicityMaskL"), &tmp, module, channel);
     chanMultMaskL = tmp;
-    Pixie16ReadSglChanPar("MultiplicityMaskH", &tmp, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("MultiplicityMaskH"), &tmp, module, channel);
     chanMultMaskH = tmp;
-    Pixie16ReadSglChanPar("QDCLen0", &QDCLen0, module, channel);
-    Pixie16ReadSglChanPar("QDCLen1", &QDCLen1, module, channel);
-    Pixie16ReadSglChanPar("QDCLen2", &QDCLen2, module, channel);
-    Pixie16ReadSglChanPar("QDCLen3", &QDCLen3, module, channel);
-    Pixie16ReadSglChanPar("QDCLen4", &QDCLen4, module, channel);
-    Pixie16ReadSglChanPar("QDCLen5", &QDCLen5, module, channel);
-    Pixie16ReadSglChanPar("QDCLen6", &QDCLen6, module, channel);
-    Pixie16ReadSglChanPar("QDCLen7", &QDCLen7, module, channel);
-    Pixie16ReadSglChanPar("CHANNEL_CSRA", &tmp, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("QDCLen0"), &QDCLen0, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("QDCLen1"), &QDCLen1, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("QDCLen2"), &QDCLen2, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("QDCLen3"), &QDCLen3, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("QDCLen4"), &QDCLen4, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("QDCLen5"), &QDCLen5, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("QDCLen6"), &QDCLen6, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("QDCLen7"), &QDCLen7, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("CHANNEL_CSRA"), &tmp, module, channel);
     csra = tmp;
 
     ui->trigRiseTime->setValue(trigRiseTime);
@@ -323,12 +379,12 @@ void MainWindow::UpdateViewModule()
     unsigned int modcsrb;
     unsigned int trigConfig0, trigConfig1, trigConfig2, trigConfig3;
 
-    Pixie16ReadSglModPar("SLOW_FILTER_RANGE", &current_slow_filter, current_module);
-    Pixie16ReadSglModPar("MODULE_CSRB", &modcsrb, current_module);
-    Pixie16ReadSglModPar("TrigConfig0", &trigConfig0, current_module);
-    Pixie16ReadSglModPar("TrigConfig1", &trigConfig1, current_module);
-    Pixie16ReadSglModPar("TrigConfig2", &trigConfig2, current_module);
-    Pixie16ReadSglModPar("TrigConfig3", &trigConfig3, current_module);
+    Pixie16ReadSglModPar(const_cast<char *>("SLOW_FILTER_RANGE"), &current_slow_filter, current_module);
+    Pixie16ReadSglModPar(const_cast<char *>("MODULE_CSRB"), &modcsrb, current_module);
+    Pixie16ReadSglModPar(const_cast<char *>("TrigConfig0"), &trigConfig0, current_module);
+    Pixie16ReadSglModPar(const_cast<char *>("TrigConfig1"), &trigConfig1, current_module);
+    Pixie16ReadSglModPar(const_cast<char *>("TrigConfig2"), &trigConfig2, current_module);
+    Pixie16ReadSglModPar(const_cast<char *>("TrigConfig3"), &trigConfig3, current_module);
 
 
     ui->slowRange->setValue(current_slow_filter);
@@ -361,7 +417,6 @@ void MainWindow::UpdateView()
 {
     // First we check that we have the correct limits
     UpdateLimits();
-
 
     // We set the current view to reflect the values set in the XIA module.
     UpdateViewChannel();
@@ -397,11 +452,14 @@ void MainWindow::on_WriteButton_clicked()
 {
 
     unsigned short module = current_module, channel = current_channel;
+    unsigned long tmp;
+    unsigned int tmpI;
     std::cout << "Writing parameters to module "<< module << ", channel " << channel;
 
     // First we will read the CSRA value
-    unsigned long csra;
-    Pixie16ReadSglChanPar("CHANNEL_CSRA", (double *)&csra, module, channel);
+    unsigned long csra, csra_old;
+    Pixie16ReadSglChanPar(const_cast<char *>("CHANNEL_CSRA"), (double *)&csra, module, channel);
+    csra_old = csra;
     csra = ( ui->CSRA_0->isChecked() ) ? APP32_SetBit(CCSRA_FTRIGSEL, csra) : APP32_ClrBit(CCSRA_FTRIGSEL, csra);
     csra = ( ui->CSRA_1->isChecked() ) ? APP32_SetBit(CCSRA_EXTTRIGSEL, csra) : APP32_ClrBit(CCSRA_EXTTRIGSEL, csra);
     csra = ( ui->CSRA_2->isChecked() ) ? APP32_SetBit(CCSRA_GOOD, csra) : APP32_ClrBit(CCSRA_GOOD, csra);
@@ -422,11 +480,13 @@ void MainWindow::on_WriteButton_clicked()
     csra = ( ui->CSRA_19->isChecked() ) ? APP32_SetBit(CCSRA_CHANVETOSEL, csra) : APP32_ClrBit(CCSRA_CHANVETOSEL, csra);
     csra = ( ui->CSRA_20->isChecked() ) ? APP32_SetBit(CCSRA_MODVETOSEL, csra) : APP32_ClrBit(CCSRA_MODVETOSEL, csra);
     csra = ( ui->CSRA_21->isChecked() ) ? APP32_SetBit(CCSRA_EXTTSENA, csra) : APP32_ClrBit(CCSRA_EXTTSENA, csra);
-    Pixie16WriteSglChanPar("CHANNEL_CSRA", csra, module, channel);
+    if (csra != csra_old)
+        Pixie16WriteSglChanPar(const_cast<char *>("CHANNEL_CSRA"), csra, module, channel);
 
     // Next we do the module CSRB values.
-    unsigned int csrb;
-    Pixie16ReadSglModPar("MODULE_CSRB", &csrb, current_module);
+    unsigned int csrb, csrb_old;
+    Pixie16ReadSglModPar(const_cast<char *>("MODULE_CSRB"), &csrb, current_module);
+    csrb_old = csrb;
     csrb = ( ui->MODCSRB_0->isChecked() ) ? APP32_SetBit(MODCSRB_CPLDPULLUP, csrb) : APP32_ClrBit(MODCSRB_CPLDPULLUP, csrb);
     csrb = ( ui->MODCSRB_4->isChecked() ) ? APP32_SetBit(MODCSRB_DIRMOD, csrb) : APP32_ClrBit(MODCSRB_DIRMOD, csrb);
     csrb = ( ui->MODCSRB_6->isChecked() ) ? APP32_SetBit(MODCSRB_CHASSISMASTER, csrb) : APP32_ClrBit(MODCSRB_CHASSISMASTER, csrb);
@@ -436,58 +496,323 @@ void MainWindow::on_WriteButton_clicked()
     csrb = ( ui->MODCSRB_11->isChecked() ) ? APP32_SetBit(MODCSRB_MULTCRATES, csrb) : APP32_ClrBit(MODCSRB_MULTCRATES, csrb);
     csrb = ( ui->MODCSRB_12->isChecked() ) ? APP32_SetBit(MODCSRB_SORTEVENTS, csrb) : APP32_ClrBit(MODCSRB_SORTEVENTS, csrb);
     csrb = ( ui->MODCSRB_13->isChecked() ) ? APP32_SetBit(MODCSRB_BKPLFASTTRIG, csrb) : APP32_ClrBit(MODCSRB_BKPLFASTTRIG, csrb);
+    if (csrb != csrb_old)
+    Pixie16WriteSglModPar(const_cast<char *>("MODULE_CSRB"), csrb, current_module);
+    
+    Pixie16ReadSglModPar(const_cast<char *>("SLOW_FILTER_RANGE"), &tmpI, current_module);
+    if ( tmpI != ui->slowRange->value())
+        Pixie16WriteSglModPar(const_cast<char *>("SLOW_FILTER_RANGE"), ui->slowRange->value(), current_module);
 
-    // First write the CSRB register
-    Pixie16WriteSglModPar("MODULE_CSRB", csrb, current_module);
-    Pixie16WriteSglModPar("SLOW_FILTER_RANGE", ui->slowRange->value(), current_module);
+
     unsigned int trigConfig0 = std::strtoul(ui->trigConfig0->text().toStdString().c_str(), 0, 16);
     unsigned int trigConfig1 = std::strtoul(ui->trigConfig1->text().toStdString().c_str(), 0, 16);
     unsigned int trigConfig2 = std::strtoul(ui->trigConfig2->text().toStdString().c_str(), 0, 16);
     unsigned int trigConfig3 = std::strtoul(ui->trigConfig3->text().toStdString().c_str(), 0, 16);
 
-    Pixie16WriteSglModPar("TrigConfig0", trigConfig0, current_module);
-    Pixie16WriteSglModPar("TrigConfig1", trigConfig1, current_module);
-    Pixie16WriteSglModPar("TrigConfig2", trigConfig2, current_module);
-    Pixie16WriteSglModPar("TrigConfig3", trigConfig3, current_module);
+    Pixie16ReadSglModPar(const_cast<char *>("TrigConfig0"), &tmpI, current_module);
+    if (trigConfig0 != tmpI)
+        Pixie16WriteSglModPar(const_cast<char *>("TrigConfig0"), trigConfig0, current_module);
+    
+    Pixie16ReadSglModPar(const_cast<char *>("TrigConfig1"), &tmpI, current_module);
+    if (trigConfig1 != tmpI)
+        Pixie16WriteSglModPar(const_cast<char *>("TrigConfig1"), trigConfig1, current_module);
+    
+    Pixie16ReadSglModPar(const_cast<char *>("TrigConfig2"), &tmpI, current_module);
+    if (trigConfig2 != tmpI)
+        Pixie16WriteSglModPar(const_cast<char *>("TrigConfig2"), trigConfig2, current_module);
+    
+    Pixie16ReadSglModPar(const_cast<char *>("TrigConfig3"), &tmpI, current_module);
+    if (trigConfig3 != tmpI)
+        Pixie16WriteSglModPar(const_cast<char *>("TrigConfig3"), trigConfig3, current_module);
 
-    Pixie16WriteSglChanPar("TRIGGER_RISETIME", ui->trigRiseTime->value(), module, channel);
-    Pixie16WriteSglChanPar("TRIGGER_FLATTOP", ui->trigFlatTop->value(), module, channel);
-    Pixie16WriteSglChanPar("TRIGGER_THRESHOLD", ui->trigThreshold->value(), module, channel);
-    Pixie16WriteSglChanPar("ENERGY_RISETIME", ui->eRiseTime->value(), module, channel);
-    Pixie16WriteSglChanPar("ENERGY_FLATTOP", ui->eFlatTop->value(), module, channel);
-    Pixie16WriteSglChanPar("TAU", ui->tau->value(), module, channel);
-    Pixie16WriteSglChanPar("BASELINE_PERCENT", ui->baselinePercent->value(), module, channel);
-    Pixie16WriteSglChanPar("BLCUT", ui->baselinePercent->value(), module, channel);
-    Pixie16WriteSglChanPar("CFDDelay", ui->cfdDelay->value(), module, channel);
-    Pixie16WriteSglChanPar("CFDScale", ui->cfdScale->value(), module, channel);
-    Pixie16WriteSglChanPar("CFDThresh", ui->cfdThreshold->value(), module, channel);
-    Pixie16WriteSglChanPar("TRACE_LENGTH", ui->traceLength->value(), module, channel);
-    Pixie16WriteSglChanPar("TRACE_DELAY", ui->traceDelay->value(), module, channel);
-    Pixie16WriteSglChanPar("FASTTRIGBACKLEN", ui->fastTrigBackLen->value(), module, channel);
-    Pixie16WriteSglChanPar("ExtTrigStretch", ui->extTrigStrech->value(), module, channel);
-    Pixie16WriteSglChanPar("ExternDelayLen", ui->ExternDelayLen->value(), module, channel);
-    Pixie16WriteSglChanPar("FtrigoutDelay", ui->FtrigoutDelay->value(), module, channel);
-    Pixie16WriteSglChanPar("VetoStretch", ui->VetoStrech->value(), module, channel);
-    Pixie16WriteSglChanPar("ChanTrigStretch", ui->ChanTrigStrech->value(), module, channel);
-    Pixie16WriteSglChanPar("QDCLen0", ui->QDCLen0->value(), module, channel);
-    Pixie16WriteSglChanPar("QDCLen1", ui->QDCLen1->value(), module, channel);
-    Pixie16WriteSglChanPar("QDCLen2", ui->QDCLen2->value(), module, channel);
-    Pixie16WriteSglChanPar("QDCLen3", ui->QDCLen3->value(), module, channel);
-    Pixie16WriteSglChanPar("QDCLen4", ui->QDCLen4->value(), module, channel);
-    Pixie16WriteSglChanPar("QDCLen5", ui->QDCLen5->value(), module, channel);
-    Pixie16WriteSglChanPar("QDCLen6", ui->QDCLen6->value(), module, channel);
-    Pixie16WriteSglChanPar("QDCLen7", ui->QDCLen7->value(), module, channel);
+    double tmpD;
+    Pixie16ReadSglChanPar(const_cast<char *>("TRIGGER_RISETIME"), &tmpD, module, channel);
+    if (tmpD != ui->trigRiseTime->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("TRIGGER_RISETIME"), ui->trigRiseTime->value(), module, channel);
+    
+    Pixie16ReadSglChanPar(const_cast<char *>("TRIGGER_FLATTOP"), &tmpD, module, channel);
+    if (tmpD != ui->trigFlatTop->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("TRIGGER_FLATTOP"), ui->trigFlatTop->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("TRIGGER_THRESHOLD"), (double *)&tmp, module, channel);
+    if (tmp != ui->trigThreshold->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("TRIGGER_THRESHOLD"), ui->trigThreshold->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("ENERGY_RISETIME"), &tmpD, module, channel);
+    if (tmpD != ui->eRiseTime->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("ENERGY_RISETIME"), ui->eRiseTime->value(), module, channel);
+    
+    Pixie16ReadSglChanPar(const_cast<char *>("ENERGY_FLATTOP"), &tmpD, module, channel);
+    if (tmpD != ui->eFlatTop->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("ENERGY_FLATTOP"), ui->eFlatTop->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("TAU"), &tmpD, module, channel);
+    if (tmpD != ui->tau->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("TAU"), ui->tau->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("CFDDelay"), &tmpD, module, channel);
+    if (tmpD != ui->cfdDelay->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("CFDDelay"), ui->cfdDelay->value(), module, channel);
+    
+    Pixie16ReadSglChanPar(const_cast<char *>("CFDScale"), (double *)&tmp, module, channel);
+    if (tmp != ui->cfdScale->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("CFDScale"), ui->cfdScale->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("CFDThresh"), (double *)&tmp, module, channel);
+    if (tmp != ui->cfdThreshold->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("CFDThresh"), ui->cfdThreshold->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("TRACE_LENGTH"), &tmpD, module, channel);
+    if (tmpD != ui->traceLength->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("TRACE_LENGTH"), ui->traceLength->value(), module, channel);
+    
+    Pixie16ReadSglChanPar(const_cast<char *>("TRACE_DELAY"), &tmpD, module, channel);
+    if (tmpD != ui->traceDelay->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("TRACE_DELAY"), ui->traceDelay->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("FASTTRIGBACKLEN"), &tmpD, module, channel);
+    if (tmpD != ui->fastTrigBackLen->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("FASTTRIGBACKLEN"), ui->fastTrigBackLen->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("ExtTrigStretch"), &tmpD, module, channel);
+    if (tmpD != ui->extTrigStrech->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("ExtTrigStretch"), ui->extTrigStrech->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("ExternDelayLen"), &tmpD, module, channel);
+    if (tmpD != ui->ExternDelayLen->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("ExternDelayLen"), ui->ExternDelayLen->value(), module, channel);
+    
+    Pixie16ReadSglChanPar(const_cast<char *>("FtrigoutDelay"), &tmpD, module, channel);
+    if (tmpD != ui->FtrigoutDelay->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("FtrigoutDelay"), ui->FtrigoutDelay->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("VetoStretch"), &tmpD, module, channel);
+    if (tmpD != ui->VetoStrech->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("VetoStretch"), ui->VetoStrech->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("ChanTrigStretch"), &tmpD, module, channel);
+    if (tmpD != ui->ChanTrigStrech->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("ChanTrigStretch"), ui->ChanTrigStrech->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("QDCLen0"), &tmpD, module, channel);
+    if (tmpD != ui->QDCLen0->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("QDCLen0"), ui->QDCLen0->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("QDCLen1"), &tmpD, module, channel);
+    if (tmpD != ui->QDCLen1->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("QDCLen1"), ui->QDCLen1->value(), module, channel);
+    
+    Pixie16ReadSglChanPar(const_cast<char *>("QDCLen2"), &tmpD, module, channel);
+    if (tmpD != ui->QDCLen2->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("QDCLen2"), ui->QDCLen2->value(), module, channel);
+    
+    Pixie16ReadSglChanPar(const_cast<char *>("QDCLen3"), &tmpD, module, channel);
+    if (tmpD != ui->QDCLen3->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("QDCLen3"), ui->QDCLen3->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("QDCLen4"), &tmpD, module, channel);
+    if (tmpD != ui->QDCLen4->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("QDCLen4"), ui->QDCLen4->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("QDCLen5"), &tmpD, module, channel);
+    if (tmpD != ui->QDCLen5->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("QDCLen5"), ui->QDCLen5->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("QDCLen6"), &tmpD, module, channel);
+    if (tmpD != ui->QDCLen6->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("QDCLen6"), ui->QDCLen6->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("QDCLen7"), &tmpD, module, channel);
+    if (tmpD != ui->QDCLen7->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("QDCLen7"), ui->QDCLen7->value(), module, channel);
+
+    // For a few moments now we will not change this.
+    //Pixie16WriteSglChanPar(const_cast<char *>("BASELINE_PERCENT"), ui->baselinePercent->value(), module, channel);
+    //Pixie16WriteSglChanPar(const_cast<char *>("BLCUT"), ui->baselinePercent->value(), module, channel);
 
     unsigned long chanMultMaskL = std::strtoul(ui->multMaskL->text().toStdString().c_str(), 0, 16);
-    unsigned long chanMultMaskH = std::strtoul(ui->multMaskL->text().toStdString().c_str(), 0, 16);
-    Pixie16WriteSglChanPar("MultiplicityMaskL", chanMultMaskL, module, channel);
-    Pixie16WriteSglChanPar("MultiplicityMaskH", chanMultMaskH, module, channel);
+    unsigned long chanMultMaskH = std::strtoul(ui->multMaskH->text().toStdString().c_str(), 0, 16);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("MultiplicityMaskL"), (double *)&tmp, module, channel);
+    if (tmp != chanMultMaskL)
+        Pixie16WriteSglChanPar(const_cast<char *>("MultiplicityMaskL"), chanMultMaskL, module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("MultiplicityMaskH"), (double *)&tmp, module, channel);
+    if (tmp != chanMultMaskH)
+        Pixie16WriteSglChanPar(const_cast<char *>("MultiplicityMaskH"), chanMultMaskH, module, channel);
 
     std::cout << " ... Done! " << std::endl;
+    SaveSettings(const_cast<char *>("settings.set"));
+}
+
+void MainWindow::SaveSettings(char *filename)
+{
+    // First we need to read the entire settings file as it currently is on disk (as a backup copy)
+    FILE *file = fopen(filename, "rb");
+    bool have_bck = true;
+    unsigned int config_raw[N_DSP_PAR * PRESET_MAX_MODULES];
+    if (fread(config_raw, sizeof(unsigned int), N_DSP_PAR*PRESET_MAX_MODULES, file) != N_DSP_PAR*PRESET_MAX_MODULES){
+        std::cout << "Warning: settings.set is not valid. All current settings may be lost if saving .set file fails." << std::endl;
+        have_bck = false;
+    }
+
+    fclose(file); // We are done with the file.
+
+    std::cout << "Trying to save settings to file '" << filename << "'" << std::endl;
+
+    int retval = Pixie16SaveDSPParametersToFile(filename);
+    if (retval == 0){
+        std::cout << "... Done" << std::endl;
+        return;
+    } else if (retval == -1) {
+        std::cout << "... Failed, unable to read DSP parameter value from modules. Please restart engine and check the 'Pixie16msg.txt' file." << std::endl;
+        if (!have_bck){
+            std::cout << "Warning: Unable to restore old '" << filename << "' file" << std::endl;
+            return;
+        }
+    } else {
+        std::cout << "... Failed, unable to write to disk." << std::endl;
+        if (!have_bck){
+            std::cout << "Warning: Unable to restore old '" << filename << "' file" << std::endl;
+            return;
+        }
+    }
+
+    file = fopen(filename, "wb");
+
+    // Writing to file...
+    if (fwrite(config_raw, sizeof(unsigned int), N_DSP_PAR*PRESET_MAX_MODULES, file) != N_DSP_PAR*PRESET_MAX_MODULES){
+        std::cout << "Warning: Unable to restore old '" << filename << "' file. This may cause an error when restarting engine." << std::endl;
+    }
+
+    fclose(file); // Done!
 }
 
 void MainWindow::on_SaveButton_clicked()
 {
-    std::cout << "Saved settings to file 'settings.set'" << std::endl;
-    Pixie16SaveDSPParametersToFile("settings.set");
+    SaveSettings(const_cast<char *>("settings.set"));
+
+    std::vector<std::string> args;
+    args.push_back("-f");
+    args.push_back("settings.set");
+    args.push_back(std::string("Subject=Settings"));
+    args.push_back(std::string("Settings file for XIA modules\nPlease add comment here!"));
+    commands.run("elog", args);
+    std::cout << "Writing 'settings.set' to elog" << std::endl;
+
+}
+
+void MainWindow::on_SaveAsButton_clicked()
+{
+    char cwd[1024];
+    QString directory;
+    if (!getcwd(cwd, sizeof(cwd))){
+        directory = "";
+    } else {
+        directory = cwd;
+    }
+    QString fname = QFileDialog::getSaveFileName(this,
+                                                 tr("Save XIA settings"), directory,
+                                                 tr("Settings file (*.set);;All files(*"));
+}
+
+void MainWindow::on_ClearButton_clicked()
+{
+    // If this button is clicked, we will reset all to false!
+
+    // First the table:
+    for (int i = 0 ; i < n_modules ; ++i){
+        for (int j = 0 ; j < NUMBER_OF_CHANNELS ; ++j){
+            QCheckBox *box = (QCheckBox *)ui->tableWidget->cellWidget(i, j);
+            box->setChecked(false);
+        }
+    }
+
+    // Then option boxes.
+    ui->cpSet_0->setChecked(false);
+    ui->cpSet_1->setChecked(false);
+    ui->cpSet_2->setChecked(false);
+    ui->cpSet_3->setChecked(false);
+    ui->cpSet_4->setChecked(false);
+    ui->cpSet_5->setChecked(false);
+    ui->cpSet_7->setChecked(false);
+    ui->cpSet_8->setChecked(false);
+    ui->cpSet_9->setChecked(false);
+    ui->cpSet_10->setChecked(false);
+    ui->cpSet_11->setChecked(false);
+    ui->cpSet_12->setChecked(false);
+}
+
+void MainWindow::on_CopyButton_clicked()
+{
+    // Destination mask
+    unsigned short destinationMask[NUMBER_OF_CHANNELS * PRESET_MAX_MODULES];
+
+    // Read from table if we should copy or not.
+    for (int i = 0 ; i < n_modules ; ++i){
+        for (int j = 0 ; j < NUMBER_OF_CHANNELS ; ++j){
+            QCheckBox *box = (QCheckBox *)ui->tableWidget->cellWidget(i, j);
+            destinationMask[i*NUMBER_OF_CHANNELS + j] = ( box->isChecked() ) ? 1 : 0;
+        }
+    }
+
+    unsigned short cp_mask = 0;
+
+    cp_mask = (ui->cpSet_0->isChecked() ) ? APP16_SetBit(0, cp_mask) : APP16_ClrBit(0, cp_mask);
+    cp_mask = (ui->cpSet_1->isChecked() ) ? APP16_SetBit(1, cp_mask) : APP16_ClrBit(1, cp_mask);
+    cp_mask = (ui->cpSet_2->isChecked() ) ? APP16_SetBit(2, cp_mask) : APP16_ClrBit(2, cp_mask);
+    cp_mask = (ui->cpSet_3->isChecked() ) ? APP16_SetBit(3, cp_mask) : APP16_ClrBit(3, cp_mask);
+    cp_mask = (ui->cpSet_4->isChecked() ) ? APP16_SetBit(4, cp_mask) : APP16_ClrBit(4, cp_mask);
+    cp_mask = (ui->cpSet_5->isChecked() ) ? APP16_SetBit(5, cp_mask) : APP16_ClrBit(5, cp_mask);
+    cp_mask = APP16_ClrBit(6, cp_mask); // We NEVER copy module settings!!
+    cp_mask = (ui->cpSet_7->isChecked() ) ? APP16_SetBit(7, cp_mask) : APP16_ClrBit(7, cp_mask);
+    cp_mask = (ui->cpSet_8->isChecked() ) ? APP16_SetBit(8, cp_mask) : APP16_ClrBit(8, cp_mask);
+    cp_mask = (ui->cpSet_9->isChecked() ) ? APP16_SetBit(9, cp_mask) : APP16_ClrBit(9, cp_mask);
+    cp_mask = (ui->cpSet_10->isChecked() ) ? APP16_SetBit(10, cp_mask) : APP16_ClrBit(10, cp_mask);
+    cp_mask = (ui->cpSet_11->isChecked() ) ? APP16_SetBit(11, cp_mask) : APP16_ClrBit(11, cp_mask);
+    cp_mask = (ui->cpSet_12->isChecked() ) ? APP16_SetBit(12, cp_mask) : APP16_ClrBit(12, cp_mask);
+
+    // Now we call the Pixie16 API with our choise.
+    int retval = Pixie16CopyDSPParameters(cp_mask, ui->source_module->value(), ui->source_channel->value(), destinationMask);
+    if (retval == 0){
+        std::cout << "Values successfully copied." << std::endl;
+    } else if (retval == -1){
+        std::cout << "Failed to program FiPPi, please restart engine." << std::endl;
+    } else {
+        std::cout << "Failed to set DACs, please restart engine." << std::endl;
+    }
+
+    // Clear...
+    on_ClearButton_clicked();
+}
+
+
+void MainWindow::ReadCommands()
+{
+    if( commands.read("acq_master_commands.txt") ) {
+        std::cout << "Using commands from acq_master_commands.txt." << std::endl;
+    } else {
+        std::cout << "Could not read commands from acq_master_commands.txt." << std::endl;
+    }
+}
+
+void MainWindow::on_AdjBLineC_clicked()
+{
+    unsigned int BLcut[PRESET_MAX_MODULES][16];
+    int retval;
+    printf("\n\n");
+    for (int i = 0 ; i < 16 ; ++i)
+        printf("\t%d", i);
+    for (int i = 0 ; i < n_modules ; ++i){
+        printf("\n%d", i);
+        for (int j = 0 ; j < 16 ; ++j){
+            retval = Pixie16BLcutFinder(i, j, &BLcut[i][j]);
+            if (retval < 0){
+                printf("*ERROR* Pixie16BLcutFinder for mod = %d, ch = %d failed, retval = %d\n", i, j, retval);
+                return;
+            }
+            printf("\t%d", BLcut[i][j]);
+        }
+    }
+    printf("\n\n");
 }

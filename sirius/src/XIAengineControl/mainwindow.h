@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 
+#include "run_command.h"
+
 namespace Ui {
 class MainWindow;
 }
@@ -24,6 +26,18 @@ private slots:
 
     void on_SaveButton_clicked();
 
+    void on_SaveAsButton_clicked();
+
+    void horizontalHeaderSectionDoubleClicked(int sec);
+
+    void verticalHeaderSectionDoubleClicked(int sec);
+
+    void on_ClearButton_clicked();
+
+    void on_CopyButton_clicked();
+
+    void on_AdjBLineC_clicked();
+
 private:
     Ui::MainWindow *ui;
 
@@ -31,13 +45,16 @@ private:
     int n_modules;
 
     //! Current module selected.
-    int current_module;
+    unsigned short current_module;
 
     //! Current channel selected.
-    int current_channel;
+    unsigned short current_channel;
 
     //! Slow filter range of current module.
     unsigned int current_slow_filter;
+
+    //! Read in experiment settings
+    command_list commands;
 
     //! Function responcible for determining the ranges of the parameters and update them accordingly.
     void UpdateLimits();
@@ -53,6 +70,15 @@ private:
 
     //! Update the view.
     void UpdateView();
+
+    //! Function to make table in 'copy' tab.
+    void MakeCopyTable();
+
+    //! Save settings to file.
+    void SaveSettings(char *filename);
+
+    //! Read commands
+    void ReadCommands();
 };
 
 #endif // MAINWINDOW_H

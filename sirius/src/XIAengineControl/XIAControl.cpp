@@ -7,6 +7,7 @@
 #include <thread>
 #include <chrono>
 #include <fstream>
+#include <iostream>
 
 #include <cstdlib>
 #include <cstdio>
@@ -20,8 +21,17 @@
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
 
+// Define some addresses...
+#define LIVETIMEA_ADDRESS 0x0004a37f
+#define LIVETIMEB_ADDRESS 0x0004a38f
+#define FASTPEAKSA_ADDRESS 0x0004a39f
+#define FASTPEAKSB_ADDRESS 0x0004a3af
+#define RUNTIMEA_ADDRESS 0x0004a342
+#define RUNTIMEB_ADDRESS 0x0004a343
+#define CHANEVENTSA_ADDRESS 0x0004a41f
+#define CHANEVENTSB_ADDRESS 0x0004a42f
 
-const bool next_line(std::istream &in, std::string &line)
+bool next_line(std::istream &in, std::string &line)
 {
     line = "";
 
@@ -523,6 +533,7 @@ bool XIAControl::InitializeXIA()
     std::lock_guard<std::mutex> xia_guard(xia_mutex);
 
     int retval = Pixie16InitSystem(num_modules, PXISlotMap, 0);
+
     if (retval < 0){
         sprintf(errmsg, "*ERROR* Pixie16InitSystem failed, retval = %d\n", retval);
         termWrite->WriteError(errmsg);
@@ -654,7 +665,7 @@ bool XIAControl::BootXIA()
         termWrite->Write(SPFPGA);
         termWrite->Write("\nDSPCodeFile:\t");
         termWrite->Write(DSPCode);
-        termWrite->Write("\nDSPVarFile:\t");
+        termWrite->Write("\nDSPVarFile:\t\t");
         termWrite->Write(DSPVar);
         termWrite->Write("\n");
         retval = Pixie16BootModule(ComFPGA, SPFPGA, TrigFPGA, DSPCode, DSPSet, DSPVar, i, 0x7F);
@@ -745,21 +756,52 @@ bool XIAControl::StartLMR()
     // Lock the XIA mutex to prevent any other
     // thread from communicating with the modules.
     std::lock_guard<std::mutex> xia_guard(xia_mutex);
+    int retval;
+
+    // First we check if the modules have already been synchronized.
+    // if so, we don't need to reset the clocks (could be annoying if there are random offsets each new run!)
+    #ifdef CHECK_SYNCH
+    unsigned int synch_val[PRESET_MAX_MODULES];
+    bool is_synch = true;
+    for (unsigned short i = 0 ; i < num_modules ; ++i){
+        retval = Pixie16ReadSglModPar(const_cast<char *>("IN_SYNCH"), &synch_val[i], i);
+        if (retval < 0){
+            sprintf(errmsg, "*ERROR* Pixie16ReadSglModPar reading IN_SYNCH failed, retval = %d\n", retval);
+            termWrite->WriteError(errmsg);
+            Pixie_Print_MSG(errmsg);
+            return false;
+        }
+
+        if (synch_val[i] != 0)
+            is_synch = false;
+
+    }
+    #endif // CHECK_SYNCH
+
+
+    // If we are not synchronized, then we reset the clock.
+    #ifdef CHECK_SYNCH
+    if (!is_synch){
+    #endif // CHECK_SYNCH
+        termWrite->Write("Trying to write IN_SYNCH...\n");
+        retval = Pixie16WriteSglModPar(const_cast<char *>("IN_SYNCH"), 0, 0);
+        if (retval < 0){
+            sprintf(errmsg, "*ERROR* Pixie16WriteSglModPar writing IN_SYNCH failed, retval = %d\n", retval);
+            termWrite->WriteError(errmsg);
+            Pixie_Print_MSG(errmsg);
+            return false;
+        }
+        termWrite->Write("... Done.\n");
+    
+    #ifdef CHECK_SYNCH
+    }
+    #endif // CHECK_SYNCH
+
 
     termWrite->Write("Trying to write SYNCH_WAIT...\n");
-    int retval = Pixie16WriteSglModPar("SYNCH_WAIT", 1, 0);
+    retval = Pixie16WriteSglModPar(const_cast<char *>("SYNCH_WAIT"), 1, 0);
     if (retval < 0){
         sprintf(errmsg, "*ERROR* Pixie16WriteSglModPar writing SYNCH_WAIT failed, retval = %d\n", retval);
-        termWrite->WriteError(errmsg);
-        Pixie_Print_MSG(errmsg);
-        return false;
-    }
-    termWrite->Write("... Done.\n");
-
-    termWrite->Write("Trying to write IN_SYNCH...\n");
-    retval = Pixie16WriteSglModPar("IN_SYNCH", 0, 0);
-    if (retval < 0){
-        sprintf(errmsg, "*ERROR* Pixie16WriteSglModPar writing IN_SYNCH failed, retval = %d\n", retval);
         termWrite->WriteError(errmsg);
         Pixie_Print_MSG(errmsg);
         return false;
@@ -793,7 +835,7 @@ bool XIAControl::CheckIsRunning()
             termWrite->WriteError(errmsg);
             Pixie_Print_MSG(errmsg);
         }
-        am_I_running = (am_I_running&&retval);
+        am_I_running = (am_I_running && retval);
     }
 
     return am_I_running;
@@ -839,7 +881,7 @@ bool XIAControl::SynchModules()
     std::lock_guard<std::mutex> xia_guard(xia_mutex);
 
     termWrite->Write("Trying to write IN_SYNCH...\n");
-    int retval = Pixie16WriteSglModPar("IN_SYNCH", 0, 0);
+    int retval = Pixie16WriteSglModPar(const_cast<char *>("IN_SYNCH"), 0, 0);
     if (retval < 0){
         sprintf(errmsg, "*ERROR* Pixie16WriteSglModPar writing IN_SYNCH failed, retval = %d\n", retval);
         termWrite->WriteError(errmsg);
@@ -853,6 +895,8 @@ bool XIAControl::SynchModules()
 
 bool XIAControl::WriteScalers()
 {
+
+
     double ICR[PRESET_MAX_MODULES][16], OCR[PRESET_MAX_MODULES][16];
     unsigned int stats[448];
     int retval;
@@ -870,38 +914,89 @@ bool XIAControl::WriteScalers()
             }
 
             for (int j = 0 ; j < 16 ; ++j){
-                ICR[i][j] = Pixie16ComputeInputCountRate(stats, i, j);
-                OCR[i][j] = Pixie16ComputeOutputCountRate(stats, i, j);
+                
+                uint64_t fastPeakN = stats[FASTPEAKSA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+                fastPeakN = fastPeakN << 32;
+                fastPeakN += stats[FASTPEAKSB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+
+                uint64_t fastPeakP = last_stats[i][FASTPEAKSA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+                fastPeakP = fastPeakP << 32;
+                fastPeakP += last_stats[i][FASTPEAKSB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+
+                double fastPeak = fastPeakN - fastPeakP;
+
+                uint64_t LiveTimeN = stats[LIVETIMEA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+                LiveTimeN = LiveTimeN << 32;
+                LiveTimeN |= stats[LIVETIMEB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+
+                uint64_t LiveTimeP = last_stats[i][LIVETIMEA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+                LiveTimeP = LiveTimeP << 32;
+                LiveTimeP |= last_stats[i][LIVETIMEB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+
+                double liveTime = LiveTimeN - LiveTimeP;
+                if (timestamp_factor[i] == 8)
+                    liveTime *= 2e-6/250.;
+                else
+                    liveTime *= 1e-6/100.;
+
+                uint64_t ChanEventsN = stats[CHANEVENTSA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+                ChanEventsN = ChanEventsN << 32;
+                ChanEventsN |= stats[CHANEVENTSB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+
+                uint64_t ChanEventsP = last_stats[i][CHANEVENTSA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+                ChanEventsP = ChanEventsP << 32;
+                ChanEventsP |= last_stats[i][CHANEVENTSB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+                
+                double ChanEvents = ChanEventsN - ChanEventsP;
+
+                uint64_t runTimeN = stats[RUNTIMEA_ADDRESS - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+                runTimeN = runTimeN << 32;
+                runTimeN |= stats[RUNTIMEB_ADDRESS - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+
+                uint64_t runTimeP = last_stats[i][RUNTIMEA_ADDRESS - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+                runTimeP = runTimeP << 32;
+                runTimeP |= last_stats[i][RUNTIMEB_ADDRESS - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+
+                double runTime = runTimeN - runTimeP;
+
+                runTime *= 1.0e-6 / 100.;
+
+                ICR[i][j] = (liveTime !=0) ? fastPeak/liveTime : 0;
+                OCR[i][j] = (runTime != 0) ? ChanEvents/runTime : 0;
+            }
+
+            for (int j = 0 ; j < 448 ; ++j){
+                last_stats[i][j] = stats[j];
             }
         }
     }
 
-    std::ofstream scaler_file_in(SCALER_FILE_NAME_IN);
-    std::ofstream scaler_file_out(SCALER_FILE_NAME_OUT);
+    FILE *scaler_file_in = fopen(SCALER_FILE_NAME_IN, "w");
+    FILE *scaler_file_out = fopen(SCALER_FILE_NAME_OUT, "w");
 
-    scaler_file_in << "Module:/Ch.:\n";
-    scaler_file_out << "Module:/Ch.:\n";
+    fprintf(scaler_file_in, "Input count rate:\n\n\n");
+    fprintf(scaler_file_out, "Output count rate:\n\n\n");
+
     for (int i = 0 ; i < 16 ; ++i){
-        scaler_file_in << "\t" << i;
-        scaler_file_out << "\t" << i;
+        fprintf(scaler_file_in, "\t%d", i);
+        fprintf(scaler_file_out, "\t%d", i);
     }
-    scaler_file_in << "\n";
-    scaler_file_out << "\n";
+    fprintf(scaler_file_in, "\n");
+    fprintf(scaler_file_out, "\n");
 
     for (int i = 0 ; i < num_modules ; ++i){
-        scaler_file_in << i;
-        scaler_file_out << i;
+        fprintf(scaler_file_in, "%d", i);
+        fprintf(scaler_file_out, "%d", i);
         for (int j = 0 ; j < 16 ; ++j){
-            scaler_file_in << "\t" << ICR[i][j];
-            scaler_file_out << "\t" << OCR[i][j];
+            fprintf(scaler_file_in, "\t%.2f", ICR[i][j]);
+            fprintf(scaler_file_out, "\t%.2f", OCR[i][j]);
         }
-        scaler_file_in << "\n";
-        scaler_file_out << "\n";
+        fprintf(scaler_file_in, "\n");
+        fprintf(scaler_file_out, "\n");
     }
-    scaler_file_in << std::flush;
-    scaler_file_out << std::flush;
-    scaler_file_in.close();
-    scaler_file_out.close();
+
+    fclose(scaler_file_in);
+    fclose(scaler_file_out);
 
     return true;
 }

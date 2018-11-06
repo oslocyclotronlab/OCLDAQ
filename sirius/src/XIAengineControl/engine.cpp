@@ -25,6 +25,10 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#ifdef TESTGUI
+#include "pixie16app_export.h"
+#endif // OFFLINE
+
 #if _FILE_OFFSET_BITS != 64
 #error must compile with _FILE_OFFSET_BITS == 64
 #endif
@@ -403,12 +407,12 @@ static void cb_disconnected(line_channel*, void*)
 // ########################################################################
 // ########################################################################
 
-
+#ifndef TESTGUI
 int main(int argc, char* argv[])
 {
     if( argc <= 1 ) {
         std::cerr << "engine runs with PXI slots as input parameters" << std::endl;
-        std::cerr << argv[0] << "2 3 4 5" << std::endl;
+        std::cerr << argv[0] << " 2 3 4 5" << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -464,6 +468,7 @@ int main(int argc, char* argv[])
     // We will now boot before anything else will happend.
     if ( !xiacontr->XIA_boot_all() )
         leaveprog = 'y';
+
 
     // Now we can start the GUI.
     globargc = argc;
@@ -548,6 +553,31 @@ int main(int argc, char* argv[])
 
     return 0;
 }
+#else
+int main(int argc, char* argv[])
+{
+    if( argc <= 1 ) {
+        std::cerr << "engine runs with PXI slots as input parameters" << std::endl;
+        std::cerr << argv[0] << " 2 3 4 5" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    unsigned short PXIMapping[PRESET_MAX_MODULES];
+    for (int i = 0 ; i < PRESET_MAX_MODULES ; ++i)
+        PXIMapping[i] = 0;
+    for (int i = 1 ; i < argc ; ++i)
+        PXIMapping[i] = atoi(argv[i]);
+
+    xiacontr = new XIAControl(&termWrite, PXIMapping);
+
+    Pixie16LoadDSPParametersFromFile("settings.set");
+
+    QApplication a(argc, argv);
+    MainWindow w(xiacontr->GetNumMod());
+    w.show();
+    return a.exec();
+}
+#endif // TESTGUI
 
 // ########################################################################
 // ########################################################################

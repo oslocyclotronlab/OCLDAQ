@@ -11,10 +11,29 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = XIAengineControl
 TEMPLATE = app
 
-INCLUDEPATH += ../../include \
-              /home/vetlewi/Desktop/Pixie16_software_linux/software/app \
-              /home/vetlewi/Desktop/Pixie16_software_linux/software/sys \
-              /home/vetlewi/Desktop/Pixie16_software_linux/software/inc
+INCLUDEPATH += ../../include
+
+unix:!macx {
+INCLUDEPATH += /opt/xia/current/inc \
+               /opt/xia/current/sys \
+               /opt/xia/current/app
+
+LIBS += -L/opt/xia/current \
+        -L/opt/plx/current/PlxSdk/PlxApi/Library \
+        -L../lib
+}
+
+macx {
+INCLUDEPATH += /Users/vetlewi/Desktop/Pixie16_software_linux/software/app \
+               /Users/vetlewi/Desktop/Pixie16_software_linux/software/sys \
+               /Users/vetlewi/Desktop/Pixie16_software_linux/software/inc
+
+LIBS += -L/Users/vetlewi/Desktop/OCLDAQ/sirius/src/lib \
+        -L/Users/vetlewi/Desktop/PlxSdk/PlxApi/Library \
+        -L/Users/vetlewi/Desktop/Pixie16_software_linux/software/
+
+#DEFINES += OFFLINE TESTGUI
+}
 
 
 # The following define makes your compiler emit warnings if you use
@@ -29,7 +48,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 QMAKE_CXXFLAGS += -pthread -D_FILE_OFFSET_BITS=64 -O3
-LIBS += -L/home/vetlewi/Desktop/OCLDAQ/sirius/src/lib -lsirius -L/home/vetlewi/Desktop/PlxSdk_7.10/PlxApi/Library -L/home/vetlewi/Desktop/Pixie16_software_linux/software/ -lPixie16App -lPixie16Sys -lPlxApi -pthread -ldl
+LIBS += -lsirius -lPixie16App -lPixie16Sys -lPlxApi -pthread -ldl
 
 SOURCES += \
         engine.cpp \

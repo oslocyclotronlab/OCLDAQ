@@ -358,7 +358,7 @@ int main(int argc, char* argv[])
 {
     if( argc <= 1 ) {
         std::cerr << "engine runs with PXI slots as input parameters" << std::endl;
-        std::cerr << argv[0] << "2 3 4 5" << std::endl;
+        std::cerr << argv[0] << " 2 3 4 5" << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -411,6 +411,10 @@ int main(int argc, char* argv[])
     const unsigned int datalen = buffer[ENGINE_DATA_SIZE];
     /*const unsigned int*/ datalen_char = datalen*sizeof(int);
 
+    // We will now boot before anything else will happend.
+    if ( !xiacontr->XIA_boot_all() )
+        leaveprog = 'y';
+
     // main loop
     while( leaveprog == 'n' ) {
         if( !stopped ) {
@@ -422,8 +426,7 @@ int main(int argc, char* argv[])
                 // a buffer is available; reset timestamp
                 *time_us = *time_s = 0;
                 // transfer the buffer
-                if( !xiacontr->XIA_fetch_buffer(data, datalen) ) {
-                    // the buffer was not transferred completely, stop
+                if( !xiacontr->XIA_fetch_buffer(data, datalen) ) {  // the buffer was not transferred completely, stop
                     do_stop();
                 } else {
 
