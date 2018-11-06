@@ -1129,13 +1129,15 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
         evt.size_raw = header_length;
         delete[] tmp;
 
-        // Striping away the list mode data.
+#if REMOVE_TRACE
+        // Striping away the traces from list mode data.
         if (event_length != header_length){
             uint32_t new_f_head = header_length << 17;
             new_f_head |= (evt.raw_data[0] & 0x8001FFFF);
             evt.raw_data[0] = new_f_head;
             evt.raw_data[3] = (evt.raw_data[3] & 0x0000FFFF);
         }
+#endif // REMOVE_TRACE
 
         {   // Creating a scope for the guard to live.
             std::lock_guard<std::mutex> queue_guard(queue_mutex);
@@ -1170,6 +1172,7 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
         evt.timestamp |= tlow;
         evt.timestamp *= timestamp_factor[module];
 
+#if REMOVE_TRACE
         // Remove trace
         if (event_length != header_length){
             uint32_t new_f_head = header_length << 17;
@@ -1177,6 +1180,8 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
             evt.raw_data[0] = new_f_head;
             evt.raw_data[3] = (evt.raw_data[3] & 0x0000FFFF);
         }
+#endif // REMOVE_TRACE
+
 
         {   // Creating a scope for the guard to live.
             std::lock_guard<std::mutex> queue_guard(queue_mutex);
