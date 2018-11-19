@@ -30,8 +30,7 @@ INCLUDEPATH += /Users/vetlewi/Desktop/XIA_stuff/Pixie16_software_linux/software/
 
 LIBS += -L/Users/vetlewi/Desktop/OCLDAQ/sirius/src/lib \
         -L/Users/vetlewi/Desktop/XIA_stuff/PlxSdk/PlxApi/Library \
-        -L/Users/vetlewi/Desktop/XIA_stuff/Pixie16_software_linux/software/ \
-        -lrt
+        -L/Users/vetlewi/Desktop/XIA_stuff/Pixie16_software_linux/software/
 
 #DEFINES += OFFLINE TESTGUI
 }
@@ -49,7 +48,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 QMAKE_CXXFLAGS += -pthread -D_FILE_OFFSET_BITS=64 -O3
-LIBS += -lsirius -lPixie16App -lPixie16Sys -lPlxApi -pthread -ldl
+LIBS += -lsirius -lPixie16App -lPixie16Sys -lPlxApi -pthread -ldl -lrt
 
 SOURCES += \
         engine.cpp \
