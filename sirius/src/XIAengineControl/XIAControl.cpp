@@ -63,6 +63,7 @@ XIAControl::XIAControl(WriteTerminal *writeTerm,
     , is_running( false )
     , thread_is_running( false )
     , settings_file( SETname )
+    , shmfd( -1 )
 {
     ReadConfigFile(FWname.c_str());
     num_modules = 0;
@@ -352,6 +353,9 @@ bool XIAControl::XIA_start_run()
     if (is_running){
         return true;
     }
+
+    if (shmfd < 0)
+        OpenSharedMemory();
 
     // Check if the modules are initialized.
     if (!is_initialized){
@@ -900,7 +904,7 @@ bool XIAControl::WriteScalers()
     double ICR[PRESET_MAX_MODULES][16], OCR[PRESET_MAX_MODULES][16];
     unsigned int stats[448];
     int retval;
-
+    UpdateSharedMemory();
     {
         // Lock the XIA mutex to prevent any other
         // thread from communicating with the modules.
@@ -1188,4 +1192,81 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
         current_position += event_length;
     }
     return;
+}
+
+
+int XIAControl::OpenSharedMemory()
+{
+    int flag = 0;
+       if((shmsem=sem_open("sempixie16pkuxiadaq",O_CREAT,0666,1)) == SEM_FAILED)
+         {
+           std::cout<<"Cannot create seamphore!"<<std::endl;
+           flag++;
+         }
+
+       if((shmfd=shm_open("shmpixie16pkuxiadaq",O_CREAT|O_RDWR,0666)) < 0)
+         {
+           std::cout<<"Cannot create shared memory"<<std::endl;
+           flag++;
+         }
+
+       if(ftruncate(shmfd,(off_t)(SHAREDMEMORYDATAOFFSET+PRESET_MAX_MODULES*2+PRESET_MAX_MODULES*4*SHAREDMEMORYDATASTATISTICS+PRESET_MAX_MODULES*4*SHAREDMEMORYDATAENERGYLENGTH*SHAREDMEMORYDATAMAXCHANNEL)) < 0)
+         {
+
+           std::cout<<"Cannot alloc memory for shared memory!"<<std::endl;
+           flag++;
+         }
+
+       if((shmptr = (unsigned char*) mmap(NULL,SHAREDMEMORYDATAOFFSET+PRESET_MAX_MODULES*2+(PRESET_MAX_MODULES*SHAREDMEMORYDATASTATISTICS*4)+PRESET_MAX_MODULES*4*SHAREDMEMORYDATAENERGYLENGTH*SHAREDMEMORYDATAMAXCHANNEL, PROT_READ|PROT_WRITE,MAP_SHARED,shmfd,0)) == MAP_FAILED)
+         {
+           std::cout<<"Cannot mmap the shared memroy to process space"<<std::endl;
+           flag++;
+         }
+       if(flag > 0) return 0;
+       std::cout<<"SHM Opend!"<<std::endl;
+       return 1;
+}
+
+int XIAControl::UpdateSharedMemory()
+{
+  int rc;
+  rc = sem_trywait(shmsem);
+  if(rc == -1 && errno != EAGAIN)
+    {
+      std::cout<<"sem_wait error!"<<std::endl;
+      return 1;
+    }
+  else if(rc == -1) return 1; // this indicates the shm is under use
+
+  static unsigned int tmp = 0;
+  tmp++;
+  memcpy(shmptr,&tmp,sizeof(unsigned int));
+  memcpy(shmptr+4,&num_modules,sizeof(unsigned short));
+  memcpy(shmptr+6,0,sizeof(unsigned int)); // This we don't use.
+
+  int retval = 0;
+  unsigned int Statistics[SHAREDMEMORYDATASTATISTICS];
+  for(unsigned short i = 0; i < num_modules; i++)
+    {
+      unsigned short a = 500;
+      unsigned short b = 250;
+      if (timestamp_factor[i] == 10)
+        memcpy(shmptr+SHAREDMEMORYDATAOFFSET+2*i,&a,sizeof(unsigned short));
+      if (timestamp_factor[i] == 8)
+        memcpy(shmptr+SHAREDMEMORYDATAOFFSET+2*i,&b,sizeof(unsigned short));
+
+      retval = Pixie16ReadStatisticsFromModule(Statistics, i);
+      if(retval < 0)
+    {
+      std::cout<<"error in get statistics info"<<std::endl;
+    }
+      memcpy(shmptr+SHAREDMEMORYDATAOFFSET+PRESET_MAX_MODULES*2+SHAREDMEMORYDATASTATISTICS*4*i,Statistics,sizeof(unsigned int)*SHAREDMEMORYDATASTATISTICS);
+    }
+
+  if(sem_post(shmsem) == -1){
+    std::cout<<"sem_post error!"<<std::endl;
+    return 1;
+  }
+  std::cout<<"SHM updated!"<<std::endl;
+  return 0;
 }
