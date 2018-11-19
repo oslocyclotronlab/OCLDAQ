@@ -731,7 +731,7 @@ void MainWindow::on_SaveButton_clicked()
     args.push_back(std::string("Settings file for XIA modules\nPlease add comment here!"));
     commands.run("elog", args);
     std::cout << "Writing 'settings.set' to elog" << std::endl;
-
+    UpdateView();
 }
 
 void MainWindow::on_SaveAsButton_clicked()
@@ -860,6 +860,9 @@ void MainWindow::on_AdjBLineC_clicked()
         }
         printf("Baseline mod=%d, ch=%d: %d", module, channel, bl);
     }
+
+    // Update the current view!
+    UpdateView();
 }
 
 void MainWindow::on_AdjBLine_clicked()
@@ -870,4 +873,6 @@ void MainWindow::on_AdjBLine_clicked()
         printf("*ERROR* Pixie16AdjustOffsets failed, retval = %d\n", retval);
         return;
     }
+
+    UpdateView();
 }
