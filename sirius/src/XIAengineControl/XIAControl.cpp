@@ -378,7 +378,7 @@ bool XIAControl::XIA_start_run()
     ready_bufs.clear();
 
     // Adjust baseline.
-    AdjustBaseline(); // At the moment, this isn't a critical error. We can keep on running.
+    //AdjustBaseline(); // At the moment, this isn't a critical error. We can keep on running.
     //AdjustBlCut();
 
     // We will wait a second before moving on.
