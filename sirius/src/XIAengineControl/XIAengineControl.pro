@@ -30,7 +30,8 @@ INCLUDEPATH += /Users/vetlewi/Desktop/XIA_stuff/Pixie16_software_linux/software/
 
 LIBS += -L/Users/vetlewi/Desktop/OCLDAQ/sirius/src/lib \
         -L/Users/vetlewi/Desktop/XIA_stuff/PlxSdk/PlxApi/Library \
-        -L/Users/vetlewi/Desktop/XIA_stuff/Pixie16_software_linux/software/
+        -L/Users/vetlewi/Desktop/XIA_stuff/Pixie16_software_linux/software/ \
+        -lrt
 
 #DEFINES += OFFLINE TESTGUI
 }
