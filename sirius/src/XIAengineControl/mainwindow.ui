@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>672</width>
+    <width>692</width>
     <height>822</height>
    </rect>
   </property>
@@ -18,7 +18,7 @@
   </property>
   <property name="maximumSize">
    <size>
-    <width>672</width>
+    <width>692</width>
     <height>822</height>
    </size>
   </property>
@@ -386,6 +386,20 @@
                          <string>%</string>
                         </property>
                        </widget>
+                      </item>
+                     </layout>
+                    </item>
+                    <item>
+                     <layout class="QHBoxLayout" name="horizontalLayout_51">
+                      <item>
+                       <widget class="QLabel" name="label_57">
+                        <property name="text">
+                         <string>Baseline average:</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QSpinBox" name="baselineAverage"/>
                       </item>
                      </layout>
                     </item>
@@ -1700,6 +1714,44 @@
        </widget>
       </item>
       <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_48">
+        <item>
+         <widget class="QCheckBox" name="checkAll">
+          <property name="text">
+           <string>All chan/mod.</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="AdjBLineC">
+          <property name="text">
+           <string>Adjust Baseline cut</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="AdjBLine">
+          <property name="text">
+           <string>Adjust baseline</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_11">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
        <layout class="QHBoxLayout" name="horizontalLayout_4">
         <item>
          <widget class="QPushButton" name="WriteButton">
@@ -1719,13 +1771,6 @@
          <widget class="QPushButton" name="SaveAsButton">
           <property name="text">
            <string>Save As current settings</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="AdjBLineC">
-          <property name="text">
-           <string>Adjust Baseline cut</string>
           </property>
          </widget>
         </item>
@@ -1753,7 +1798,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>672</width>
+     <width>692</width>
      <height>22</height>
     </rect>
    </property>
