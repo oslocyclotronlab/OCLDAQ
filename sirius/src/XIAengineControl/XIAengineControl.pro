@@ -24,13 +24,13 @@ LIBS += -L/opt/xia/current \
 }
 
 macx {
-INCLUDEPATH += /Users/vetlewi/Desktop/Pixie16_software_linux/software/app \
-               /Users/vetlewi/Desktop/Pixie16_software_linux/software/sys \
-               /Users/vetlewi/Desktop/Pixie16_software_linux/software/inc
+INCLUDEPATH += /Users/vetlewi/Desktop/XIA_stuff/Pixie16_software_linux/software/app \
+               /Users/vetlewi/Desktop/XIA_stuff/Pixie16_software_linux/software/sys \
+               /Users/vetlewi/Desktop/XIA_stuff/Pixie16_software_linux/software/inc
 
 LIBS += -L/Users/vetlewi/Desktop/OCLDAQ/sirius/src/lib \
-        -L/Users/vetlewi/Desktop/PlxSdk/PlxApi/Library \
-        -L/Users/vetlewi/Desktop/Pixie16_software_linux/software/
+        -L/Users/vetlewi/Desktop/XIA_stuff/PlxSdk/PlxApi/Library \
+        -L/Users/vetlewi/Desktop/XIA_stuff/Pixie16_software_linux/software/
 
 #DEFINES += OFFLINE TESTGUI
 }
