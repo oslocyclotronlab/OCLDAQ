@@ -2419,7 +2419,7 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16BLcutFinder (
 
 PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16TauFinder (
 	unsigned short ModNum,   // Pixie module number
-	double         *Tau )    // 16 returned Tau values, in µs
+	double         *Tau )    // 16 returned Tau values, in ï¿½s
 {
 
 	char           ErrMSG[MAX_ERRMSG_LENGTH];
@@ -3378,7 +3378,7 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16WriteSglChanPar (
 	{
 		// We will update the peak sample value. Thus we need to do the same changes as when changing risetime and flattop.
 		SL = Pixie_Devices[ModNum].DSP_Parameter_Values[SlowLength_Address[ModNum] + ChanNum - DATA_MEMORY_ADDRESS];
-
+		SlowFilterRange = Pixie_Devices[ModNum].DSP_Parameter_Values[SlowFilterRange_Address[ModNum] - DATA_MEMORY_ADDRESS];
 		if(Module_Information[ModNum].Module_ADCMSPS == 100)
 			peaksample = (unsigned int)ROUND(ChanParData * (double)Module_Information[ModNum].Module_ADCMSPS / pow(2.0, (double)SlowFilterRange));
 		else if(Module_Information[ModNum].Module_ADCMSPS == 250)
@@ -4519,19 +4519,25 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16ReadSglChanPar (
 	{
 
 		// Read from the selected Pixie module
-		Pixie16MbufferIO(&peaksample, 1, (unsigned int)(PeakSample_Address[ModNum] + ChanNum), MOD_READ, ModNum);
+		Pixie16IMbufferIO(&peaksample, 1, (unsigned int)(PeakSample_Address[ModNum] + ChanNum), MOD_READ, ModNum);
 		Pixie_Devices[ModNum].DSP_Parameter_Values[PeakSample_Address[ModNum] + ChanNum - DATA_MEMORY_ADDRESS] = peaksample;
 
 		Pixie16IMbufferIO(&SlowFilterRange, 1, SlowFilterRange_Address[ModNum], MOD_READ, ModNum);
 		Pixie_Devices[ModNum].DSP_Parameter_Values[SlowFilterRange_Address[ModNum] - DATA_MEMORY_ADDRESS] = SlowFilterRange;
 
+		Pixie16IMbufferIO(&SL, 1, (unsigned int)(SlowLength_Address[ModNum] + ChanNum), MOD_READ, ModNum);
+		Pixie_Devices[ModNum].DSP_Parameter_Values[SlowLength_Address[ModNum] + ChanNum - DATA_MEMORY_ADDRESS] = SL;
+
+		long long ps_tmp = peaksample;
+		ps_tmp -= SL;
+
 		// Update channel parameter PeakSample
 		if(Module_Information[ModNum].Module_ADCMSPS == 100)
-			*ChanParData = (double)peaksample * pow(2.0, (double)SlowFilterRange) / (double)Module_Information[ModNum].Module_ADCMSPS;
+			*ChanParData = (double)ps_tmp * pow(2.0, (double)SlowFilterRange) / (double)Module_Information[ModNum].Module_ADCMSPS;
 		else if(Module_Information[ModNum].Module_ADCMSPS == 250)
-			*ChanParData = (double)peaksample * pow(2.0, (double)SlowFilterRange) / (double)(Module_Information[ModNum].Module_ADCMSPS / 2);
+			*ChanParData = (double)ps_tmp * pow(2.0, (double)SlowFilterRange) / (double)(Module_Information[ModNum].Module_ADCMSPS / 2);
 		else if(Module_Information[ModNum].Module_ADCMSPS == 500)
-			*ChanParData = (double)peaksample * pow(2.0, (double)SlowFilterRange) / (double)(Module_Information[ModNum].Module_ADCMSPS / 5);
+			*ChanParData = (double)ps_tmp * pow(2.0, (double)SlowFilterRange) / (double)(Module_Information[ModNum].Module_ADCMSPS / 5);
 		
 	}
 	else if(strcmp(ChanParName,"TAU") == 0)
