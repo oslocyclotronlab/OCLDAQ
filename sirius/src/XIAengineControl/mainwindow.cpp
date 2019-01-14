@@ -44,10 +44,6 @@ MainWindow::MainWindow(int num_mod, QWidget *parent) :
     // We set the current view to reflect the values set in the XIA module.
     UpdateView();
 
-    // Force most compact view of the window!
-    setFixedHeight(606);
-    setFixedWidth(578);
-
 }
 
 void MainWindow::MakeCopyTable()
@@ -858,7 +854,7 @@ void MainWindow::on_AdjBLineC_clicked()
             printf("*ERROR* Pixie16BLcutFinder for mod = %d, ch = %d failed, retval = %d\n", module, channel, retval);
             return;
         }
-        printf("Baseline mod=%d, ch=%d: %d", module, channel, bl);
+        printf("Baseline mod=%d, ch=%d: %d\n", module, channel, bl);
     }
 
     // Update the current view!
