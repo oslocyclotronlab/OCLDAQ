@@ -4,6 +4,8 @@
 #include "pixie16app_defs.h"
 #include "pixie16app_export.h"
 
+#include "Functions.h"
+
 #include <iostream>
 #include <cmath>
 #include <stdio.h>
@@ -642,10 +644,6 @@ void MainWindow::on_WriteButton_clicked()
     if (tmpD != ui->QDCLen7->value())
         Pixie16WriteSglChanPar(const_cast<char *>("QDCLen7"), ui->QDCLen7->value(), module, channel);
 
-    // For a few moments now we will not change this.
-    //Pixie16WriteSglChanPar(const_cast<char *>("BASELINE_PERCENT"), ui->baselinePercent->value(), module, channel);
-    //Pixie16WriteSglChanPar(const_cast<char *>("BLCUT"), ui->baselinePercent->value(), module, channel);
-
     Pixie16ReadSglChanPar(const_cast<char *>("BASELINE_PERCENT"), &tmpD, module, channel);
     if (tmpD != ui->baselinePercent->value())
         Pixie16WriteSglChanPar(const_cast<char *>("BASELINE_PERCENT"), ui->baselinePercent->value(), module, channel);
@@ -864,7 +862,7 @@ void MainWindow::on_AdjBLineC_clicked()
 void MainWindow::on_AdjBLine_clicked()
 {
     // Adjust baselines!
-    int retval = Pixie16AdjustOffsets(n_modules);
+    int retval = AdjustBaselineOffset(n_modules);
     if (retval < 0){
         printf("*ERROR* Pixie16AdjustOffsets failed, retval = %d\n", retval);
         return;

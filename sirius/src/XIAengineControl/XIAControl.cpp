@@ -2,6 +2,7 @@
 
 #include "WriteTerminal.h"
 #include "utilities.h"
+#include "Functions.h"
 
 #include <algorithm>
 #include <thread>
@@ -698,7 +699,7 @@ bool XIAControl::AdjustBaseline()
     std::lock_guard<std::mutex> xia_guard(xia_mutex);
 
     termWrite->Write("Adjusting baseline of all modules and channels...");
-    int retval = Pixie16AdjustOffsets(num_modules);
+    int retval = AdjustBaselineOffset(num_modules);
     if (retval < 0){
         sprintf(errmsg, "*ERROR* Pixie16AdjustOffsets failed, retval = %d\n", retval);
         termWrite->Write("\n");
