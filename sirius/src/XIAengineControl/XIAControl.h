@@ -14,6 +14,12 @@
 #include <atomic>
 
 #include <sys/time.h>
+#include <semaphore.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 class WriteTerminal;
 
@@ -24,6 +30,11 @@ class WriteTerminal;
 #define SCALER_FILE_NAME_OUT "scalers_out.dat"
 #define MAX_RAWDATA_LEN 16 // Maximum length of a raw event without any trace
 #define PRESET_MAX_MODULES 24  // Maximum number of modules. As in the XIA API
+
+#define SHAREDMEMORYDATAOFFSET 10
+#define SHAREDMEMORYDATASTATISTICS 448
+#define SHAREDMEMORYDATAENERGYLENGTH 32768
+#define SHAREDMEMORYDATAMAXCHANNEL 16
 
 typedef struct {
     int64_t timestamp;                  //! Timestamp of the event.
@@ -176,6 +187,14 @@ private:
     unsigned int last_stats[PRESET_MAX_MODULES][448];
 
     timeval last_time;
+
+    // Shared memory to use scaler tool from Pekin U.
+    sem_t *shmsem; // shared memory semaphore
+    int    shmfd;  // shared memory id
+    unsigned char *shmptr;// pointer to shm
+
+    int OpenSharedMemory();
+    int UpdateSharedMemory();
 
     // Some private functions that are needed.
 

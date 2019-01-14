@@ -9,7 +9,7 @@ TOPDIR="$(cd "$(dirname "$0")" && pwd -L)"
 LIBDIR="$TOPDIR/src/lib"
 MASTERDIR="$TOPDIR/src/master"
 ENGINEDIR="$TOPDIR/src/engine"
-XIAENGINEDIR="$TOPDIR/src/XIAengine"
+#XIAENGINEDIR="$TOPDIR/src/XIAengine"
 XIAGUIENGINEDIR="$TOPDIR/src/XIAengineControl"
 RUPDATEDIR="$TOPDIR/src/rupdate"
 XIASORTDIR="$TOPDIR/src/XIAonline"
@@ -30,8 +30,8 @@ make -j4
 #make -j4
 
 # Next XIAengine directory
-cd $XIAENGINEDIR
-make -j4
+#cd $XIAENGINEDIR
+#make -j4
 
 # Next XIAGUIengine directory
 cd $XIAGUIENGINEDIR
@@ -48,7 +48,7 @@ make -j4
 
 cd $TOPDIR
 cp $MASTERDIR/acq_master $BINDIR/acq_master
-cp $XIAENGINEDIR/XIAengine $BINDIR/XIAengine
+#cp $XIAENGINEDIR/XIAengine $BINDIR/XIAengine
 cp $XIAGUIENGINEDIR/XIAengineControl $BINDIR/XIAengineControl
 cp $XIASORTDIR/XIAsort $BINDIR/XIAsort
 cp $RUPDATEDIR/rupdate $BINDIR/rupdate

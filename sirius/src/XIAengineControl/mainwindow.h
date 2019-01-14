@@ -38,6 +38,8 @@ private slots:
 
     void on_AdjBLineC_clicked();
 
+    void on_AdjBLine_clicked();
+
 private:
     Ui::MainWindow *ui;
 

@@ -10,27 +10,27 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = XIAengineControl
 TEMPLATE = app
+CONFIG += optimize_full
 
 INCLUDEPATH += ../../include
 
 unix:!macx {
-INCLUDEPATH += /opt/xia/current/inc \
-               /opt/xia/current/sys \
-               /opt/xia/current/app
+INCLUDEPATH += /opt/xia/include \
+               /opt/plx/include 
 
-LIBS += -L/opt/xia/current \
-        -L/opt/plx/current/PlxSdk/PlxApi/Library \
+LIBS += -L/opt/xia/lib \
+        -L/opt/plx/lib \
         -L../lib
 }
 
 macx {
-INCLUDEPATH += /Users/vetlewi/Desktop/Pixie16_software_linux/software/app \
-               /Users/vetlewi/Desktop/Pixie16_software_linux/software/sys \
-               /Users/vetlewi/Desktop/Pixie16_software_linux/software/inc
+INCLUDEPATH += /Users/vetlewi/Desktop/XIA_stuff/Pixie16_software_linux/software/app \
+               /Users/vetlewi/Desktop/XIA_stuff/Pixie16_software_linux/software/sys \
+               /Users/vetlewi/Desktop/XIA_stuff/Pixie16_software_linux/software/inc
 
 LIBS += -L/Users/vetlewi/Desktop/OCLDAQ/sirius/src/lib \
-        -L/Users/vetlewi/Desktop/PlxSdk/PlxApi/Library \
-        -L/Users/vetlewi/Desktop/Pixie16_software_linux/software/
+        -L/Users/vetlewi/Desktop/XIA_stuff/PlxSdk/PlxApi/Library \
+        -L/Users/vetlewi/Desktop/XIA_stuff/Pixie16_software_linux/software/
 
 #DEFINES += OFFLINE TESTGUI
 }
@@ -47,8 +47,9 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-QMAKE_CXXFLAGS += -pthread -D_FILE_OFFSET_BITS=64 -O3
-LIBS += -lsirius -lPixie16App -lPixie16Sys -lPlxApi -pthread -ldl
+QMAKE_CXXFLAGS = -pthread -D_FILE_OFFSET_BITS=64 -O3 -m64 -fPIC -W -Wall -mtune=native
+QMAKE_CXXFLAGS_RELEASE = -pthread -D_FILE_OFFSET_BITS=64 -O3 -m64 -fPIC -W -Wall -mtune=native
+LIBS += -lsirius -lPixie16App -lPixie16Sys -lPlxApi -pthread -ldl -lrt
 
 SOURCES += \
         engine.cpp \
