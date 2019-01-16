@@ -188,13 +188,13 @@ private:
 
     timeval last_time;
 
-    // Shared memory to use scaler tool from Pekin U.
+    /*// Shared memory to use scaler tool from Pekin U.
     sem_t *shmsem; // shared memory semaphore
     int    shmfd;  // shared memory id
     unsigned char *shmptr;// pointer to shm
 
     int OpenSharedMemory();
-    int UpdateSharedMemory();
+    int UpdateSharedMemory();*/
 
     // Some private functions that are needed.
 

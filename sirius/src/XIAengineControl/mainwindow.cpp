@@ -5,6 +5,7 @@
 #include "pixie16app_export.h"
 
 #include "Functions.h"
+#include "run_command.h"
 
 #include <iostream>
 #include <cmath>
@@ -12,6 +13,8 @@
 #include <unistd.h>
 
 #include <QFileDialog>
+
+extern command_list* commands;
 
 MainWindow::MainWindow(int num_mod, QWidget *parent) :
     QMainWindow(parent),
@@ -721,9 +724,11 @@ void MainWindow::on_SaveButton_clicked()
     std::vector<std::string> args;
     args.push_back("-f");
     args.push_back("settings.set");
-    args.push_back(std::string("Subject=Settings"));
+    args.push_back(std::string("-a Subject=Settings"));
     args.push_back(std::string("Settings file for XIA modules\nPlease add comment here!"));
-    commands.run("elog", args);
+
+
+
     std::cout << "Writing 'settings.set' to elog" << std::endl;
     UpdateView();
 }
@@ -740,6 +745,11 @@ void MainWindow::on_SaveAsButton_clicked()
     QString fname = QFileDialog::getSaveFileName(this,
                                                  tr("Save XIA settings"), directory,
                                                  tr("Settings file (*.set);;All files(*"));
+
+    char tmp[16384];
+    sprintf(tmp, "%s", fname.toStdString().c_str());
+
+    SaveSettings(tmp);
 }
 
 void MainWindow::on_ClearButton_clicked()
@@ -810,16 +820,6 @@ void MainWindow::on_CopyButton_clicked()
 
     // Clear...
     on_ClearButton_clicked();
-}
-
-
-void MainWindow::ReadCommands()
-{
-    if( commands.read("acq_master_commands.txt") ) {
-        std::cout << "Using commands from acq_master_commands.txt." << std::endl;
-    } else {
-        std::cout << "Could not read commands from acq_master_commands.txt." << std::endl;
-    }
 }
 
 void MainWindow::on_AdjBLineC_clicked()
