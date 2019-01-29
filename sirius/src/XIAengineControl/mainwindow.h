@@ -3,8 +3,6 @@
 
 #include <QMainWindow>
 
-#include "run_command.h"
-
 namespace Ui {
 class MainWindow;
 }
@@ -55,9 +53,6 @@ private:
     //! Slow filter range of current module.
     unsigned int current_slow_filter;
 
-    //! Read in experiment settings
-    command_list commands;
-
     //! Function responcible for determining the ranges of the parameters and update them accordingly.
     void UpdateLimits();
 
@@ -78,9 +73,6 @@ private:
 
     //! Save settings to file.
     void SaveSettings(char *filename);
-
-    //! Read commands
-    void ReadCommands();
 };
 
 #endif // MAINWINDOW_H

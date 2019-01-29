@@ -2,6 +2,7 @@
 
 #include "WriteTerminal.h"
 #include "utilities.h"
+#include "Functions.h"
 
 #include <algorithm>
 #include <thread>
@@ -63,7 +64,7 @@ XIAControl::XIAControl(WriteTerminal *writeTerm,
     , is_running( false )
     , thread_is_running( false )
     , settings_file( SETname )
-    , shmfd( -1 )
+    //, shmfd( -1 )
 {
     ReadConfigFile(FWname.c_str());
     num_modules = 0;
@@ -354,8 +355,8 @@ bool XIAControl::XIA_start_run()
         return true;
     }
 
-    if (shmfd < 0)
-        OpenSharedMemory();
+    //if (shmfd < 0)
+    //    OpenSharedMemory();
 
     // Check if the modules are initialized.
     if (!is_initialized){
@@ -698,7 +699,7 @@ bool XIAControl::AdjustBaseline()
     std::lock_guard<std::mutex> xia_guard(xia_mutex);
 
     termWrite->Write("Adjusting baseline of all modules and channels...");
-    int retval = Pixie16AdjustOffsets(num_modules);
+    int retval = AdjustBaselineOffset(num_modules);
     if (retval < 0){
         sprintf(errmsg, "*ERROR* Pixie16AdjustOffsets failed, retval = %d\n", retval);
         termWrite->Write("\n");
@@ -904,7 +905,7 @@ bool XIAControl::WriteScalers()
     double ICR[PRESET_MAX_MODULES][16], OCR[PRESET_MAX_MODULES][16];
     unsigned int stats[448];
     int retval;
-    UpdateSharedMemory();
+    //UpdateSharedMemory();
     {
         // Lock the XIA mutex to prevent any other
         // thread from communicating with the modules.
@@ -1195,7 +1196,7 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
 }
 
 
-int XIAControl::OpenSharedMemory()
+/*int XIAControl::OpenSharedMemory()
 {
     int flag = 0;
        if((shmsem=sem_open("sempixie16pkuxiadaq",O_CREAT,0666,1)) == SEM_FAILED)
@@ -1225,9 +1226,9 @@ int XIAControl::OpenSharedMemory()
        if(flag > 0) return 0;
        std::cout<<"SHM Opend!"<<std::endl;
        return 1;
-}
+}*/
 
-int XIAControl::UpdateSharedMemory()
+/*int XIAControl::UpdateSharedMemory()
 {
   int rc;
   rc = sem_trywait(shmsem);
@@ -1269,4 +1270,4 @@ int XIAControl::UpdateSharedMemory()
   }
   std::cout<<"SHM updated!"<<std::endl;
   return 0;
-}
+}*/

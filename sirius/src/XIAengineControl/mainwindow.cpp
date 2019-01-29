@@ -4,12 +4,17 @@
 #include "pixie16app_defs.h"
 #include "pixie16app_export.h"
 
+#include "Functions.h"
+#include "run_command.h"
+
 #include <iostream>
 #include <cmath>
 #include <stdio.h>
 #include <unistd.h>
 
 #include <QFileDialog>
+
+extern command_list* commands;
 
 MainWindow::MainWindow(int num_mod, QWidget *parent) :
     QMainWindow(parent),
@@ -43,10 +48,6 @@ MainWindow::MainWindow(int num_mod, QWidget *parent) :
 
     // We set the current view to reflect the values set in the XIA module.
     UpdateView();
-
-    // Force most compact view of the window!
-    setFixedHeight(606);
-    setFixedWidth(578);
 
 }
 
@@ -646,10 +647,6 @@ void MainWindow::on_WriteButton_clicked()
     if (tmpD != ui->QDCLen7->value())
         Pixie16WriteSglChanPar(const_cast<char *>("QDCLen7"), ui->QDCLen7->value(), module, channel);
 
-    // For a few moments now we will not change this.
-    //Pixie16WriteSglChanPar(const_cast<char *>("BASELINE_PERCENT"), ui->baselinePercent->value(), module, channel);
-    //Pixie16WriteSglChanPar(const_cast<char *>("BLCUT"), ui->baselinePercent->value(), module, channel);
-
     Pixie16ReadSglChanPar(const_cast<char *>("BASELINE_PERCENT"), &tmpD, module, channel);
     if (tmpD != ui->baselinePercent->value())
         Pixie16WriteSglChanPar(const_cast<char *>("BASELINE_PERCENT"), ui->baselinePercent->value(), module, channel);
@@ -727,9 +724,11 @@ void MainWindow::on_SaveButton_clicked()
     std::vector<std::string> args;
     args.push_back("-f");
     args.push_back("settings.set");
-    args.push_back(std::string("Subject=Settings"));
+    args.push_back(std::string("-a Subject=Settings"));
     args.push_back(std::string("Settings file for XIA modules\nPlease add comment here!"));
-    commands.run("elog", args);
+
+
+
     std::cout << "Writing 'settings.set' to elog" << std::endl;
     UpdateView();
 }
@@ -746,6 +745,11 @@ void MainWindow::on_SaveAsButton_clicked()
     QString fname = QFileDialog::getSaveFileName(this,
                                                  tr("Save XIA settings"), directory,
                                                  tr("Settings file (*.set);;All files(*"));
+
+    char tmp[16384];
+    sprintf(tmp, "%s", fname.toStdString().c_str());
+
+    SaveSettings(tmp);
 }
 
 void MainWindow::on_ClearButton_clicked()
@@ -818,16 +822,6 @@ void MainWindow::on_CopyButton_clicked()
     on_ClearButton_clicked();
 }
 
-
-void MainWindow::ReadCommands()
-{
-    if( commands.read("acq_master_commands.txt") ) {
-        std::cout << "Using commands from acq_master_commands.txt." << std::endl;
-    } else {
-        std::cout << "Could not read commands from acq_master_commands.txt." << std::endl;
-    }
-}
-
 void MainWindow::on_AdjBLineC_clicked()
 {
 
@@ -858,7 +852,7 @@ void MainWindow::on_AdjBLineC_clicked()
             printf("*ERROR* Pixie16BLcutFinder for mod = %d, ch = %d failed, retval = %d\n", module, channel, retval);
             return;
         }
-        printf("Baseline mod=%d, ch=%d: %d", module, channel, bl);
+        printf("Baseline mod=%d, ch=%d: %d\n", module, channel, bl);
     }
 
     // Update the current view!
@@ -868,7 +862,7 @@ void MainWindow::on_AdjBLineC_clicked()
 void MainWindow::on_AdjBLine_clicked()
 {
     // Adjust baselines!
-    int retval = Pixie16AdjustOffsets(n_modules);
+    int retval = AdjustBaselineOffset(n_modules);
     if (retval < 0){
         printf("*ERROR* Pixie16AdjustOffsets failed, retval = %d\n", retval);
         return;
