@@ -24,7 +24,7 @@
 #define  LABRSP_YSIZE           32      /* LaBr time spectra	 	*/
 #define  DESP_YSIZE             64      /* E-counter spectra        */
 #define  ESP_YSIZE              16      /* DE-counter spectra       */
-#define  EDESP_YSIZE            4096    /* DE-E-counter spectra     */
+#define  EDESP_YSIZE            2048    /* DE-E-counter spectra     */
 #define  TLABRSP_YSIZE          32      /* Thickness spectra        */
 #define  PPAC_YSIZE             4       /* PPAC spectra             */
 #define  TPPAC_YSIZE			32		/* PPAC time spectra		*/
