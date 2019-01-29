@@ -37,6 +37,7 @@ sort_spectrum_t sort_spectra[] = {
     { PPAC_ID,    PPAC_KEY,     PPAC_SIZE,      0,  PPAC_XSIZE,     PPAC_YSIZE,     "PPACSP",   "PPAC spec"},
     { TPPAC_ID,   TPPAC_KEY,    TPPAC_SIZE,     0,  TPPAC_XSIZE,    TPPAC_YSIZE,    "TPPACS",   "t(LaBr) - t(PPAC)"},
     { EDESS_ID,   EDESS_KEY,    EDESS_SIZE,     0,  EDESS_XSIZE,    EDESS_YSIZE,    "EDESS",    "E-DE single strip"},
+    { LABRCSP_ID, LABRCSP_KEY,  LABRCSP_SIZE,   0,  LABRCSP_XSIZE,  LABRCSP_YSIZE,  "LABRCSP",  "LaBr-energy, calibrated"}, 
     {  0, 0, 0, 0, 0, 0, 0, 0 }
 };
 #endif // XIA
