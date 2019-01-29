@@ -9,6 +9,9 @@
 #include <string.h>
 #include <iostream>
 
+double gain_labr[32]  = {1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.};
+double shift_labr[32] = {0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.};
+
 
 void sort_singles(std::vector<word_t> buffer)
 {
@@ -21,6 +24,7 @@ void sort_singles(std::vector<word_t> buffer)
         switch (dinfo.type) {
         case labr:
             spec_fill(LABRSP_ID, buffer[i].adcdata, dinfo.detectorNum);
+            spec_fill(LABRCSP_ID, gain_labr[dinfo.detectorNum]*buffer[i].adcdata + shift_labr[dinfo.detectorNum], dinfo.detectorNum);
             break;
         case deDet:
             spec_fill(DESP_ID, buffer[i].adcdata, dinfo.detectorNum + 8*dinfo.telNum);
