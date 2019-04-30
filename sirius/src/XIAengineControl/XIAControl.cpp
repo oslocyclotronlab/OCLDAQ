@@ -1156,7 +1156,7 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
     }
 
     while (current_position < size){
-        event_length = (raw_data[current_position] & 0x3FFE0000) >> 17;
+        event_length = (raw_data[current_position] & 0x7FFE0000) >> 17;
         header_length = (raw_data[current_position] & 0x0001F000) >> 12;
 
         if (current_position + event_length > size){
