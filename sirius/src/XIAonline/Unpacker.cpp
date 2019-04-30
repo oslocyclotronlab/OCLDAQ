@@ -49,6 +49,7 @@ word_t Extract_word(const volatile uint32_t *buf, const int &size, bool &error)
     int16_t chanID = ( buf[current_position] & 0xF ) >> 0;
     int16_t slotID = ( buf[current_position] & 0xF0 ) >> 4;
     int16_t crateID = ( buf[current_position] & 0xF00 ) >> 8;
+    int16_t address = ( buf[current_position] & 0xFFF );
     size_t header_length = ( buf[current_position] & 0x1F000 ) >> 12;
     size_t event_length = ( buf[current_position] & 0x7FFE0000 ) >> 17;
     bool finish_code = ( buf[current_position++] & 0x80000000 ) >> 30;
@@ -116,7 +117,7 @@ word_t Extract_word(const volatile uint32_t *buf, const int &size, bool &error)
     }
 
     word_t result;
-    result.address = ( crateID >> 8 ) | ( slotID >> 4 ) | chanID;
+    result.address = address;
     result.adcdata = event_energy;
     result.cfddata = cfddata;
     result.timestamp = (int64_t(evttime_hi) << 32) | int64_t(evttime_lo);
