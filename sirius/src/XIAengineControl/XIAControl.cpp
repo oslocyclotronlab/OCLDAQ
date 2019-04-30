@@ -1131,7 +1131,7 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
         for (int i = 0 ; i < header_length ; ++i){
             evt.raw_data[i] = tmp[i];
         }
-        evt.size_raw = header_length;
+        evt.size_raw = event_length;
         delete[] tmp;
 
 #if REMOVE_TRACE
@@ -1169,7 +1169,7 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
         for (int i = 0 ; i < header_length ; ++i){
             evt.raw_data[i] = raw_data[current_position+i];
         }
-        evt.size_raw = header_length;
+        evt.size_raw = event_length;
 
         tlow = evt.raw_data[1];
         thigh = (evt.raw_data[2] & 0x0000FFFF);
