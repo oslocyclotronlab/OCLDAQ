@@ -1104,7 +1104,7 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
 
     if (overflow_fifo[module].size() > 0){
         event_length = (overflow_fifo[module][0] & 0x7FFE0000) >> 17;
-        header_length = (overflow_fifo[module][0] & 0x0001F000) >> 12;
+        header_length = (overflow_fifo[module][0] & 0x1F000) >> 12;
         int evtsize = event_length - overflow_fifo[module].size();
         if (evtsize > size) { // Event spans several FIFOs :O
             for (int i = 0 ; i < size ; ++i){
@@ -1134,16 +1134,6 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
         evt.size_raw = event_length;
         delete[] tmp;
 
-#if REMOVE_TRACE
-        // Striping away the traces from list mode data.
-        if (event_length != header_length){
-            uint32_t new_f_head = header_length << 17;
-            new_f_head |= (evt.raw_data[0] & 0x8001FFFF);
-            evt.raw_data[0] = new_f_head;
-            evt.raw_data[3] = (evt.raw_data[3] & 0x0000FFFF);
-        }
-#endif // REMOVE_TRACE
-
         {   // Creating a scope for the guard to live.
             std::lock_guard<std::mutex> queue_guard(queue_mutex);
             sorted_events.push(evt);
@@ -1157,7 +1147,7 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
 
     while (current_position < size){
         event_length = (raw_data[current_position] & 0x7FFE0000) >> 17;
-        header_length = (raw_data[current_position] & 0x0001F000) >> 12;
+        header_length = (raw_data[current_position] & 0x1F000 ) >> 12;
 
         if (current_position + event_length > size){
             for (int i = current_position ; i < size ; ++i){
@@ -1176,16 +1166,6 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
         evt.timestamp = thigh << 32;
         evt.timestamp |= tlow;
         evt.timestamp *= timestamp_factor[module];
-
-#if REMOVE_TRACE
-        // Remove trace
-        if (event_length != header_length){
-            uint32_t new_f_head = header_length << 17;
-            new_f_head |= (evt.raw_data[0] & 0x8001FFFF);
-            evt.raw_data[0] = new_f_head;
-            evt.raw_data[3] = (evt.raw_data[3] & 0x0000FFFF);
-        }
-#endif // REMOVE_TRACE
 
 
         {   // Creating a scope for the guard to live.
