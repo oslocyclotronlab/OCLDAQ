@@ -174,6 +174,8 @@ int main (int argc, char *[])
         exit(EXIT_FAILURE);
     }
 
+    std::cout << "I get here!" << std::endl;
+
     signal(SIGINT, keyb_int); // set up interrupt handler (Ctrl-C)
     signal(SIGPIPE, SIG_IGN);
 
