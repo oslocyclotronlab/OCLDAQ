@@ -201,7 +201,7 @@ std::vector<word_t> Unpacker::ParseBuffer(const volatile uint32_t *buffer, const
             }
             break;
 
-        found.push_back(Extract_word(buffer+current_position, event_length));
+        found.push_back(Extract_word(buffer+current_position, event_length, error));
     }
 
     std::sort(found.begin(), found.end(), sort_func);
