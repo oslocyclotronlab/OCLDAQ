@@ -114,6 +114,7 @@ word_t Extract_word(const volatile uint32_t *buf, const int &size, bool &error)
         ext_TS_hi = (buf[current_position++] & 0xFFFF);
     } else if ( header_length != 4 ){
         std::cerr << "Wrong header length = " << header_length << std::endl;
+        error = true;
     }
 
     word_t result;

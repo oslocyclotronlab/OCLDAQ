@@ -227,6 +227,7 @@ int main (int argc, char* argv[])
     while ( leaveprog == 'n' ){
         const int tus = *time_us;
         const int ts = *time_s;
+        error = false;
 
         if (tus != 0 && ts != 0) {
             if (ts > last_t || (ts == last_t && tus > last_tus)){
@@ -237,6 +238,8 @@ int main (int argc, char* argv[])
                 sort_singles(data_p);
                 ++buffer_count;
                 evtbldr->SetBuffer(data_p);
+                if ( error )
+                    continue; // We just skip if there was a problem!
 
                 while (true){
                     evt_status = evtbldr->Next(event);
