@@ -262,7 +262,7 @@ bool XIAControl::XIA_check_buffer_ST(int bufsize)
 
 
 
-bool XIAControl::XIA_fetch_buffer(uint32_t *buffer, int bufsize)
+bool XIAControl::XIA_fetch_buffer(uint32_t *buffer, int bufsize, unsigned int *first_header)
 {
     std::lock_guard<std::mutex> queue_guard(queue_mutex);
 
@@ -294,6 +294,8 @@ bool XIAControl::XIA_fetch_buffer(uint32_t *buffer, int bufsize)
 
     // Use std::sort to sort all data before we do the readout of the internal buffer.
     //std::sort(sorted_events.begin(), sorted_events.end(), std::greater<Event_t>());
+
+    *first_header = current_pos;
 
     while (current_pos < bufsize){
         //current_word = sorted_events.back();

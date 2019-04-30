@@ -202,6 +202,7 @@ int main (int argc, char* argv[])
     const volatile int* time_s  = (int*)&engine_shm[ENGINE_TIME_S ];
     const volatile unsigned int* data    = engine_shm + engine_shm[ENGINE_DATA_START];
     const volatile unsigned int  datalen = engine_shm[ENGINE_DATA_SIZE];
+    const volatile unsigned int* first_header = engine_shm[ENGINE_FIRST_HEADER];
 
 
     // Attach shared memory
@@ -232,7 +233,7 @@ int main (int argc, char* argv[])
                 last_t = ts;
                 last_tus = tus;
 
-                data_p = unpacker->ParseBuffer(data, datalen, error);
+                data_p = unpacker->ParseBuffer(data+(*first_header), datalen-(*first_header), error);
                 std::cout << data_p.size() << " " << error << std::endl;
                 sort_singles(data_p);
                 ++buffer_count;

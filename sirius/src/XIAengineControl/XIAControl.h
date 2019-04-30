@@ -92,7 +92,7 @@ public:
     bool XIA_check_buffer_ST(int bufsize);
 
     // Ask for a buffer of data to be committed.
-    bool XIA_fetch_buffer(uint32_t *buffer, int bufsize);
+    bool XIA_fetch_buffer(uint32_t *buffer, int bufsize, unsigned int *first_header);
 
     // Ask the class to boot the XIA modules.
     bool XIA_boot_all();
