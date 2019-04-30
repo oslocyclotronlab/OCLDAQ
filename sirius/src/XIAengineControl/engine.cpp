@@ -481,7 +481,7 @@ int main(int argc, char* argv[])
     unsigned int* time_us       = &buffer[ENGINE_TIME_US];
     unsigned int* time_s        = &buffer[ENGINE_TIME_S ];
     unsigned int* data          = buffer + buffer[ENGINE_DATA_START];
-    unsigned int* first_header  = &buffer[ENGINE_FIRST_GOOD_WORD];
+    unsigned int* first_header  = &buffer[ENGINE_FIRST_HEADER];
     const unsigned int datalen  = buffer[ENGINE_DATA_SIZE];
     /*const unsigned int*/ datalen_char = datalen*sizeof(int);
 
