@@ -32,6 +32,7 @@
 #include "XIA_CFD.h"
 
 #include <algorithm>
+#include <iostream>
 
 #define FINISHCODE              0xC0000000  ///< Bitmask for the Finish code bit [31]
 #define FINISHCODE_OFFSET       30          ///< Finish code offset
@@ -130,8 +131,8 @@ word_t Extract_word(const volatile uint32_t *buf, const int &size, bool &error)
     result.address = ( crateID >> 8 ) | ( slotID >> 4 ) | chanID;
     result.adcdata = event_energy;
     result.cfddata = cfddata;
-    result.timestamp = (int64_t(evttime_hi) << 32) | int64_t(evttime_lo);
-    result.trace_length = trace_length;
+    result.timestamp = (int64_t(evttime_hi) << 32) | int64_t(evttime_lo);
+    result.tracelen = trace_length;
 
     switch (GetSamplingFrequency(result.address)) {
         case f100MHz:
