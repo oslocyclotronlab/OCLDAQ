@@ -202,7 +202,7 @@ int main (int argc, char* argv[])
     const volatile int* time_s  = (int*)&engine_shm[ENGINE_TIME_S ];
     const volatile unsigned int* data    = engine_shm + engine_shm[ENGINE_DATA_START];
     const volatile unsigned int  datalen = engine_shm[ENGINE_DATA_SIZE];
-    const volatile unsigned int* first_header = engine_shm[ENGINE_FIRST_HEADER];
+    const volatile unsigned int* first_header = (int*)&engine_shm[ENGINE_FIRST_HEADER];
 
 
     // Attach shared memory
