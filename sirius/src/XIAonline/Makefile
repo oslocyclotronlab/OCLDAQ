@@ -6,8 +6,8 @@ CC		=	gcc
 LINKER	=	$(CXX)
 
 ### Defining flags and stuff ######
-CXXFLAGS	=	-pthread -m64 -W -Wall -fPIC -std=c++11 -g -O0#-O3 -mtune=native
-CCFLAGS		=	-pthread -m64 -W -Wall -fPIC -g -O0#-O3 -mtune=native
+CXXFLAGS	=	-pthread -m64 -W -Wall -fPIC -std=c++11 -O3 -mtune=native
+CCFLAGS		=	-pthread -m64 -W -Wall -fPIC -O3 -mtune=native
 LIBS		=	-L../lib -lsirius
 
 ### Includes ####
