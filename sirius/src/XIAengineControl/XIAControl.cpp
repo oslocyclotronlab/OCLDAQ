@@ -1103,7 +1103,7 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
     Event_t evt;
 
     if (overflow_fifo[module].size() > 0){
-        event_length = (overflow_fifo[module][0] & 0x3FFE0000) >> 17;
+        event_length = (overflow_fifo[module][0] & 0x7FFE0000) >> 17;
         header_length = (overflow_fifo[module][0] & 0x0001F000) >> 12;
         int evtsize = event_length - overflow_fifo[module].size();
         if (evtsize > size) { // Event spans several FIFOs :O
