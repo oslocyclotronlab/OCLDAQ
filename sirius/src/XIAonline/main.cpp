@@ -233,7 +233,7 @@ int main (int argc, char* argv[])
                 last_tus = tus;
 
                 data_p = unpacker->ParseBuffer(data, datalen, error);
-                std::cout << data_p.size() << std::endl;
+                std::cout << data_p.size() << " " << error << std::endl;
                 sort_singles(data_p);
                 ++buffer_count;
                 evtbldr->SetBuffer(data_p);
