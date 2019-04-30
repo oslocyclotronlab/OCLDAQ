@@ -163,7 +163,7 @@ std::vector<word_t> Unpacker::ParseBuffer(const volatile uint32_t *buffer, const
 
         header_length = ( buffer[current_position] & 0x1F000 ) >> 12;
         event_length = ( buffer[current_position] & 0x7FFE0000 ) >> 17;
-        std::cout << current_position << " " << header_length << " " << event_length << std::endl;
+        //std::cout << current_position << " " << header_length << " " << event_length << std::endl;
         if ( current_position + event_length > size )
             break;
 
