@@ -158,7 +158,6 @@ std::vector<word_t> Unpacker::ParseBuffer(const volatile uint32_t *buffer, const
     int64_t event_t_low, event_t_high;
     word_t curr_w;
 
-    std::cout << "I get here!" << std::endl;
 
     // First overflow!
     if ( overflow.size() > 0 ){
