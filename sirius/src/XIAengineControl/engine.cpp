@@ -2,6 +2,7 @@
 #include "engine_shm.h"
 #include "net_control.h"
 #include "utilities.h"
+#include "run_command.h"
 
 #include "WriteTerminal.h"
 #include "XIAControl.h"
@@ -54,6 +55,7 @@ static std::thread gui_thread;
 static int gui_is_running;
 static int globargc;
 static char **globargv;
+command_list* commands = 0;
 
 // ########################################################################
 // ######################################################################## 
@@ -419,6 +421,23 @@ int main(int argc, char* argv[])
     signal(SIGINT, keyb_int); // set up interrupt handler (Ctrl-C)
     signal(SIGPIPE, SIG_IGN);
 
+    commands = new command_list();
+    if( (commands->read("acq_master_commands.txt")) ) {
+        std::cerr << "Using commands from acq_master_commands.txt." << std::endl;
+    } else {
+        std::cerr << "Using default commands." << std::endl;
+        commands->read_text(
+            "mama     = xterm -bg moccasin -fg black -geometry 80x25+5-60 -e mama\n"
+            "rupdate  = rupdate\n"
+            "loadsort = xterm -bg khaki -fg black -geometry 100x25-50+0 -e loadsort\n"
+            "readme   = echo\n"
+            "manual   = firefox http://ocl.uio.no/sirius/\n"
+            "sort     = xterm -e acq_sort\n"
+            "engine   = xterm -e usb-engine\n"
+            "elog     = echo\n"
+            );
+    }
+
     io_select ioc;
 
     static command_cb::command engine_commands[] = {
@@ -551,6 +570,8 @@ int main(int argc, char* argv[])
     if (gui_thread.joinable())
         gui_thread.join();
 
+
+    delete commands;
     return 0;
 }
 #else

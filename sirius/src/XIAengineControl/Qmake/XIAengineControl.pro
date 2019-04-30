@@ -15,13 +15,11 @@ CONFIG += optimize_full
 INCLUDEPATH += ../../include
 
 unix:!macx {
-INCLUDEPATH += /opt/xia/current/app \
-               /opt/xia/current/sys \
-               /opt/xia/current/inc \
-               /opt/plx/current/PlxSdk/Include
+INCLUDEPATH += /opt/xia/include \
+               /opt/plx/include 
 
-LIBS += -L/opt/xia/current \
-        -L/opt/plx/current/PlxSdk/PlxApi/Library \
+LIBS += -L/opt/xia/lib \
+        -L/opt/plx/lib \
         -L../lib
 }
 
@@ -42,7 +40,7 @@ LIBS += -L/Users/vetlewi/Desktop/OCLDAQ/sirius/src/lib \
 # any feature of Qt which has been marked as deprecated (the exact warnings
 # depend on your compiler). Please consult the documentation of the
 # deprecated API in order to know how to port your code away from it.
-DEFINES += QT_DEPRECATED_WARNINGS REMOVE_TRACE=0
+DEFINES += QT_DEPRECATED_WARNINGS
 
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -57,14 +55,12 @@ SOURCES += \
         engine.cpp \
         mainwindow.cpp \
         WriteTerminal.cpp \
-        XIAControl.cpp \
-    functions.cpp
+        XIAControl.cpp
 
 HEADERS += \
         mainwindow.h \
         WriteTerminal.h \
-        XIAControl.h \
-    Functions.h
+        XIAControl.h
 
 FORMS += \
         mainwindow.ui

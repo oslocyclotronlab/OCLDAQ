@@ -4,12 +4,17 @@
 #include "pixie16app_defs.h"
 #include "pixie16app_export.h"
 
+#include "Functions.h"
+#include "run_command.h"
+
 #include <iostream>
 #include <cmath>
 #include <stdio.h>
 #include <unistd.h>
 
 #include <QFileDialog>
+
+extern command_list* commands;
 
 MainWindow::MainWindow(int num_mod, QWidget *parent) :
     QMainWindow(parent),
@@ -43,10 +48,6 @@ MainWindow::MainWindow(int num_mod, QWidget *parent) :
 
     // We set the current view to reflect the values set in the XIA module.
     UpdateView();
-
-    // Force most compact view of the window!
-    setFixedHeight(606);
-    setFixedWidth(578);
 
 }
 
@@ -166,6 +167,10 @@ void MainWindow::UpdateLimits()
     ui->eFlatTop->setMinimum( MIN_SLOWGAP_LEN * pow(2.0, current_slow_filter) / adcFactor );
     ui->eFlatTop->setMaximum( SLOWFILTER_MAX_LEN * pow(2.0, current_slow_filter) / adcFactor );
 
+    // Trigger sample limits
+    ui->peak_sample->setMinimum( -FASTFILTER_MAX_LEN * pow(2.0, current_slow_filter) / adcFactor );
+    ui->peak_sample->setMaximum( SLOWFILTER_MAX_LEN * pow(2.0, current_slow_filter) / adcFactor );
+
     // Tau limits
     ui->tau->setMinimum(0);
     ui->tau->setMaximum(1e6);
@@ -183,6 +188,8 @@ void MainWindow::UpdateLimits()
     ui->baselinePercent->setMaximum(99);
     ui->baselineCut->setMinimum(0);
     ui->baselineCut->setMaximum(999999999);
+    ui->baselineAverage->setMinimum(0);
+    ui->baselineAverage->setMaximum(16);
 
     // Trace length
     if ( msps == 500 ){
@@ -253,10 +260,10 @@ void MainWindow::UpdateViewChannel()
     unsigned short module = current_module;
     unsigned short channel = current_channel;
 
-    double trigRiseTime, trigFlatTop;
+    double trigRiseTime, trigFlatTop, peakSample;
     unsigned int trigThreshold;
     double energyRiseTime, energyFlatTop, tau;
-    unsigned int baselinePercent, baselineCut;
+    unsigned int baselinePercent, baselineCut, baselineAverage;
     double cfdDelay;
     unsigned int cfdScale, cfdThreshold;
     double trace_length, trace_delay;
@@ -269,6 +276,7 @@ void MainWindow::UpdateViewChannel()
 
     Pixie16ReadSglChanPar(const_cast<char *>("TRIGGER_RISETIME"), &trigRiseTime, module, channel);
     Pixie16ReadSglChanPar(const_cast<char *>("TRIGGER_FLATTOP"), &trigFlatTop, module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("PEAKSAMPLE"), &peakSample, module, channel);
     Pixie16ReadSglChanPar(const_cast<char *>("TRIGGER_THRESHOLD"), &tmp, module, channel);
     trigThreshold = tmp;
     Pixie16ReadSglChanPar(const_cast<char *>("ENERGY_RISETIME"), &energyRiseTime, module, channel);
@@ -278,6 +286,8 @@ void MainWindow::UpdateViewChannel()
     baselinePercent = tmp;
     Pixie16ReadSglChanPar(const_cast<char *>("BLCUT"), &tmp, module, channel);
     baselineCut = tmp;
+    Pixie16ReadSglChanPar(const_cast<char *>("BASELINE_AVERAGE"), &tmp, module, channel);
+    baselineAverage = tmp;
     Pixie16ReadSglChanPar(const_cast<char *>("CFDDelay"), &cfdDelay, module, channel);
     Pixie16ReadSglChanPar(const_cast<char *>("CFDScale"), &tmp, module, channel);
     cfdScale = tmp;
@@ -308,12 +318,14 @@ void MainWindow::UpdateViewChannel()
 
     ui->trigRiseTime->setValue(trigRiseTime);
     ui->trigFlatTop->setValue(trigFlatTop);
+    ui->peak_sample->setValue(peakSample);
     ui->trigThreshold->setValue(trigThreshold);
     ui->eRiseTime->setValue(energyRiseTime);
     ui->eFlatTop->setValue(energyFlatTop);
     ui->tau->setValue(tau);
     ui->baselinePercent->setValue(baselinePercent);
     ui->baselineCut->setValue(baselineCut);
+    ui->baselineAverage->setValue(baselineAverage);
     ui->cfdDelay->setValue(cfdDelay);
     ui->cfdScale->setValue(cfdScale);
     ui->cfdThreshold->setValue(cfdThreshold);
@@ -539,12 +551,21 @@ void MainWindow::on_WriteButton_clicked()
         Pixie16WriteSglChanPar(const_cast<char *>("TRIGGER_THRESHOLD"), ui->trigThreshold->value(), module, channel);
 
     Pixie16ReadSglChanPar(const_cast<char *>("ENERGY_RISETIME"), &tmpD, module, channel);
-    if (tmpD != ui->eRiseTime->value())
+    if (tmpD != ui->eRiseTime->value()){
         Pixie16WriteSglChanPar(const_cast<char *>("ENERGY_RISETIME"), ui->eRiseTime->value(), module, channel);
+        Pixie16WriteSglChanPar(const_cast<char *>("PEAKSAMPLE"), ui->peak_sample->value(), module, channel);
+    }
     
     Pixie16ReadSglChanPar(const_cast<char *>("ENERGY_FLATTOP"), &tmpD, module, channel);
-    if (tmpD != ui->eFlatTop->value())
+    if (tmpD != ui->eFlatTop->value()){
         Pixie16WriteSglChanPar(const_cast<char *>("ENERGY_FLATTOP"), ui->eFlatTop->value(), module, channel);
+        Pixie16WriteSglChanPar(const_cast<char *>("PEAKSAMPLE"), ui->peak_sample->value(), module, channel);
+    }
+
+    Pixie16ReadSglChanPar(const_cast<char *>("PEAKSAMPLE"), &tmpD, module, channel);
+    if (tmpD != ui->peak_sample->value()){
+        Pixie16WriteSglChanPar(const_cast<char *>("PEAKSAMPLE"), ui->peak_sample->value(), module, channel);
+    }
 
     Pixie16ReadSglChanPar(const_cast<char *>("TAU"), &tmpD, module, channel);
     if (tmpD != ui->tau->value())
@@ -626,9 +647,17 @@ void MainWindow::on_WriteButton_clicked()
     if (tmpD != ui->QDCLen7->value())
         Pixie16WriteSglChanPar(const_cast<char *>("QDCLen7"), ui->QDCLen7->value(), module, channel);
 
-    // For a few moments now we will not change this.
-    //Pixie16WriteSglChanPar(const_cast<char *>("BASELINE_PERCENT"), ui->baselinePercent->value(), module, channel);
-    //Pixie16WriteSglChanPar(const_cast<char *>("BLCUT"), ui->baselinePercent->value(), module, channel);
+    Pixie16ReadSglChanPar(const_cast<char *>("BASELINE_PERCENT"), &tmpD, module, channel);
+    if (tmpD != ui->baselinePercent->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("BASELINE_PERCENT"), ui->baselinePercent->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("BLCUT"), &tmpD, module, channel);
+    if (tmpD != ui->baselineCut->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("BLCUT"), ui->baselineCut->value(), module, channel);
+
+    Pixie16ReadSglChanPar(const_cast<char *>("BASELINE_AVERAGE"), &tmpD, module, channel);
+    if (tmpD != ui->baselineAverage->value())
+        Pixie16WriteSglChanPar(const_cast<char *>("BASELINE_AVERAGE"), ui->baselineAverage->value(), module, channel);
 
     unsigned long chanMultMaskL = std::strtoul(ui->multMaskL->text().toStdString().c_str(), 0, 16);
     unsigned long chanMultMaskH = std::strtoul(ui->multMaskH->text().toStdString().c_str(), 0, 16);
@@ -695,11 +724,13 @@ void MainWindow::on_SaveButton_clicked()
     std::vector<std::string> args;
     args.push_back("-f");
     args.push_back("settings.set");
-    args.push_back(std::string("Subject=Settings"));
+    args.push_back(std::string("-a Subject=Settings"));
     args.push_back(std::string("Settings file for XIA modules\nPlease add comment here!"));
-    commands.run("elog", args);
-    std::cout << "Writing 'settings.set' to elog" << std::endl;
 
+
+
+    std::cout << "Writing 'settings.set' to elog" << std::endl;
+    UpdateView();
 }
 
 void MainWindow::on_SaveAsButton_clicked()
@@ -714,6 +745,11 @@ void MainWindow::on_SaveAsButton_clicked()
     QString fname = QFileDialog::getSaveFileName(this,
                                                  tr("Save XIA settings"), directory,
                                                  tr("Settings file (*.set);;All files(*"));
+
+    char tmp[16384];
+    sprintf(tmp, "%s", fname.toStdString().c_str());
+
+    SaveSettings(tmp);
 }
 
 void MainWindow::on_ClearButton_clicked()
@@ -786,33 +822,51 @@ void MainWindow::on_CopyButton_clicked()
     on_ClearButton_clicked();
 }
 
-
-void MainWindow::ReadCommands()
-{
-    if( commands.read("acq_master_commands.txt") ) {
-        std::cout << "Using commands from acq_master_commands.txt." << std::endl;
-    } else {
-        std::cout << "Could not read commands from acq_master_commands.txt." << std::endl;
-    }
-}
-
 void MainWindow::on_AdjBLineC_clicked()
 {
-    unsigned int BLcut[PRESET_MAX_MODULES][16];
-    int retval;
-    printf("\n\n");
-    for (int i = 0 ; i < 16 ; ++i)
-        printf("\t%d", i);
-    for (int i = 0 ; i < n_modules ; ++i){
-        printf("\n%d", i);
-        for (int j = 0 ; j < 16 ; ++j){
-            retval = Pixie16BLcutFinder(i, j, &BLcut[i][j]);
-            if (retval < 0){
-                printf("*ERROR* Pixie16BLcutFinder for mod = %d, ch = %d failed, retval = %d\n", i, j, retval);
-                return;
+
+    // Check if we should update all values.
+    if ( ui->checkAll->isChecked() ){
+        unsigned int BLcut[PRESET_MAX_MODULES][16];
+        int retval;
+        printf("\n\n");
+        for (int i = 0 ; i < 16 ; ++i)
+            printf("\t%d", i);
+        for (int i = 0 ; i < n_modules ; ++i){
+            printf("\n%d", i);
+            for (int j = 0 ; j < 16 ; ++j){
+                retval = Pixie16BLcutFinder(i, j, &BLcut[i][j]);
+                if (retval < 0){
+                    printf("*ERROR* Pixie16BLcutFinder for mod = %d, ch = %d failed, retval = %d\n", i, j, retval);
+                    return;
+                }
+                printf("\t%d", BLcut[i][j]);
             }
-            printf("\t%d", BLcut[i][j]);
         }
+        printf("\n\n");
+    } else {
+        unsigned short module = current_module, channel = current_channel;
+        unsigned int bl;
+        int retval = Pixie16BLcutFinder(module, channel, &bl);
+        if (retval < 0){
+            printf("*ERROR* Pixie16BLcutFinder for mod = %d, ch = %d failed, retval = %d\n", module, channel, retval);
+            return;
+        }
+        printf("Baseline mod=%d, ch=%d: %d\n", module, channel, bl);
     }
-    printf("\n\n");
+
+    // Update the current view!
+    UpdateView();
+}
+
+void MainWindow::on_AdjBLine_clicked()
+{
+    // Adjust baselines!
+    int retval = AdjustBaselineOffset(n_modules);
+    if (retval < 0){
+        printf("*ERROR* Pixie16AdjustOffsets failed, retval = %d\n", retval);
+        return;
+    }
+
+    UpdateView();
 }

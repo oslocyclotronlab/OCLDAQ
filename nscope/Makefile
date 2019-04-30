@@ -8,11 +8,11 @@ INCLUDES	=	-I./configuration -I./booter \
 				-I/home/vetlewi/Desktop/Pixie16_software_linux/software/app \
 				-I/home/vetlewi/Desktop/Pixie16_software_linux/software/sys \
 				-I/home/vetlewi/Desktop/Pixie16_software_linux/software/inc \
-				-I/home/vetlewi/Desktop/PlxSdk_7.10/Include
+				-I/home/vetlewi/Desktop/PlxSdk/Include
 INCLUDES	+=	$(ROOTINC)
 
 LIBS		=	-L/home/vetlewi/Desktop/Pixie16_software_linux/software \
-				-L/home/vetlewi/Desktop/PlxSdk_7.10/PlxApi/Library \
+				-L/home/vetlewi/Desktop/PlxSdk/PlxApi/Library \
 				-lPixie16App -lPixie16Sys -lPlxApi
 LIBS		+=	$(ROOTLIBS)
 
