@@ -166,7 +166,7 @@ static void cb_disconnected(line_channel*, void*)
 }
 
 
-int main (int argc, char *[])
+int main (int argc, char *argv[])
 {
 
     if( argc != 1 ) {
