@@ -197,7 +197,7 @@ std::vector<word_t> Unpacker::ParseBuffer(const volatile uint32_t *buffer, const
 
         if ( current_position + event_length > size ){
             while( current_position < size )
-                uint32_t number = buffer[current_position]
+                uint32_t number = buffer[current_position];
                 overflow.push_back(number);
             }
             break;
