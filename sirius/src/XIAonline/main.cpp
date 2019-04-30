@@ -13,7 +13,6 @@
 #include "utilities.h"
 
 
-#include "XIARoutine.h"
 #include "Event.h"
 #include "Unpacker.h"
 #include "Event_builder.h"
@@ -165,15 +164,8 @@ static void cb_disconnected(line_channel*, void*)
     std::cout << "acq_sort: client disconnected" << std::endl;
 }
 
-int main(int argc, char *argv[])
+int main (int argc, char* argv[])
 {
-    std::cout << "Hello world!" << std::endl;
-}
-
-/*int main (int argc, char *argv[])
-{
-
-    std::cout << "I get here!" << std::endl;
     if( argc != 1 ) {
         std::cerr << "acq_sort runs without parameters" << std::endl;
         exit(EXIT_FAILURE);
@@ -268,4 +260,4 @@ int main(int argc, char *argv[])
     // detach shared memory
     engine_shm_detach();
     spectra_detach_all();
-}*/
+}

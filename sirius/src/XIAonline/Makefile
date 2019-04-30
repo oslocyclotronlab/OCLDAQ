@@ -17,13 +17,6 @@ TARGET = XIAsort
 
 # Sources
 CXX_SRC =	main.cpp \
-			XIARoutine.cpp \
-			Histogram1D.cpp \
-			Histogram2D.cpp \
-			Histogram3D.cpp \
-			Histograms.cpp \
-			Parameters.cpp \
-			ParticleRange.cpp \
 			Event_builder.cpp \
 			Unpacker.cpp \
 			Sort_Funct.cpp \
@@ -57,3 +50,4 @@ FORCE:
 
 clean:
 	rm -f *.o
+	rm -f $(TARGET)

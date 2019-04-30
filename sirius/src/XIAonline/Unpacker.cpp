@@ -34,18 +34,6 @@
 #include <algorithm>
 #include <iostream>
 
-#define FINISHCODE              0xC0000000  ///< Bitmask for the Finish code bit [31]
-#define FINISHCODE_OFFSET       30          ///< Finish code offset
-#define EVENTLENGTH             0x7FFE0000  ///< Bitmask for the Event length [30:17]
-#define EVENTLENGTH_OFFSET      17          ///< Event length offset
-#define HEADERSIZE              0x1F000     ///< Header size [16:12]
-#define HEADERSIZE_OFFSET       12          ///< Header size offset
-#define CHANNELID               0x00000FFF  ///< Channel ID [11:0]
-#define CHANNELID_OFFSET        0           ///< Channel ID offset
-#define EVENTTIMELOW            0xFFFFFFFF  ///< Least significant bits of the timestamp [31:0]
-#define EVENTTIMELOW_OFFSET     0           ///< Least siginificant bits of the timestamp offset
-#define EVENTTIMEHIGH           0x0000FFFF  ///< Most significant bits of the timestamp [15:0]
-#define EVENTTIMEHIGH_OFFSET    0           ///< Most significant bits of the timestamp offset
 
 inline bool sort_func(word_t a, word_t b){ return a.timestamp < b.timestamp; }
 
@@ -132,7 +120,7 @@ word_t Extract_word(const volatile uint32_t *buf, const int &size, bool &error)
     result.adcdata = event_energy;
     result.cfddata = cfddata;
     result.timestamp = (int64_t(evttime_hi) << 32) | int64_t(evttime_lo);
-    result.tracelen = trace_length;
+    result.trace = trace_t(trace_length);
 
     switch (GetSamplingFrequency(result.address)) {
         case f100MHz:
@@ -154,8 +142,8 @@ word_t Extract_word(const volatile uint32_t *buf, const int &size, bool &error)
 
 
     for ( size_t i = 0 ; i < event_length - header_length ; ++i ){
-        result.trace[2*i] = ( buf[current_position] & 0xFFFF );
-        result.trace[2*i+1] = ( buf[current_position++] & 0xFFFF0000 ) >> 16;
+        result.trace.trace[2*i] = ( buf[current_position] & 0xFFFF );
+        result.trace.trace[2*i+1] = ( buf[current_position++] & 0xFFFF0000 ) >> 16;
     }
     error = false;
     return result;
@@ -209,19 +197,7 @@ std::vector<word_t> Unpacker::ParseBuffer(const volatile uint32_t *buffer, const
     std::sort(found.begin(), found.end(), sort_func);
     error = false;
     return found;
-
 }
 
 
-#undef FINISHCODE
-#undef FINISHCODE_OFFSET
-#undef EVENTLENGTH
-#undef EVENTLENGTH_OFFSET
-#undef HEADERSIZE
-#undef HEADERSIZE_OFFSET
-#undef CHANNELID
-#undef CHANNELID_OFFSET
-#undef EVENTTIMELOW
-#undef EVENTTIMELOW_OFFSET
-#undef EVENTTIMEHIGH
-#undef EVENTTIMEHIGH_OFFSET
+
