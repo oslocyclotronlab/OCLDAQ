@@ -158,34 +158,12 @@ std::vector<word_t> Unpacker::ParseBuffer(const volatile uint32_t *buffer, const
     int64_t event_t_low, event_t_high;
     word_t curr_w;
 
-    std::cout << size << std::endl;
-
-
-    // First overflow!
-    if ( overflow.size() > 0 ){
-        header_length = ( overflow[0] & 0x1F000 ) >> 12;
-        event_length = ( overflow[0] & 0x7FFE0000 ) >> 17;
-
-        uint32_t *tmp = new uint32_t[event_length];
-
-        for (size_t i = 0 ; i < overflow.size() ; ++i){
-            tmp[i] = overflow[i];
-        }
-
-        int diff = event_length - overflow.size();
-        for (int i = 0 ; i < diff ; ++i){
-            tmp[overflow.size() + i] = buffer[current_position++];
-        }
-        found.push_back(Extract_word(tmp, event_length, error));
-        overflow.clear();
-        delete[] tmp;
-    }
 
     while ( current_position < size ){
 
         header_length = ( buffer[current_position] & 0x1F000 ) >> 12;
         event_length = ( buffer[current_position] & 0x7FFE0000 ) >> 17;
-
+        std::cout << current_position << " " << header_length << " " << event_length << std::endl;
         if ( current_position + event_length > size ){
             for ( int omg = current_position ; omg < size ; ++omg )
                 overflow.push_back(uint32_t(buffer[current_position++]));
