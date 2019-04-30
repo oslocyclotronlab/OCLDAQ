@@ -19,6 +19,7 @@ void sort_singles(std::vector<word_t> buffer)
     for (size_t i = 0 ; i < buffer.size() ; ++i){
 
         dinfo = GetDetector(buffer[i].address);
+        std::cout << buffer[i].address << std::endl;
 
         switch (dinfo.type) {
         case labr:
