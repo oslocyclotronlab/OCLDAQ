@@ -35,9 +35,9 @@
 
 #define FINISHCODE              0xC0000000  ///< Bitmask for the Finish code bit [31]
 #define FINISHCODE_OFFSET       30          ///< Finish code offset
-#define EVENTLENGTH             0x3FFE0000  ///< Bitmask for the Event length [30:17]
+#define EVENTLENGTH             0x7FFE0000  ///< Bitmask for the Event length [30:17]
 #define EVENTLENGTH_OFFSET      17          ///< Event length offset
-#define HEADERSIZE              0x0001F000  ///< Header size [16:12]
+#define HEADERSIZE              0x1F000     ///< Header size [16:12]
 #define HEADERSIZE_OFFSET       12          ///< Header size offset
 #define CHANNELID               0x00000FFF  ///< Channel ID [11:0]
 #define CHANNELID_OFFSET        0           ///< Channel ID offset
