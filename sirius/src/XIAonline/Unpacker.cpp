@@ -115,6 +115,7 @@ word_t Extract_word(const volatile uint32_t *buf, const int &size, bool &error)
     } else if ( header_length != 4 ){
         std::cerr << "Wrong header length = " << header_length << std::endl;
         error = true;
+        return word_t();
     }
 
     word_t result;
@@ -171,6 +172,8 @@ std::vector<word_t> Unpacker::ParseBuffer(const volatile uint32_t *buffer, const
 
         found.push_back(Extract_word(buffer+current_position, event_length, error));
         current_position += event_length;
+        if ( error )
+            break;
     }
 
     std::sort(found.begin(), found.end(), sort_func);
