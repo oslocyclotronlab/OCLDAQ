@@ -115,7 +115,7 @@ word_t Extract_word(const volatile uint32_t *buf, const int &size, bool &error)
     } else if ( header_length != 4 ){
         std::cerr << "Wrong header length = " << header_length << std::endl;
         error = true;
-        return word_t();
+        //return word_t();
     }
 
     word_t result;
@@ -123,7 +123,7 @@ word_t Extract_word(const volatile uint32_t *buf, const int &size, bool &error)
     result.adcdata = event_energy;
     result.cfddata = cfddata;
     result.timestamp = (int64_t(evttime_hi) << 32) | int64_t(evttime_lo);
-    result.trace = trace_t(trace_length);
+    //result.trace = trace_t(trace_length);
 
     switch (GetSamplingFrequency(result.address)) {
         case f100MHz:
@@ -143,13 +143,17 @@ word_t Extract_word(const volatile uint32_t *buf, const int &size, bool &error)
             break;
     }
 
+    while ( current_position < size )
+        current_position++;
+    return result;
 
-    for ( size_t i = 0 ; i < event_length - header_length ; ++i ){
+    /*for ( size_t i = 0 ; i < event_length - header_length ; ++i ){
         result.trace.trace[2*i] = ( buf[current_position] & 0xFFFF );
         result.trace.trace[2*i+1] = ( buf[current_position++] & 0xFFFF0000 ) >> 16;
+        current_position++;
     }
     error = false;
-    return result;
+    return result;*/
 }
 
 std::vector<word_t> Unpacker::ParseBuffer(const volatile uint32_t *buffer, const int &size, bool &error)
@@ -177,7 +181,6 @@ std::vector<word_t> Unpacker::ParseBuffer(const volatile uint32_t *buffer, const
     }
 
     std::sort(found.begin(), found.end(), sort_func);
-    error = false;
     return found;
 }
 

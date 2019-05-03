@@ -68,7 +68,7 @@ typedef struct {
     double cfdcorr;         //!< Correction from the CFD.
     int64_t timestamp;		//!< Timestamp in [ns].
     char cfdfail;           //!< Flag to tell if the CFD was forced or not.
-    trace_t trace;          //!< Class/structure containing the trace.
+    //trace_t trace;          //!< Class/structure containing the trace.
 
 } word_t;
 
