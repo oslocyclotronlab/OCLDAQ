@@ -32,7 +32,11 @@ enum {
     PPAC_ID     =   6,
     TPPAC_ID    =   7,
     EDESS_ID    =   8,
-    LABRCSP_ID  =   9
+    LABRCSP_ID  =   9,
+    LABRCFD_ID  =  10,
+    DECFD_ID    =  11,
+    ECFD_ID     =  12,
+    GUARD_ID    =  13
 };
 #endif // XIA
 
