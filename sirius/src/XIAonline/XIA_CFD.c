@@ -2,10 +2,6 @@
 
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
-
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -16,7 +12,7 @@ extern "C" {
 #define BIT13TO0	0x3FFF
 #define BIT12TO0	0x1FFF
 
-double XIA_CFD_Fraction_100MHz(uint16_t CFDvalue, char* fail)
+double XIA_CFD_Fraction_100MHz(uint16_t CFDvalue, bool* fail)
 {
 	double correction;
 	uint32_t cfdfailbit, timecfd;
@@ -28,7 +24,7 @@ double XIA_CFD_Fraction_100MHz(uint16_t CFDvalue, char* fail)
 	return correction;
 }
 
-double XIA_CFD_Fraction_250MHz(uint16_t CFDvalue, char* fail)
+double XIA_CFD_Fraction_250MHz(uint16_t CFDvalue, bool* fail)
 {
 	double correction;
 	uint32_t cfdfailbit, cfdtrigsource, timecfd;
@@ -41,7 +37,7 @@ double XIA_CFD_Fraction_250MHz(uint16_t CFDvalue, char* fail)
 	return correction;
 }
 
-double XIA_CFD_Fraction_500MHz(uint16_t CFDvalue, char* fail)
+double XIA_CFD_Fraction_500MHz(uint16_t CFDvalue, bool* fail)
 {
 	double correction;
 	uint32_t cfdtrigsource, timecfd;
@@ -91,7 +87,3 @@ double XIA_time_in_ns_500MHz(int64_t timestamp, uint16_t CFDvalue)
 	time_in_ns = time_in_ns + correction;
 	return time_in_ns;
 }
-
-#ifdef __cplusplus
-}
-#endif // __cplusplus

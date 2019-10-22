@@ -24,12 +24,21 @@ void sort_singles(std::vector<word_t> buffer)
         case labr:
             spec_fill(LABRSP_ID, buffer[i].adcdata, dinfo.detectorNum);
             spec_fill(LABRCSP_ID, gain_labr[dinfo.detectorNum]*buffer[i].adcdata + shift_labr[dinfo.detectorNum], dinfo.detectorNum);
+            if ( buffer[i].cfdfail )
+                spec_fill(LABRCFD_ID, buffer[i].adcdata, dinfo.detectorNum);
             break;
         case deDet:
             spec_fill(DESP_ID, buffer[i].adcdata, dinfo.detectorNum + 8*dinfo.telNum);
+            if ( buffer[i].cfdfail )
+                spec_fill(DECFD_ID, buffer[i].adcdata, dinfo.detectorNum);
             break;
         case eDet:
             spec_fill(ESP_ID, buffer[i].adcdata, dinfo.detectorNum);
+            if ( buffer[i].cfdfail )
+                spec_fill(ECFD_ID, buffer[i].adcdata, dinfo.detectorNum);
+            break;
+        case eGuard:
+            spec_fill(GUARD_ID, buffer[i].adcdata, dinfo.detectorNum);
             break;
         case ppac:
             spec_fill(PPAC_ID, buffer[i].adcdata, dinfo.detectorNum);
