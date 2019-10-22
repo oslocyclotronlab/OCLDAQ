@@ -7,11 +7,6 @@
  * from the internal CFD algorithm of XIA.
  */
 
-// We should probably compile it as C and not C++,
-// as C should, in principle be faster.
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
 
 #include <stdint.h>
 
@@ -24,7 +19,7 @@ extern "C" {
  *  if the CFD value should be voided.
  */
 double XIA_CFD_Fraction_100MHz(uint16_t CFDvalue,	/*!< Factional value recorded by the XIA unit.	*/
-                               char* fail           /*! Fail flag. Set to 1 if fail bit is 1.	    */);
+                               bool* fail           /*! Fail flag. Set to 1 if fail bit is 1.	    */);
 
 /*! Calculates the fractional value for the zero
  *  crossing of a signal measured with a 250MHz
@@ -35,7 +30,7 @@ double XIA_CFD_Fraction_100MHz(uint16_t CFDvalue,	/*!< Factional value recorded 
  *  if the CFD value should be voided.
  */
 double XIA_CFD_Fraction_250MHz(uint16_t CFDvalue,	/*!< Factional value recorded by the XIA unit.	*/
-                               char* fail           /*!< Fail flag. Set to 1 if fail bit is 1.	    */);
+                               bool* fail           /*!< Fail flag. Set to 1 if fail bit is 1.	    */);
 
 /*! Calculates the fractional value for the zero
  *  crossing of a signal measured with a 500MHz
@@ -48,7 +43,7 @@ double XIA_CFD_Fraction_250MHz(uint16_t CFDvalue,	/*!< Factional value recorded 
  *  the same result as the fail bit in the other models.
  */
 double XIA_CFD_Fraction_500MHz(uint16_t CFDvalue,   /*!< Factional value recorded by the XIA unit.						*/
-                               char* fail           /*!< Fail flag. Set to 1 if bit 15, 14 and 13 of CFDvalue is 1.		*/);
+                               bool* fail           /*!< Fail flag. Set to 1 if bit 15, 14 and 13 of CFDvalue is 1.		*/);
 
 
 
@@ -97,9 +92,3 @@ double XIA_time_in_ns_250MHz(int64_t timestamp,	/*!< Course FPGA timestamp					*
  */
 double XIA_time_in_ns_500MHz(int64_t timestamp,	/*!< Course FPGA timestamp					*/
                              uint16_t CFDvalue	/*!< Fractional value found by the XIA unit	*/);
-
-
-#ifdef __cplusplus
-}
-#endif // __cplusplus
-#endif // XIA_CFD_H

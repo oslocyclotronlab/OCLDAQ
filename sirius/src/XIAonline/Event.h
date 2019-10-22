@@ -37,7 +37,7 @@ typedef struct {
     uint16_t cfddata;       //!< Fractional difference of before/after zero-crossing.
     double cfdcorr;         //!< Correction from the CFD.
     int64_t timestamp;		//!< Timestamp in [ns].
-    char cfdfail;           //!< Flag to tell if the CFD was forced or not.
+    bool cfdfail;           //!< Flag to tell if the CFD was forced or not.
 } word_t;
 
 
