@@ -19,8 +19,14 @@ double XIA_CFD_Fraction_100MHz(uint16_t CFDvalue, bool* fail)
 
 	cfdfailbit = ((CFDvalue & BIT15TO15) >> 15);
 	timecfd = ((CFDvalue & BIT14TO0) >> 0);
+	if ( timecfd == 0 ){
+		correction = 0;
+		*fail = true;
+		return correction;
+	}
+
 	correction = (10*(double)timecfd)/32768.0;
-    *fail = cfdfailbit;
+    *fail = ( cfdfailbit > 0 );
 	return correction;
 }
 
@@ -32,8 +38,15 @@ double XIA_CFD_Fraction_250MHz(uint16_t CFDvalue, bool* fail)
 	cfdfailbit = ((CFDvalue & BIT15TO15) >> 15);
 	cfdtrigsource = ((CFDvalue & BIT14TO14) >> 14);
 	timecfd = ((CFDvalue & BIT13TO0) >> 0);
+
+	if ( timecfd == 0 ){
+		correction = 0;
+		*fail = true;
+		return correction;
+	}
+
 	correction = (((double)timecfd)/16384.0 - cfdtrigsource)*4.0;
-    *fail = cfdfailbit;
+    *fail = ( cfdfailbit > 0 );
 	return correction;
 }
 
@@ -45,14 +58,14 @@ double XIA_CFD_Fraction_500MHz(uint16_t CFDvalue, bool* fail)
 	cfdtrigsource = ((CFDvalue & BIT15TO13) >> 13);
 	timecfd = ((CFDvalue & BIT12TO0) >> 0);
 	correction = (((double)timecfd)/8192.0 + cfdtrigsource - 1.0)*2.0;
-    *fail = (cfdtrigsource >= 7) ? 1 : 0;
+    *fail = (cfdtrigsource > 4);
 	return correction;
 }
 
 double XIA_time_in_ns_100MHz(int64_t timestamp, uint16_t CFDvalue)
 {
 	double correction, time_in_ns;
-    char fail;
+    bool fail;
 
 	correction = XIA_CFD_Fraction_100MHz(CFDvalue, &fail);
 	correction = fail ? 10.*((double)rand()/RAND_MAX) : correction;
@@ -65,7 +78,7 @@ double XIA_time_in_ns_100MHz(int64_t timestamp, uint16_t CFDvalue)
 double XIA_time_in_ns_250MHz(int64_t timestamp, uint16_t CFDvalue)
 {
 	double correction, time_in_ns;
-    char fail;
+    bool fail;
 
 	correction = XIA_CFD_Fraction_250MHz(CFDvalue, &fail);
 	correction = fail ? 4.0*((double)rand()/RAND_MAX - 1) : correction;
@@ -78,7 +91,7 @@ double XIA_time_in_ns_250MHz(int64_t timestamp, uint16_t CFDvalue)
 double XIA_time_in_ns_500MHz(int64_t timestamp, uint16_t CFDvalue)
 {
 	double correction, time_in_ns;
-    char fail;
+    bool fail;
 
 	correction = XIA_CFD_Fraction_500MHz(CFDvalue, &fail);
 	correction = fail ? 2.0*(7.*(double)rand()/RAND_MAX - 1) : correction;
