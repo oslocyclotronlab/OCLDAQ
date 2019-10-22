@@ -478,10 +478,11 @@ int main(int argc, char* argv[])
         std::cerr << "engine: Failed to attach shared memory." << std::endl;
         exit(EXIT_FAILURE);
     }
-    unsigned int* time_us = &buffer[ENGINE_TIME_US];
-    unsigned int* time_s  = &buffer[ENGINE_TIME_S ];
-    unsigned int* data    = buffer + buffer[ENGINE_DATA_START];
-    const unsigned int datalen = buffer[ENGINE_DATA_SIZE];
+    unsigned int* time_us       = &buffer[ENGINE_TIME_US];
+    unsigned int* time_s        = &buffer[ENGINE_TIME_S ];
+    unsigned int* data          = buffer + buffer[ENGINE_DATA_START];
+    unsigned int* first_header  = &buffer[ENGINE_FIRST_HEADER];
+    const unsigned int datalen  = buffer[ENGINE_DATA_SIZE];
     /*const unsigned int*/ datalen_char = datalen*sizeof(int);
 
     // We will now boot before anything else will happend.
@@ -506,7 +507,7 @@ int main(int argc, char* argv[])
                 // a buffer is available; reset timestamp
                 *time_us = *time_s = 0;
                 // transfer the buffer
-                if( !xiacontr->XIA_fetch_buffer(data, datalen) ) {
+                if( !xiacontr->XIA_fetch_buffer(data, datalen, first_header) ) {
                     // the buffer was not transferred completely, stop
                     do_stop();
                 } else {

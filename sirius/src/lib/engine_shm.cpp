@@ -42,6 +42,7 @@ unsigned int* engine_shm_attach(bool write)
         shared_mem[ENGINE_TIME_S]       = 0;
         shared_mem[ENGINE_DATA_START] = BUFFER_OFF; // TODO: take these from vme cpu
         shared_mem[ENGINE_DATA_SIZE]  = BUFFER_SIZE;
+        shared_mem[ENGINE_FIRST_HEADER] = 0;
     }
     return shared_mem;
 }
