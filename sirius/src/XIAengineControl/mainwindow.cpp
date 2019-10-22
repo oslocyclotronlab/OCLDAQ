@@ -170,6 +170,7 @@ void MainWindow::UpdateLimits()
     // Trigger sample limits
     ui->peak_sample->setMinimum( -FASTFILTER_MAX_LEN * pow(2.0, current_slow_filter) / adcFactor );
     ui->peak_sample->setMaximum( SLOWFILTER_MAX_LEN * pow(2.0, current_slow_filter) / adcFactor );
+    ui->peak_sample->setDisabled(true);
 
     // Tau limits
     ui->tau->setMinimum(0);
@@ -553,19 +554,19 @@ void MainWindow::on_WriteButton_clicked()
     Pixie16ReadSglChanPar(const_cast<char *>("ENERGY_RISETIME"), &tmpD, module, channel);
     if (tmpD != ui->eRiseTime->value()){
         Pixie16WriteSglChanPar(const_cast<char *>("ENERGY_RISETIME"), ui->eRiseTime->value(), module, channel);
-        Pixie16WriteSglChanPar(const_cast<char *>("PEAKSAMPLE"), ui->peak_sample->value(), module, channel);
+    //    Pixie16WriteSglChanPar(const_cast<char *>("PEAKSAMPLE"), ui->peak_sample->value(), module, channel);
     }
     
     Pixie16ReadSglChanPar(const_cast<char *>("ENERGY_FLATTOP"), &tmpD, module, channel);
     if (tmpD != ui->eFlatTop->value()){
         Pixie16WriteSglChanPar(const_cast<char *>("ENERGY_FLATTOP"), ui->eFlatTop->value(), module, channel);
-        Pixie16WriteSglChanPar(const_cast<char *>("PEAKSAMPLE"), ui->peak_sample->value(), module, channel);
+    //    Pixie16WriteSglChanPar(const_cast<char *>("PEAKSAMPLE"), ui->peak_sample->value(), module, channel);
     }
 
-    Pixie16ReadSglChanPar(const_cast<char *>("PEAKSAMPLE"), &tmpD, module, channel);
-    if (tmpD != ui->peak_sample->value()){
-        Pixie16WriteSglChanPar(const_cast<char *>("PEAKSAMPLE"), ui->peak_sample->value(), module, channel);
-    }
+    //Pixie16ReadSglChanPar(const_cast<char *>("PEAKSAMPLE"), &tmpD, module, channel);
+    //if (tmpD != ui->peak_sample->value()){
+    //    Pixie16WriteSglChanPar(const_cast<char *>("PEAKSAMPLE"), ui->peak_sample->value(), module, channel);
+   // }
 
     Pixie16ReadSglChanPar(const_cast<char *>("TAU"), &tmpD, module, channel);
     if (tmpD != ui->tau->value())
