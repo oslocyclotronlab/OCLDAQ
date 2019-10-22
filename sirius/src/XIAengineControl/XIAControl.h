@@ -28,8 +28,12 @@ class WriteTerminal;
 #define SIRIUS_BUFFER_SIZE 32768
 #define SCALER_FILE_NAME_IN "scalers_in.dat"
 #define SCALER_FILE_NAME_OUT "scalers_out.dat"
-#define MAX_RAWDATA_LEN 16 // Maximum length of a raw event without any trace
 #define PRESET_MAX_MODULES 24  // Maximum number of modules. As in the XIA API
+#if REMOVE_TRACE // Set at compile time!
+    #define MAX_RAWDATA_LEN 18 // Maximum length of a raw event with trace
+#else
+    #define MAX_RAWDATA_LEN 4114
+#endif // REMOVE_TRACE
 
 #define SHAREDMEMORYDATAOFFSET 10
 #define SHAREDMEMORYDATASTATISTICS 448
@@ -88,7 +92,7 @@ public:
     bool XIA_check_buffer_ST(int bufsize);
 
     // Ask for a buffer of data to be committed.
-    bool XIA_fetch_buffer(uint32_t *buffer, int bufsize);
+    bool XIA_fetch_buffer(uint32_t *buffer, int bufsize, unsigned int *first_header);
 
     // Ask the class to boot the XIA modules.
     bool XIA_boot_all();
