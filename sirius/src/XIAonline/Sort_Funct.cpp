@@ -30,7 +30,7 @@ void sort_singles(std::vector<word_t> buffer)
         case deDet:
             spec_fill(DESP_ID, buffer[i].adcdata, dinfo.detectorNum + 8*dinfo.telNum);
             if ( buffer[i].cfdfail )
-                spec_fill(DECFD_ID, buffer[i].adcdata, dinfo.detectorNum);
+                spec_fill(DECFD_ID, buffer[i].adcdata, dinfo.detectorNum + 8*dinfo.telNum);
             break;
         case eDet:
             spec_fill(ESP_ID, buffer[i].adcdata, dinfo.detectorNum);
