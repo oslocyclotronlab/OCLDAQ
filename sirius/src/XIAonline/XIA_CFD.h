@@ -92,3 +92,5 @@ double XIA_time_in_ns_250MHz(int64_t timestamp,	/*!< Course FPGA timestamp					*
  */
 double XIA_time_in_ns_500MHz(int64_t timestamp,	/*!< Course FPGA timestamp					*/
                              uint16_t CFDvalue	/*!< Fractional value found by the XIA unit	*/);
+
+#endif // XIA_CFD_H
