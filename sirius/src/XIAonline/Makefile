@@ -23,7 +23,7 @@ CXX_SRC =	main.cpp \
 			spectrum_rw.cpp
 
 C_SRC	=	experimentsetup.c \
-			XIA_CFD.c
+			XIA_CFD.cpp
 
 C_OBJ = $(C_SRC:%.c=%.o)
 CXX_OBJ = $(CXX_SRC:%.cpp=%.o)
