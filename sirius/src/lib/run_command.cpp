@@ -106,8 +106,10 @@ bool run_forground(const std::string& cmd, const std::vector<std::string>& xargs
     // copy to a string array
     const unsigned NARGV = 128;
     char* argv[NARGV];
-    if( es==0 || es + xargs.size() > NARGV-1 )
-        ::exit(EXIT_FAILURE);
+    if( es==0 || es + xargs.size() > NARGV-1 ){
+        //::exit(EXIT_FAILURE);
+        std::cout << "Error: args missing or too manyh args!" << std::endl;
+    }
     unsigned int i;
     for( i=0; i<es; ++i )
         argv[i] = ::strdup(expanded[i].c_str());
@@ -122,9 +124,11 @@ bool run_forground(const std::string& cmd, const std::vector<std::string>& xargs
 #endif
 
     // execute program with arguments
-    if( ::execvp(argv[0], argv) < 0 )
+    if( ::execvp(argv[0], argv) < 0 ){
         // reached in case of execvp failure
         ::exit(EXIT_FAILURE);
+        std::cout << "Error executing: " << argv[0] << std::endl;
+    }
 
     return true; // not reached, but compiler does not know
 }
@@ -219,8 +223,8 @@ bool command_list::run(const std::string& cmd_key, const std::vector<std::string
     if( cmd.empty() )
         return false;
 
-    //return run_forground(cmd, xargs);
-    return run_background(cmd, xargs);
+    return run_forground(cmd, xargs);
+    //return run_background(cmd, xargs);
 }
 
 // ########################################################################
