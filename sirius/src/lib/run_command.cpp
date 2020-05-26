@@ -219,7 +219,8 @@ bool command_list::run(const std::string& cmd_key, const std::vector<std::string
     if( cmd.empty() )
         return false;
 
-    return run_forground(cmd, xargs);
+    //return run_forground(cmd, xargs);
+    return run_background(cmd, xargs);
 }
 
 // ########################################################################
