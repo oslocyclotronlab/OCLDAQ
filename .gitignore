@@ -1,6 +1,7 @@
 # We don't need to keep DS_Store files
 .DS_Store
 XIAsort
+.idea
 
 # C++ objects and libs
 *.slo
