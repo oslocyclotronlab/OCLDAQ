@@ -5,8 +5,6 @@ project(OCLDAQ VERSION 1.0.0 LANGUAGES C CXX)
 option(ENABLE_ENGINE "Build XIAengine" OFF)
 option(ENABLE_RUPDATE "Build rupdate" ON)
 
-set(CMAKE_LIBRARY_PREFIX "lib")
-
 ##############################################
 # Declare dependencies
 
@@ -244,8 +242,8 @@ if ( ENABLE_RUPDATE )
     install(TARGETS master XIAonline rupdate-bin
             RUNTIME DESTINATION bin)
     install(TARGETS rupdate
-            LIBRARY DESTINATION CMAKE_LIBRARY_PREFIX)
+            LIBRARY DESTINATION lib)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/librupdate_rdict.pcm ${CMAKE_CURRENT_BINARY_DIR}/librupdate.rootmap
-            DESTINATION CMAKE_LIBRARY_PREFIX)
+            DESTINATION lib)
 endif()
 
