@@ -82,12 +82,7 @@ FILE(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/src/master/null.cpp)
 add_executable(acq_master
         src/master/null.cpp)
 
-target_link_libraries(acq_master
-        ${PROJECT_NAME}::sirius
-        master
-        X11::X11
-        X11::Xt
-        ${MOTIF_LIBRARIES})
+target_link_libraries(acq_master master)
 
 #add_custom_target(acq_master
 #    COMMAND ${CMAKE_CXX_COMPILER} -o acq_master CMakeFiles/master.dir/src/master/*.o libsirius.a -lX11 -lXm -lXt
