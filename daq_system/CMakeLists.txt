@@ -130,7 +130,7 @@ if ( ENABLE_RUPDATE )
     target_compile_options(rupdate PRIVATE -Wall -W -fPIC)
 
     target_link_libraries(rupdate
-        PRIVATE
+        PUBLIC
             ${PROJECT_NAME}::sirius
             ROOT::Core
             ROOT::Gpad
