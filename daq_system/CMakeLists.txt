@@ -75,7 +75,7 @@ target_link_libraries(master
         ${PROJECT_NAME}::sirius
         X11::X11
         X11::Xt
-        ${MOTIF_LIBS}
+        ${MOTIF_LIBRARIES}
 )
 
 FILE(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/src/master/null.cpp)
