@@ -230,22 +230,20 @@ endif()
 ##########################################
 ###########  Install commands  ###########
 
-if ( ENABLE_ENGINE AND ENABLE_RUPDATE )
-    install(TARGETS master XIAonline XIAengine rupdate-bin
+install(TARGETS master XIAonline
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib)
+
+if ( ENABLE_ENGINE )
+    install(TARGETS XIAengine
             RUNTIME DESTINATION bin)
-    install(TARGETS rupdate
-            LIBRARY DESTINATION lib)
-elseif ( ENABLE_ENGINE )
-    install(TARGETS master XIAonline XIAengine
-            RUNTIME DESTINATION bin)
-elseif ( ENABLE_RUPDATE )
+endif()
+if ( ENABLE_RUPDATE )
     install(TARGETS master XIAonline rupdate-bin
             RUNTIME DESTINATION bin)
     install(TARGETS rupdate
             LIBRARY DESTINATION lib)
-else()
-    install(TARGETS master XIAonline
-            RUNTIME DESTINATION bin
-            LIBRARY DESTINATION lib)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/librupdate_rdict.pcm ${CMAKE_CURRENT_SOURCE_DIR}/librupdate.rootmap
+            DESTINATION lib)
 endif()
 
