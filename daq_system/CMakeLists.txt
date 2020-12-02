@@ -74,9 +74,8 @@ target_include_directories(master
 target_link_libraries(master
     PRIVATE
         ${PROJECT_NAME}::sirius
-        X11::X11
-        X11::Xt
-        ${MOTIF_LIBRARIES}
+        X11
+        Xt
         Xm
 )
 
