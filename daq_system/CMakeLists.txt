@@ -242,8 +242,8 @@ if ( ENABLE_RUPDATE )
     install(TARGETS master XIAonline rupdate-bin
             RUNTIME DESTINATION bin)
     install(TARGETS rupdate
-            LIBRARY DESTINATION lib)
+            LIBRARY DESTINATION lib64)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/librupdate_rdict.pcm ${CMAKE_CURRENT_BINARY_DIR}/librupdate.rootmap
-            DESTINATION lib)
+            DESTINATION lib64)
 endif()
 
