@@ -239,7 +239,7 @@ if ( ENABLE_ENGINE )
             RUNTIME DESTINATION bin)
 endif()
 if ( ENABLE_RUPDATE )
-    install(TARGETS master XIAonline rupdate-bin
+    install(TARGETS XIAonline rupdate-bin
             RUNTIME DESTINATION bin)
     install(TARGETS rupdate
             LIBRARY DESTINATION lib64)
