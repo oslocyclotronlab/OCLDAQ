@@ -31,6 +31,9 @@ add_library(sirius STATIC
 
 add_library(${PROJECT_NAME}::sirius ALIAS sirius)
 
+target_compile_definitions(sirius PRIVATE _FILE_OFFSET_BITS=64)
+target_compile_options(sirius PRIVATE -fPIC -W -Wall)
+
 target_include_directories(sirius
     PUBLIC
         $<INSTALL_INTERFACE:include>
@@ -40,6 +43,8 @@ target_include_directories(sirius
         ${CMAKE_CURRENT_SOURCE_DIR}/src/sirius
         ${CMAKE_CURRENT_SOURCE_DIR}/include/sirius
 )
+
+target_link_libraries(sirius PUBLIC m)
 
 ##############     master     ################
 # This is the GUI for starting/stopping runs.
@@ -72,6 +77,7 @@ target_link_libraries(master
         X11::X11
         X11::Xt
         ${MOTIF_LIBRARIES}
+        Xm
 )
 
 ############     XIAonline     ##############
