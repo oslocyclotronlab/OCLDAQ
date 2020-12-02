@@ -243,7 +243,7 @@ if ( ENABLE_RUPDATE )
             RUNTIME DESTINATION bin)
     install(TARGETS rupdate
             LIBRARY DESTINATION lib)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/librupdate_rdict.pcm ${CMAKE_CURRENT_SOURCE_DIR}/librupdate.rootmap
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/librupdate_rdict.pcm ${CMAKE_CURRENT_BINARY_DIR}/librupdate.rootmap
             DESTINATION lib)
 endif()
 
