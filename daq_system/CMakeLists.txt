@@ -118,10 +118,13 @@ if ( ENABLE_RUPDATE )
                 -I${CMAKE_CURRENT_SOURCE_DIR}/include/sirius
             LINKDEF ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/linkdef.h)
 
-    add_executable(rupdate
+    add_library(rupdate
             ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/io_root.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/rupdate.cpp
             G__rupdate)
+
+    add_executable(r_update
+            src/rupdate/main.cpp)
 
     target_compile_definitions(rupdate PUBLIC XIA=1)
     target_compile_options(rupdate PRIVATE -Wall -W -fPIC)
@@ -134,6 +137,8 @@ if ( ENABLE_RUPDATE )
             ROOT::Hist
             ROOT::Gui
     )
+
+    target_link_libraries(r_update PRIVATE rupdate)
 
 
 endif()
