@@ -3,6 +3,7 @@ project(OCLDAQ VERSION 1.0.0 LANGUAGES C CXX)
 
 
 option(ENABLE_ENGINE "Build XIAengine" OFF)
+option(ENABLE_RUPDATE "Build rupdate" ON)
 
 ##############################################
 # Declare dependencies
@@ -102,6 +103,35 @@ set_target_properties(XIAonline PROPERTIES
             CXX_EXTENSIONS NO)
 
 target_link_libraries(XIAonline ${PROJECT_NAME}::sirius)
+
+if ( ENABLE_RUPDATE )
+    ###########     rupdate     #############
+    # This is the rupdate for viewing hists.
+    find_package(ROOT CONFIG REQUIRED)
+    include("${ROOT_DIR}/RootMacros.cmake")
+
+    root_generate_dictionary(G__rupdate
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/io_root.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/rupdate.h
+            OPTIONS
+                -I${CMAKE_CURRENT_SOURCE_DIR}/include
+                -I${CMAKE_CURRENT_SOURCE_DIR}/include/sirius
+            LINKDEF ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/linkdef.h)
+
+    add_executable(rupdate
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/io_root.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/rupdate.cpp
+            G__rupdate)
+
+    target_link_libraries(rupdate
+        PRIVATE
+            ${PROJECT_NAME}::sirius
+            ROOT::Core
+            ROOT::Gpad
+            ROOT::Hist
+            ROOT::Gui
+    )
+endif()
 
 if( ENABLE_ENGINE )
 
