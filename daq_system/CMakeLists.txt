@@ -48,21 +48,20 @@ target_link_libraries(sirius PUBLIC m)
 ##############     master     ################
 # This is the GUI for starting/stopping runs.
 
-add_executable(master
-    src/master/acq_clear.cpp
-    src/master/acq_dump.cpp
-    src/master/acq_gui.cpp
-    src/master/acq_init.cpp
-    src/master/acq_reload.cpp
-    src/master/acq_start.cpp
-    src/master/acq_status.cpp
-    src/master/acq_stop.cpp
-    src/master/acq_storage.cpp
-    src/master/io_xtapp.cpp
-    src/master/m_engine.cpp
-    src/master/m_sort.cpp
-    src/master/net_client.cpp
-)
+add_library(master STATIC
+        src/master/acq_clear.cpp
+        src/master/acq_dump.cpp
+        src/master/acq_gui.cpp
+        src/master/acq_init.cpp
+        src/master/acq_reload.cpp
+        src/master/acq_start.cpp
+        src/master/acq_status.cpp
+        src/master/acq_stop.cpp
+        src/master/acq_storage.cpp
+        src/master/io_xtapp.cpp
+        src/master/m_engine.cpp
+        src/master/m_sort.cpp
+        src/master/net_client.cpp)
 
 target_include_directories(master
     PRIVATE
@@ -70,22 +69,35 @@ target_include_directories(master
         ${MOTIF_INCLUDE_DIR}
 )
 
+target_compile_options(master PRIVATE -Wall -W -fPIC)
 target_link_libraries(master
-    PRIVATE
+    PUBLIC
         ${PROJECT_NAME}::sirius
-        X11
-        Xt
-        Xm
+        X11::X11
+        X11::Xt
+        ${MOTIF_LIBS}
 )
 
-add_custom_target(acq_master
-    COMMAND ${CMAKE_CXX_COMPILER} -o acq_master CMakeFiles/master.dir/src/master/*.o libsirius.a -lX11 -lXm -lXt
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libsirius.a ${CMAKE_CURRENT_BINARY_DIR}/master
-    COMMENT "Linking acq_master"
-)
+FILE(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/src/master/null.cpp)
+add_executable(acq_master
+        src/master/null.cpp)
 
-add_custom_command(TARGET master POST_BUILD
+target_link_libraries(acq_master
+        ${PROJECT_NAME}::sirius
+        master
+        X11::X11
+        X11::Xt
+        ${MOTIF_LIBRARIES})
+
+#add_custom_target(acq_master
+#    COMMAND ${CMAKE_CXX_COMPILER} -o acq_master CMakeFiles/master.dir/src/master/*.o libsirius.a -lX11 -lXm -lXt
+#    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+#    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libsirius.a ${CMAKE_CURRENT_BINARY_DIR}/master
+#    COMMENT "Linking acq_master"
+#)
+
+
+add_custom_command(OUTPUT master POST_BUILD
     COMMAND ${CMAKE_CXX_COMPILER} -o acq_master CMakeFiles/master.dir/src/master/*.o libsirius.a -lX11 -lXm -lXt
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS sirius
