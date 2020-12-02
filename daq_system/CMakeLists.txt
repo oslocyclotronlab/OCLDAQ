@@ -226,4 +226,7 @@ endif()
 ##########################################
 ###########  Install commands  ###########
 
-install(TARGETS master)
+if ( ENABLE_ENGINE AND ENABLE_RUPDATE )
+install(TARGETS master XIAonline XIAengine rupdate-bin rupdate
+        DESTINATION bin
+        DESTINATION lib)
