@@ -73,26 +73,10 @@ target_compile_options(master PRIVATE -Wall -W -fPIC)
 target_link_libraries(master
     PUBLIC
         ${PROJECT_NAME}::sirius
+        ${MOTIF_LIBRARIES} # !!!!!!!IMPORTANT MOTIF HAS TO BE BEFORE Xt!!!!!!
         X11::X11
         X11::Xt
-        ${MOTIF_LIBRARIES}
 )
-
-add_custom_target(acq_master
-    COMMAND ${CMAKE_CXX_COMPILER} -o acq_master CMakeFiles/master.dir/src/master/*.o libsirius.a -lX11 -lXm -lXt
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libsirius.a ${CMAKE_CURRENT_BINARY_DIR}/master
-    COMMENT "Linking acq_master"
-)
-
-
-#add_custom_command(OUTPUT master POST_BUILD
-#    COMMAND ${CMAKE_CXX_COMPILER} -o acq_master CMakeFiles/master.dir/src/master/*.o libsirius.a -lX11 -lXm -lXt
-#    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-#    DEPENDS sirius
-#)
-
-#set_target_properties(acq_master PROPERTIES TYPE EXECUTABLE)
 
 ############     XIAonline     ##############
 # Online sorting of the data.
