@@ -227,6 +227,20 @@ endif()
 ###########  Install commands  ###########
 
 if ( ENABLE_ENGINE AND ENABLE_RUPDATE )
-install(TARGETS master XIAonline XIAengine rupdate-bin rupdate
-        DESTINATION bin
-        DESTINATION lib)
+    install(TARGETS master XIAonline XIAengine rupdate-bin rupdate
+            DESTINATION bin
+            DESTINATION lib)
+elseif ( ENABLE_ENGINE )
+    install(TARGETS master XIAonline XIAengine
+            DESTINATION bin
+            DESTINATION lib)
+elseif ( ENABLE_RUPDATE )
+    install(TARGETS master XIAonline rupdate-bin rupdate
+            DESTINATION bin
+            DESTINATION lib)
+else()
+    install(TARGETS master XIAonline
+            DESTINATION bin
+            DESTINATION lib)
+endif()
+
