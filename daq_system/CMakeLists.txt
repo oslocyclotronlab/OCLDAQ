@@ -5,6 +5,8 @@ project(OCLDAQ VERSION 1.0.0 LANGUAGES C CXX)
 option(ENABLE_ENGINE "Build XIAengine" OFF)
 option(ENABLE_RUPDATE "Build rupdate" ON)
 
+option(CMAKE_LIBRARY_PREFIX "Library folder" "lib")
+
 ##############################################
 # Declare dependencies
 
@@ -141,8 +143,8 @@ if ( ENABLE_RUPDATE )
     target_link_libraries(rupdate-bin PRIVATE rupdate)
     set_target_properties(rupdate-bin PROPERTIES OUTPUT_NAME rupdate)
 
-    #set_property(TARGET rupdate PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
-    #set_property(TARGET rupdate-bin PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
+    set_property(TARGET rupdate PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
+    set_property(TARGET rupdate-bin PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 
 endif()
@@ -242,8 +244,8 @@ if ( ENABLE_RUPDATE )
     install(TARGETS master XIAonline rupdate-bin
             RUNTIME DESTINATION bin)
     install(TARGETS rupdate
-            LIBRARY DESTINATION lib)
+            LIBRARY DESTINATION CMAKE_LIBRARY_PREFIX)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/librupdate_rdict.pcm ${CMAKE_CURRENT_BINARY_DIR}/librupdate.rootmap
-            DESTINATION lib)
+            DESTINATION CMAKE_LIBRARY_PREFIX)
 endif()
 
