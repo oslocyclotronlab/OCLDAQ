@@ -228,19 +228,19 @@ endif()
 
 if ( ENABLE_ENGINE AND ENABLE_RUPDATE )
     install(TARGETS master XIAonline XIAengine rupdate-bin rupdate
-            DESTINATION bin
-            DESTINATION lib)
+            RUNTIME DESTINATION bin
+            LIBRARY DESTINATION lib)
 elseif ( ENABLE_ENGINE )
     install(TARGETS master XIAonline XIAengine
-            DESTINATION bin
-            DESTINATION lib)
+            RUNTIME DESTINATION bin
+            LIBRARY DESTINATION lib)
 elseif ( ENABLE_RUPDATE )
     install(TARGETS master XIAonline rupdate-bin rupdate
-            DESTINATION bin
-            DESTINATION lib)
+            RUNTIME DESTINATION bin
+            LIBRARY DESTINATION lib)
 else()
     install(TARGETS master XIAonline
-            DESTINATION bin
-            DESTINATION lib)
+            RUNTIME DESTINATION bin
+            LIBRARY DESTINATION lib)
 endif()
 
