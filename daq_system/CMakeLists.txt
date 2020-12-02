@@ -48,7 +48,7 @@ target_link_libraries(sirius PUBLIC m)
 ##############     master     ################
 # This is the GUI for starting/stopping runs.
 
-add_library(master STATIC
+add_executable(master
         src/master/acq_clear.cpp
         src/master/acq_dump.cpp
         src/master/acq_gui.cpp
@@ -77,12 +77,6 @@ target_link_libraries(master
         X11::Xt
         ${MOTIF_LIBRARIES}
 )
-
-FILE(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/src/master/null.cpp)
-add_executable(acq_master
-        src/master/null.cpp)
-
-target_link_libraries(acq_master master)
 
 #add_custom_target(acq_master
 #    COMMAND ${CMAKE_CXX_COMPILER} -o acq_master CMakeFiles/master.dir/src/master/*.o libsirius.a -lX11 -lXm -lXt
