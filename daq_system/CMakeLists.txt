@@ -118,7 +118,7 @@ if ( ENABLE_RUPDATE )
                 -I${CMAKE_CURRENT_SOURCE_DIR}/include/sirius
             LINKDEF ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/linkdef.h)
 
-    add_library(rupdate
+    add_library(rupdate SHARED
             ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/io_root.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/rupdate.cpp
             G__rupdate)
