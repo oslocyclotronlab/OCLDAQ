@@ -5,7 +5,7 @@ project(OCLDAQ VERSION 1.0.0 LANGUAGES C CXX)
 option(ENABLE_ENGINE "Build XIAengine" OFF)
 option(ENABLE_RUPDATE "Build rupdate" ON)
 
-set(CMAKE_LIBRARY_PREFIX "Library folder" "lib")
+set(CMAKE_LIBRARY_PREFIX "lib")
 
 ##############################################
 # Declare dependencies
