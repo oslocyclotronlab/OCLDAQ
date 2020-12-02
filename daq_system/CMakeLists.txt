@@ -123,6 +123,9 @@ if ( ENABLE_RUPDATE )
             ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/rupdate.cpp
             G__rupdate)
 
+    target_compile_definitions(rupdate PUBLIC XIA=1)
+    target_compile_options(rupdate PRIVATE -Wall -W -fPIC)
+
     target_link_libraries(rupdate
         PRIVATE
             ${PROJECT_NAME}::sirius
@@ -131,6 +134,8 @@ if ( ENABLE_RUPDATE )
             ROOT::Hist
             ROOT::Gui
     )
+
+
 endif()
 
 if( ENABLE_ENGINE )
