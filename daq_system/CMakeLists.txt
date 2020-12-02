@@ -141,8 +141,8 @@ if ( ENABLE_RUPDATE )
     target_link_libraries(rupdate-bin PRIVATE rupdate)
     set_target_properties(rupdate-bin PROPERTIES OUTPUT_NAME rupdate)
 
-    set_property(TARGET rupdate PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
-    set_property(TARGET rupdate-bin PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
+    #set_property(TARGET rupdate PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
+    #set_property(TARGET rupdate-bin PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 
 endif()
