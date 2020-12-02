@@ -123,11 +123,8 @@ if ( ENABLE_RUPDATE )
             ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/rupdate.cpp
             G__rupdate)
 
-    add_executable(r_update
-            src/rupdate/main.cpp)
-
     target_compile_definitions(rupdate PUBLIC XIA=1)
-    target_compile_options(rupdate PRIVATE -Wall -W -fPIC)
+    target_compile_options(rupdate PUBLIC -Wall -W -fPIC)
 
     target_link_libraries(rupdate
         PUBLIC
@@ -138,8 +135,11 @@ if ( ENABLE_RUPDATE )
             ROOT::Gui
     )
 
-    target_link_libraries(r_update PRIVATE rupdate)
+    add_executable(rupdate-bin
+            src/rupdate/main.cpp)
 
+    target_link_libraries(rupdate-bin PRIVATE rupdate)
+    set_target_properties(rupdate-bin PROPERTIES OUTPUT_NAME rupdate)
 
 endif()
 
