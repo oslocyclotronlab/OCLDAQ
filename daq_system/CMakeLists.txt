@@ -12,7 +12,6 @@ option(ENABLE_ENGINE "Build XIAengine" OFF)
 find_package(X11 REQUIRED)
 find_package(Motif REQUIRED)
 
-
 ##############################################
 # Create target and set properties
 
@@ -85,6 +84,14 @@ add_custom_target(acq_master
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libsirius.a ${CMAKE_CURRENT_BINARY_DIR}/master
     COMMENT "Linking acq_master"
 )
+
+add_custom_command(TARGET master POST_BUILD
+    COMMAND ${CMAKE_CXX_COMPILER} -o acq_master CMakeFiles/master.dir/src/master/*.o libsirius.a -lX11 -lXm -lXt
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS sirius
+)
+
+#set_target_properties(acq_master PROPERTIES TYPE EXECUTABLE)
 
 ############     XIAonline     ##############
 # Online sorting of the data.
@@ -187,7 +194,11 @@ if( ENABLE_ENGINE )
         Qt5::Widgets
         )
 
+
 endif()
 
 
+##########################################
+###########  Install commands  ###########
 
+install(TARGETS master)
