@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
-project(OCLDAQ VERSION 1.0.0 LANGUAGES C CXX)
+project(OCLDAQ VERSION 2.0.0 LANGUAGES C CXX)
 
 
-option(ENABLE_ENGINE "Build XIAengine" OFF)
+option(ENABLE_ENGINE "Build XIAengine" ON)
 option(ENABLE_RUPDATE "Build rupdate" ON)
 
 ##############################################
