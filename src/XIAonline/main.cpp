@@ -239,7 +239,7 @@ int main (int argc, char* argv[])
 
                 data_p = unpacker->ParseBuffer(data+(*first_header), datalen-(*first_header), error);
                 sort_singles(data_p);
-
+                pub.AddBuffer(data_p);
                 ++buffer_count;
                 evtbldr->SetBuffer(data_p);
                 if ( error )
