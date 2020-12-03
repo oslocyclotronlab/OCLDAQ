@@ -2419,7 +2419,7 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16BLcutFinder (
 
 PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16TauFinder (
 	unsigned short ModNum,   // Pixie module number
-	double         *Tau )    // 16 returned Tau values, in µs
+	double         *Tau )    // 16 returned Tau values, in us
 {
 
 	char           ErrMSG[MAX_ERRMSG_LENGTH];
