@@ -10,12 +10,8 @@
 #include "zmq.hpp"
 #include "readerwriterqueue.h"
 
-#if __GNUC__ < 10
-#include "jthread.hpp"
-#else
-#include <thread>
-#endif // __GNUC__ < 10
 
+#include <thread>
 #include <vector>
 #include <string>
 
@@ -35,7 +31,8 @@ private:
 
     queue_t queue;
 
-    std::jthread worker;
+    bool stop;
+    std::thread worker;
 
     //void worker_thread(std::stop_token token);
 

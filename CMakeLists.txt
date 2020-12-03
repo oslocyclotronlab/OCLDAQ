@@ -99,80 +99,62 @@ add_executable(XIAonline
     src/XIAonline/publisher.cpp
     src/XIAonline/publisher.h)
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 10) # GCC10 implements jthread!
-    target_include_directories(XIAonline
+target_include_directories(XIAonline
         PRIVATE
-            ${CMAKE_CURRENT_SOURCE_DIR}/src/XIAonline
-            ${CMAKE_CURRENT_SOURCE_DIR}/external/cppzmq
-            ${CMAKE_CURRENT_SOURCE_DIR}/external/readerwriterqueue
-            ${CMAKE_CURRENT_SOURCE_DIR}/external/cereal/include
-    )
-    set_target_properties(XIAonline PROPERTIES
-            CXX_STANDARD 20
-            CXX_STANDARD_REQUIRED YES
-            CXX_EXTENSIONS NO)
-else()
-    target_include_directories(XIAonline
-            PRIVATE
-            ${CMAKE_CURRENT_SOURCE_DIR}/src/XIAonline
-            ${CMAKE_CURRENT_SOURCE_DIR}/external/cppzmq
-            ${CMAKE_CURRENT_SOURCE_DIR}/external/readerwriterqueue
-            ${CMAKE_CURRENT_SOURCE_DIR}/external/cereal/include
-            ${CMAKE_CURRENT_SOURCE_DIR}/external/jthread/source
-    )
-    set_target_properties(XIAonline PROPERTIES
-            CXX_STANDARD 17
-            CXX_STANDARD_REQUIRED YES
-            CXX_EXTENSIONS NO)
-endif()
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/XIAonline
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/cppzmq
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/readerwriterqueue
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/cereal/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/jthread/source
+)
+set_target_properties(XIAonline PROPERTIES
+        CXX_STANDARD 11
+        CXX_STANDARD_REQUIRED YES
+        CXX_EXTENSIONS NO)
 
 target_link_libraries(XIAonline ${PROJECT_NAME}::sirius libzmq)
 
-if ( ENABLE_RUPDATE )
-    ###########     rupdate     #############
-    # This is the rupdate for viewing hists.
+###########     rupdate     #############
+# This is the rupdate for viewing hists.
 
-    include("${ROOT_DIR}/RootMacros.cmake")
+include("${ROOT_DIR}/RootMacros.cmake")
 
-    root_generate_dictionary(G__rupdate
-            ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/io_root.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/rupdate.h
-            OPTIONS
-                -I${CMAKE_CURRENT_SOURCE_DIR}/include
-                -I${CMAKE_CURRENT_SOURCE_DIR}/include/sirius
-            LINKDEF ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/linkdef.h)
+root_generate_dictionary(G__rupdate
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/io_root.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/rupdate.h
+        OPTIONS
+            -I${CMAKE_CURRENT_SOURCE_DIR}/include
+            -I${CMAKE_CURRENT_SOURCE_DIR}/include/sirius
+        LINKDEF ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/linkdef.h)
 
-    add_library(rupdate SHARED
-            ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/io_root.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/rupdate.cpp
-            G__rupdate)
+add_library(rupdate SHARED
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/io_root.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/rupdate.cpp
+        G__rupdate)
 
-    target_compile_definitions(rupdate PUBLIC XIA=1)
-    target_compile_options(rupdate PUBLIC -Wall -W -fPIC)
+target_compile_definitions(rupdate PUBLIC XIA=1)
+target_compile_options(rupdate PUBLIC -Wall -W -fPIC)
 
-    target_link_libraries(rupdate
-        PUBLIC
-            ${PROJECT_NAME}::sirius
-            ROOT::Core
-            ROOT::Gpad
-            ROOT::Hist
-            ROOT::Gui
-    )
+target_link_libraries(rupdate
+    PUBLIC
+        ${PROJECT_NAME}::sirius
+        ROOT::Core
+        ROOT::Gpad
+        ROOT::Hist
+        ROOT::Gui
+)
 
-    add_executable(rupdate-bin
-            src/rupdate/main.cpp)
+add_executable(rupdate-bin
+        src/rupdate/main.cpp)
 
-    target_link_libraries(rupdate-bin PRIVATE rupdate)
-    set_target_properties(rupdate-bin PROPERTIES OUTPUT_NAME rupdate)
+target_link_libraries(rupdate-bin PRIVATE rupdate)
+set_target_properties(rupdate-bin PROPERTIES OUTPUT_NAME rupdate)
 
-    set_property(TARGET rupdate PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
-    set_property(TARGET rupdate-bin PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
+set_property(TARGET rupdate PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
+set_property(TARGET rupdate-bin PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-
-endif()
-
-    ###########     XIAlibraries     #############
-    # This is the XIA libraries from XIA SDK
+###########     XIAlibraries     #############
+# This is the XIA libraries from XIA SDK
 
 add_library(xia STATIC
     src/xia/communication.c

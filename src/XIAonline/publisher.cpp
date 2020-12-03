@@ -12,12 +12,12 @@
 #define MAX_BUFFER_SIZE 131072
 #define INTERNAL_BUFFER_SIZE 65536
 
-void worker_thread(const std::stop_token &token, queue_t &queue, zmq::socket_t &publish_socket)
+void worker_thread(const bool &token, queue_t &queue, zmq::socket_t &publish_socket)
 {
     std::vector<word_t> words(INTERNAL_BUFFER_SIZE);
     word_t word;
     int num = 0;
-    while ( !token.stop_requested() ){
+    while ( !token ){
         // We will first fill 64k of entries in a vector, that vector has to be serialized.
         while ( words.size() < INTERNAL_BUFFER_SIZE ){
             if ( queue.wait_dequeue_timed(word, std::chrono::seconds(1)) ) {
@@ -45,6 +45,7 @@ publisher::publisher(const std::string& addr)
     : context()
     , publish_socket(context, zmq::socket_type::pub)
     , queue( MAX_BUFFER_SIZE )
+    , stop( false )
 {
     try {
         publish_socket.bind(addr);
@@ -55,7 +56,7 @@ publisher::publisher(const std::string& addr)
     }
 
     // Start worker thread
-    worker = std::jthread([&](const std::stop_token& token){ worker_thread(token, queue, publish_socket); });
+    worker = std::thread(worker_thread, std::ref(stop), std::ref(queue), std::ref(publish_socket));
 }
 
 void publisher::AddBuffer(const std::vector<word_t> &buffer)
@@ -67,7 +68,7 @@ void publisher::AddBuffer(const std::vector<word_t> &buffer)
 
 publisher::~publisher()
 {
-    worker.request_stop();
+    stop = true;
     if ( worker.joinable() ){
         worker.join();
     }
