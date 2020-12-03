@@ -5,5 +5,5 @@
 	path = external/readerwriterqueue
 	url = https://github.com/cameron314/readerwriterqueue.git
 [submodule "external/jthread"]
-    path = external/jthread
-    url = https://github.com/josuttis/jthread.git
+	path = external/jthread
+	url = https://github.com/josuttis/jthread.git

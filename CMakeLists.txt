@@ -14,6 +14,11 @@ find_package(ROOT CONFIG REQUIRED)
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Threads REQUIRED)
 
+include(external/cppzmq/libzmq-pkg-config/FindZeroMQ.cmake)
+if ( NOT ZeroMQ_FOUND )
+    message(ERROR "Could not find ZeroMQ libraries")
+endif()
+
 ##############################################
 # Create target and set properties
 
@@ -97,6 +102,8 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_
     target_include_directories(XIAonline
         PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/src/XIAonline
+            ${CMAKE_CURRENT_SOURCE_DIR}/external/cppzmq
+            ${CMAKE_CURRENT_SOURCE_DIR}/external/readerwriterqueue
     )
     set_target_properties(XIAonline PROPERTIES
             CXX_STANDARD 20
@@ -107,6 +114,7 @@ else()
             PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/src/XIAonline
             ${CMAKE_CURRENT_SOURCE_DIR}/external/cppzmq
+            ${CMAKE_CURRENT_SOURCE_DIR}/external/readerwriterqueue
     )
     set_target_properties(XIAonline PROPERTIES
             CXX_STANDARD 17
