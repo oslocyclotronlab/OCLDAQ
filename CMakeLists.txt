@@ -16,7 +16,7 @@ find_package(Threads REQUIRED)
 
 include(external/cppzmq/libzmq-pkg-config/FindZeroMQ.cmake)
 if ( NOT ZeroMQ_FOUND )
-    message(ERROR "Could not find ZeroMQ libraries")
+    message(FATAL_ERROR "Could not find ZeroMQ libraries")
 endif()
 
 ##############################################
@@ -96,7 +96,8 @@ add_executable(XIAonline
     src/XIAonline/spectrum_rw.cpp
     src/XIAonline/Unpacker.cpp
     src/XIAonline/XIA_CFD.cpp
-        src/XIAonline/publisher.cpp src/XIAonline/publisher.h)
+    src/XIAonline/publisher.cpp
+    src/XIAonline/publisher.h)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 10) # GCC10 implements jthread!
     target_include_directories(XIAonline
@@ -104,6 +105,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_
             ${CMAKE_CURRENT_SOURCE_DIR}/src/XIAonline
             ${CMAKE_CURRENT_SOURCE_DIR}/external/cppzmq
             ${CMAKE_CURRENT_SOURCE_DIR}/external/readerwriterqueue
+            ${CMAKE_CURRENT_SOURCE_DIR}/external/cereal/include
     )
     set_target_properties(XIAonline PROPERTIES
             CXX_STANDARD 20
@@ -115,6 +117,8 @@ else()
             ${CMAKE_CURRENT_SOURCE_DIR}/src/XIAonline
             ${CMAKE_CURRENT_SOURCE_DIR}/external/cppzmq
             ${CMAKE_CURRENT_SOURCE_DIR}/external/readerwriterqueue
+            ${CMAKE_CURRENT_SOURCE_DIR}/external/cereal/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/external/jthread/source
     )
     set_target_properties(XIAonline PROPERTIES
             CXX_STANDARD 17
@@ -122,7 +126,7 @@ else()
             CXX_EXTENSIONS NO)
 endif()
 
-target_link_libraries(XIAonline ${PROJECT_NAME}::sirius)
+target_link_libraries(XIAonline ${PROJECT_NAME}::sirius libzmq)
 
 if ( ENABLE_RUPDATE )
     ###########     rupdate     #############
