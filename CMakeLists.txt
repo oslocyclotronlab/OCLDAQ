@@ -222,8 +222,8 @@ add_executable(XIAengine
     src/XIAengine/mainwindow.ui
 )
 
-target_compile_definitions(XIAengine PRIVATE BUILD_GUI=1 _FILE_OFFSET_BITS=64)
-
+target_compile_definitions(XIAengine PRIVATE BUILD_GUI=1 _FILE_OFFSET_BITS=64 REMOVE_TRACE=1)
+target_compile_options(XIAengine PRIVATE -m64)
 target_include_directories(XIAengine
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/XIAengine
