@@ -10,7 +10,7 @@
 #include <iostream>
 
 #define MAX_BUFFER_SIZE 131072
-#define INTERNAL_BUFFER_SIZE 65536
+#define INTERNAL_BUFFER_SIZE 1048576
 
 void worker_thread(const bool &token, queue_t &queue, zmq::socket_t &publish_socket)
 {
