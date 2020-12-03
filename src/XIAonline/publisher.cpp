@@ -23,6 +23,7 @@ void worker_thread(const std::stop_token &token, queue_t &queue, zmq::socket_t &
             if ( queue.wait_dequeue_timed(word, std::chrono::seconds(1)) ) {
                 words.push_back(word);
             } else {
+                std::cout << "Time-out, have " << words.size() << " entries" << std::endl;
                 break;
             }
         }
