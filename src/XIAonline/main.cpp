@@ -18,6 +18,7 @@
 #include "Event_builder.h"
 #include "spectrum_rw.h"
 #include "Sort_Funct.h"
+#include "publisher.h"
 
 char leaveprog='n';
 static int buffer_count=0,bad_buffer_count=0;
@@ -217,6 +218,8 @@ int main (int argc, char* argv[])
 
     EventBuilder::Status evt_status;
 
+    publisher pub("*:6000");
+
     Event event;
     std::vector<word_t> data_p;
 
@@ -236,6 +239,7 @@ int main (int argc, char* argv[])
 
                 data_p = unpacker->ParseBuffer(data+(*first_header), datalen-(*first_header), error);
                 sort_singles(data_p);
+
                 ++buffer_count;
                 evtbldr->SetBuffer(data_p);
                 if ( error )
