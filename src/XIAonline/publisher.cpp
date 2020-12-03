@@ -16,6 +16,7 @@ void worker_thread(const std::stop_token &token, queue_t &queue, zmq::socket_t &
 {
     std::vector<word_t> words(INTERNAL_BUFFER_SIZE);
     word_t word;
+    int num = 0;
     while ( !token.stop_requested() ){
         // We will first fill 64k of entries in a vector, that vector has to be serialized.
         while ( words.size() < INTERNAL_BUFFER_SIZE ){
@@ -30,6 +31,7 @@ void worker_thread(const std::stop_token &token, queue_t &queue, zmq::socket_t &
             // Now we can transfer a single buffer <3
             publish_socket.send(zmq::buffer(to_string(words)));
             words.clear();
+            std::cout << "Sending buffer# " << num++ << std::endl;
         }
     }
 
