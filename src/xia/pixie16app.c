@@ -4999,7 +4999,7 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16SaveHistogramToFile (
 	unsigned short ModNum)   // module number
 {
 	
-	char ErrMSG[MAX_ERRMSG_LENGTH];
+	char ErrMSG[MAX_ERRMSG_LENGTH+128];
 	FILE *HistFile = NULL;
 	unsigned int *histdata;
 	unsigned int histo_addr;
