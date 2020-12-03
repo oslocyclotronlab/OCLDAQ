@@ -5,7 +5,21 @@
 #ifndef OCLDAQ_PUBLISHER_H
 #define OCLDAQ_PUBLISHER_H
 
+#include "Event.h"
+
 #include "zmq.hpp"
+#include "readerwriterqueue.h"
+
+#if __GNUC__ < 10
+#include "jthread.hpp"
+#else
+#include <thread>
+#endif // __GNUC__ < 10
+
+#include <vector>
+#include <string>
+
+using queue_t = moodycamel::BlockingReaderWriterQueue<word_t>;
 
 /*!
  * publisher class
@@ -16,7 +30,22 @@ class publisher
 
 private:
 
+    zmq::context_t context;
+    zmq::socket_t publish_socket;
 
+    queue_t queue;
+
+    std::jthread worker;
+
+    //void worker_thread(std::stop_token token);
+
+public:
+
+    explicit publisher(const std::string& addr);
+
+    ~publisher();
+
+    void AddBuffer(const std::vector<word_t> &buffer);
 };
 
 
