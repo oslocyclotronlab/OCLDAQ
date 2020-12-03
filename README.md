@@ -7,7 +7,7 @@ Currently the OCL DAQ software requires the following packages to compile:
 * X11 - Most linux distributions have X11.
 * openmotif/motif/etc - Most linux distributions have openmotif installed.
 * ROOT ≥6.14 - Can be downloaded from [here](https://root.cern).
-* Qt5 - Get from [qt.io](qt.io) or your favourite repo.
+* Qt5 - Get from [qt.io](https://qt.io) or your favourite repo.
 
 ### Analog only pre-requisits (see tag 1.5.3 or older)
 * libCAENVME - CAEN VME library, can be downloaded from [here](http://www.caen.it/jsp/Template2/CaenProd.jsp?idmod=689&parent=43)
