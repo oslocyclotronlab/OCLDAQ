@@ -91,17 +91,28 @@ add_executable(XIAonline
     src/XIAonline/spectrum_rw.cpp
     src/XIAonline/Unpacker.cpp
     src/XIAonline/XIA_CFD.cpp
-)
+        src/XIAonline/publisher.cpp src/XIAonline/publisher.h)
 
-target_include_directories(XIAonline
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/XIAonline
-)
-
-set_target_properties(XIAonline PROPERTIES
-            CXX_STANDARD 11
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 10) # GCC10 implements jthread!
+    target_include_directories(XIAonline
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/XIAonline
+    )
+    set_target_properties(XIAonline PROPERTIES
+            CXX_STANDARD 20
             CXX_STANDARD_REQUIRED YES
             CXX_EXTENSIONS NO)
+else()
+    target_include_directories(XIAonline
+            PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/XIAonline
+            ${CMAKE_CURRENT_SOURCE_DIR}/external/cppzmq
+    )
+    set_target_properties(XIAonline PROPERTIES
+            CXX_STANDARD 17
+            CXX_STANDARD_REQUIRED YES
+            CXX_EXTENSIONS NO)
+endif()
 
 target_link_libraries(XIAonline ${PROJECT_NAME}::sirius)
 
