@@ -2419,7 +2419,7 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16BLcutFinder (
 
 PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16TauFinder (
 	unsigned short ModNum,   // Pixie module number
-	double         *Tau )    // 16 returned Tau values, in us
+	double         *Tau )    // 16 returned Tau values, in µs
 {
 
 	char           ErrMSG[MAX_ERRMSG_LENGTH];
@@ -3256,12 +3256,12 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16WriteSglChanPar (
 		{
 			
 			// Calculate slow length
-            if(Module_Information[ModNum].Module_ADCMSPS == 100)
-                SL = (unsigned int)ROUND(ChanParData * (double)Module_Information[ModNum].Module_ADCMSPS / pow(2.0, (double)SlowFilterRange));
-            else if(Module_Information[ModNum].Module_ADCMSPS == 250)
-                SL = (unsigned int)ROUND(ChanParData * (double)(Module_Information[ModNum].Module_ADCMSPS / 2) / pow(2.0, (double)SlowFilterRange));
-            else if(Module_Information[ModNum].Module_ADCMSPS == 500)
-                SL = (unsigned int)ROUND(ChanParData * (double)(Module_Information[ModNum].Module_ADCMSPS / 5) / pow(2.0, (double)SlowFilterRange));
+		if(Module_Information[ModNum].Module_ADCMSPS == 100)
+			SL = (unsigned int)ROUND(ChanParData * (double)Module_Information[ModNum].Module_ADCMSPS / pow(2.0, (double)SlowFilterRange));
+		else if(Module_Information[ModNum].Module_ADCMSPS == 250)
+			SL = (unsigned int)ROUND(ChanParData * (double)(Module_Information[ModNum].Module_ADCMSPS / 2) / pow(2.0, (double)SlowFilterRange));
+		else if(Module_Information[ModNum].Module_ADCMSPS == 500)
+			SL = (unsigned int)ROUND(ChanParData * (double)(Module_Information[ModNum].Module_ADCMSPS / 5) / pow(2.0, (double)SlowFilterRange));
 
 			// Check slow length limit
 			SG = Pixie_Devices[ModNum].DSP_Parameter_Values[SlowGap_Address[ModNum] + ChanNum - DATA_MEMORY_ADDRESS];
@@ -3282,12 +3282,12 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16WriteSglChanPar (
 		{
 			
 			// Calculate slow gap
-            if(Module_Information[ModNum].Module_ADCMSPS == 100)
-                SG = (unsigned int)ROUND(ChanParData * (double)Module_Information[ModNum].Module_ADCMSPS / pow(2.0, (double)SlowFilterRange));
-            else if(Module_Information[ModNum].Module_ADCMSPS == 250)
-                SG = (unsigned int)ROUND(ChanParData * (double)(Module_Information[ModNum].Module_ADCMSPS / 2) / pow(2.0, (double)SlowFilterRange));
-            else if(Module_Information[ModNum].Module_ADCMSPS == 500)
-                SG = (unsigned int)ROUND(ChanParData * (double)(Module_Information[ModNum].Module_ADCMSPS / 5) / pow(2.0, (double)SlowFilterRange));
+		if(Module_Information[ModNum].Module_ADCMSPS == 100)
+			SG = (unsigned int)ROUND(ChanParData * (double)Module_Information[ModNum].Module_ADCMSPS / pow(2.0, (double)SlowFilterRange));
+		else if(Module_Information[ModNum].Module_ADCMSPS == 250)
+			SG = (unsigned int)ROUND(ChanParData * (double)(Module_Information[ModNum].Module_ADCMSPS / 2) / pow(2.0, (double)SlowFilterRange));
+		else if(Module_Information[ModNum].Module_ADCMSPS == 500)
+			SG = (unsigned int)ROUND(ChanParData * (double)(Module_Information[ModNum].Module_ADCMSPS / 5) / pow(2.0, (double)SlowFilterRange));
 			
 			// Check slow gap limit
 			SL = Pixie_Devices[ModNum].DSP_Parameter_Values[SlowLength_Address[ModNum] + ChanNum - DATA_MEMORY_ADDRESS];
@@ -4999,7 +4999,7 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16SaveHistogramToFile (
 	unsigned short ModNum)   // module number
 {
 	
-	char ErrMSG[MAX_ERRMSG_LENGTH+128];
+	char ErrMSG[MAX_ERRMSG_LENGTH];
 	FILE *HistFile = NULL;
 	unsigned int *histdata;
 	unsigned int histo_addr;

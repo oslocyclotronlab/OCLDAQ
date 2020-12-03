@@ -153,27 +153,40 @@ set_target_properties(rupdate-bin PROPERTIES OUTPUT_NAME rupdate)
 set_property(TARGET rupdate PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
 set_property(TARGET rupdate-bin PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
 
+############     plx     ##############
+# This is the XIA readout engine.
+add_library(plx STATIC
+        src/plx/Aardvark.c
+        src/plx/Eep_8000.c
+        src/plx/PlxApi.c
+        src/plx/PlxApiI2cAa.c)
+
+add_library(${PROJECT_NAME}::plx ALIAS plx)
+target_include_directories(plx
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/plx
+        )
+
+target_compile_definitions(plx PRIVATE PLX_64BIT PLX_LINUX PLX_LITTLE_ENDIAN GCC PCI_CODE)
+
+target_compile_options(plx PRIVATE -fPIC -Wall -pipe)
+
+target_link_libraries(plx PUBLIC m dl)
+
 ###########     XIAlibraries     #############
 # This is the XIA libraries from XIA SDK
 
 add_library(xia STATIC
-    src/xia/communication.c
-    src/xia/i2cm24c64.c
-    src/xia/pixie16app.c
-    src/xia/pixie16sys.c
-    src/xia/tools.c
-    src/xia/utilities.c
-    src/xia/Aardvark.c
-    src/xia/Eep_8000.c
-    src/xia/PlxApi.c
-    src/xia/PlxApiI2cAa.c)
+        src/xia/communication.c
+        src/xia/i2cm24c64.c
+        src/xia/pixie16app.c
+        src/xia/pixie16sys.c
+        src/xia/tools.c
+        src/xia/utilities.c)
 
 add_library(${PROJECT_NAME}::xia ALIAS xia)
 
-target_compile_definitions(xia PUBLIC
-    PLX_LITTLE_ENDIAN
-    PCI_CODE
-    PLX_LINUX)
+target_compile_definitions(xia PUBLIC PLX_LITTLE_ENDIAN PCI_CODE PLX_LINUX)
 
 target_compile_options(xia PRIVATE -Wall -pipe -fPIC)
 
@@ -184,12 +197,13 @@ target_include_directories(xia
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/xia>
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/xia
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/xia/inc
         ${CMAKE_CURRENT_SOURCE_DIR}/include/xia)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    target_link_libraries(xia PUBLIC m dl)
+    target_link_libraries(xia PUBLIC m dl ${PROJECT_NAME}::plx)
 else()
-    target_link_libraries(xia PUBLIC m dl rt)
+    target_link_libraries(xia PUBLIC m dl rt ${PROJECT_NAME}::plx)
 endif()
 
 ############     XIAengine     ##############
@@ -223,6 +237,7 @@ set_target_properties(XIAengine PROPERTIES
 target_link_libraries(XIAengine
     ${PROJECT_NAME}::sirius
     ${PROJECT_NAME}::xia
+    ${PROJECT_NAME}::plx
     Qt5::Widgets)
 
 ##########################################

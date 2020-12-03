@@ -342,17 +342,11 @@ unsigned int SYS32_TstBit(unsigned short bit, unsigned int value)
 *
 ****************************************************************/
 
-int Pixie_Print_MSG2(const char *msg)
+int Pixie_Print_MSG(char *message)
 {
 	time_t rawtime;
 	struct tm *timeinfo;
 	FILE *Pixie16msg = NULL;
-
-	// Ensure we dont have buffer overflows!
-	size_t len = strlen(msg) + 64;
-	char *message = malloc(len);
-    *(message + len - 1) = 0;
-    strncpy(message, msg, len-1); // Copy and ensure correct length.
 	
 	// Get current date and time
 	time ( &rawtime );
@@ -372,11 +366,6 @@ int Pixie_Print_MSG2(const char *msg)
 	
 	fprintf(Pixie16msg, "%s", message);
 	fclose(Pixie16msg);
-	free(message);
+	
 	return(0);
-}
-
-int Pixie_Print_MSG(char *message)
-{
-    return Pixie_Print_MSG2(message);
 }
