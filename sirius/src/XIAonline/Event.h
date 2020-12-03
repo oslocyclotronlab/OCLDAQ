@@ -31,13 +31,43 @@
 //! \author Vetle W. Ingeberg
 //! \date 2015-2018
 //! \copyright GNU Public License v. 3
+
+class trace_t {
+
+public:
+    uint16_t tracelen;
+    uint16_t *trace;
+
+    trace_t() : tracelen( 0 ), trace( nullptr ){}
+
+    trace_t(const uint16_t &len) : tracelen( len ), trace( new uint16_t[len] ){}
+
+    trace_t(const trace_t &o) : tracelen( o.tracelen ), trace( ( o.tracelen > 0) ? new uint16_t[o.tracelen] : nullptr ){ for (uint16_t i = 0 ; i < tracelen ; ++i){ trace[i] = o.trace[i]; } }
+
+    trace_t &operator=(const trace_t &o){
+        tracelen = o.tracelen;
+        trace = ( tracelen > 0 ) ? new uint16_t[o.tracelen] : nullptr;
+        for (uint16_t i = 0 ; i < tracelen ; ++i){
+            trace[i] = o.trace[i];
+        }
+        return *this;
+    }
+
+    ~trace_t(){
+        if ( tracelen > 0 && trace != nullptr )
+            delete[] trace;
+    }
+
+};
+
+
 typedef struct {
 	uint16_t address;		//!< Holds the address of the ADC. 
     uint16_t adcdata;		//!< Data read out from the ADC.
     uint16_t cfddata;       //!< Fractional difference of before/after zero-crossing.
     double cfdcorr;         //!< Correction from the CFD.
     int64_t timestamp;		//!< Timestamp in [ns].
-    char cfdfail;           //!< Flag to tell if the CFD was forced or not.
+    bool cfdfail;           //!< Flag to tell if the CFD was forced or not.
 } word_t;
 
 

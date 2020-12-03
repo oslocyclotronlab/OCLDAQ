@@ -13,7 +13,6 @@
 #include "utilities.h"
 
 
-#include "XIARoutine.h"
 #include "Event.h"
 #include "Unpacker.h"
 #include "Event_builder.h"
@@ -165,14 +164,14 @@ static void cb_disconnected(line_channel*, void*)
     std::cout << "acq_sort: client disconnected" << std::endl;
 }
 
-
-int main (int argc, char *[])
+int main (int argc, char* argv[])
 {
-
     if( argc != 1 ) {
         std::cerr << "acq_sort runs without parameters" << std::endl;
         exit(EXIT_FAILURE);
     }
+
+    
 
     signal(SIGINT, keyb_int); // set up interrupt handler (Ctrl-C)
     signal(SIGPIPE, SIG_IGN);
@@ -203,6 +202,7 @@ int main (int argc, char *[])
     const volatile int* time_s  = (int*)&engine_shm[ENGINE_TIME_S ];
     const volatile unsigned int* data    = engine_shm + engine_shm[ENGINE_DATA_START];
     const volatile unsigned int  datalen = engine_shm[ENGINE_DATA_SIZE];
+    const volatile unsigned int* first_header = (unsigned int*)&engine_shm[ENGINE_FIRST_HEADER];
 
 
     // Attach shared memory
@@ -227,16 +227,19 @@ int main (int argc, char *[])
     while ( leaveprog == 'n' ){
         const int tus = *time_us;
         const int ts = *time_s;
+        error = false;
 
         if (tus != 0 && ts != 0) {
             if (ts > last_t || (ts == last_t && tus > last_tus)){
                 last_t = ts;
                 last_tus = tus;
 
-                data_p = unpacker->ParseBuffer(data, datalen, error);
+                data_p = unpacker->ParseBuffer(data+(*first_header), datalen-(*first_header), error);
                 sort_singles(data_p);
                 ++buffer_count;
                 evtbldr->SetBuffer(data_p);
+                if ( error )
+                    continue; // We just skip if there was a problem!
 
                 while (true){
                     evt_status = evtbldr->Next(event);

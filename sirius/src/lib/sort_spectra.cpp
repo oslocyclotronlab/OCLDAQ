@@ -37,7 +37,11 @@ sort_spectrum_t sort_spectra[] = {
     { PPAC_ID,    PPAC_KEY,     PPAC_SIZE,      0,  PPAC_XSIZE,     PPAC_YSIZE,     "PPACSP",   "PPAC spec"},
     { TPPAC_ID,   TPPAC_KEY,    TPPAC_SIZE,     0,  TPPAC_XSIZE,    TPPAC_YSIZE,    "TPPACS",   "t(LaBr) - t(PPAC)"},
     { EDESS_ID,   EDESS_KEY,    EDESS_SIZE,     0,  EDESS_XSIZE,    EDESS_YSIZE,    "EDESS",    "E-DE single strip"},
-    { LABRCSP_ID, LABRCSP_KEY,  LABRCSP_SIZE,   0,  LABRCSP_XSIZE,  LABRCSP_YSIZE,  "LABRCSP",  "LaBr-energy, calibrated"}, 
+    { LABRCSP_ID, LABRCSP_KEY,  LABRCSP_SIZE,   0,  LABRCSP_XSIZE,  LABRCSP_YSIZE,  "LABRCSP",  "LaBr-energy, calibrated"},
+    { LABRCFD_ID, LABRCFD_KEY,  LABRCFD_SIZE,   0,  LABRCFD_XSIZE,  LABRCFD_YSIZE,  "LABRCFD",  "LaBr-energy (CFD fail)"},
+    { DECFD_ID,   DECFD_KEY,    DECFD_SIZE,     0,  DECFD_XSIZE,    DECFD_YSIZE,    "DECFD",    "DE spectra (CFD fail)"},
+    { ECFD_ID,    ECFD_KEY,     ECFD_SIZE,      0,  ECFD_XSIZE,     ECFD_YSIZE,     "ECFD",     "E spectra (CFD fail)"},
+    { GUARD_ID,   GUARD_KEY,    GUARD_SIZE,     0,  GUARD_XSIZE,    GUARD_YSIZE,    "GUARD",    "E guard rings"},
     {  0, 0, 0, 0, 0, 0, 0, 0 }
 };
 #endif // XIA

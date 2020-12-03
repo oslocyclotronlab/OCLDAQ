@@ -262,7 +262,7 @@ bool XIAControl::XIA_check_buffer_ST(int bufsize)
 
 
 
-bool XIAControl::XIA_fetch_buffer(uint32_t *buffer, int bufsize)
+bool XIAControl::XIA_fetch_buffer(uint32_t *buffer, int bufsize, unsigned int *first_header)
 {
     std::lock_guard<std::mutex> queue_guard(queue_mutex);
 
@@ -294,6 +294,8 @@ bool XIAControl::XIA_fetch_buffer(uint32_t *buffer, int bufsize)
 
     // Use std::sort to sort all data before we do the readout of the internal buffer.
     //std::sort(sorted_events.begin(), sorted_events.end(), std::greater<Event_t>());
+
+    *first_header = current_pos;
 
     while (current_pos < bufsize){
         //current_word = sorted_events.back();
@@ -1103,8 +1105,8 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
     Event_t evt;
 
     if (overflow_fifo[module].size() > 0){
-        event_length = (overflow_fifo[module][0] & 0x3FFE0000) >> 17;
-        header_length = (overflow_fifo[module][0] & 0x0001F000) >> 12;
+        event_length = (overflow_fifo[module][0] & 0x7FFE0000) >> 17;
+        header_length = (overflow_fifo[module][0] & 0x1F000) >> 12;
         int evtsize = event_length - overflow_fifo[module].size();
         if (evtsize > size) { // Event spans several FIFOs :O
             for (int i = 0 ; i < size ; ++i){
@@ -1131,16 +1133,8 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
         for (int i = 0 ; i < header_length ; ++i){
             evt.raw_data[i] = tmp[i];
         }
-        evt.size_raw = header_length;
+        evt.size_raw = event_length;
         delete[] tmp;
-
-        // Striping away the list mode data.
-        if (event_length != header_length){
-            uint32_t new_f_head = header_length << 17;
-            new_f_head |= (evt.raw_data[0] & 0x8001FFFF);
-            evt.raw_data[0] = new_f_head;
-            evt.raw_data[3] = (evt.raw_data[3] & 0x0000FFFF);
-        }
 
         {   // Creating a scope for the guard to live.
             std::lock_guard<std::mutex> queue_guard(queue_mutex);
@@ -1154,8 +1148,8 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
     }
 
     while (current_position < size){
-        event_length = (raw_data[current_position] & 0x3FFE0000) >> 17;
-        header_length = (raw_data[current_position] & 0x0001F000) >> 12;
+        event_length = (raw_data[current_position] & 0x7FFE0000) >> 17;
+        header_length = (raw_data[current_position] & 0x1F000 ) >> 12;
 
         if (current_position + event_length > size){
             for (int i = current_position ; i < size ; ++i){
@@ -1167,7 +1161,7 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
         for (int i = 0 ; i < header_length ; ++i){
             evt.raw_data[i] = raw_data[current_position+i];
         }
-        evt.size_raw = header_length;
+        evt.size_raw = event_length;
 
         tlow = evt.raw_data[1];
         thigh = (evt.raw_data[2] & 0x0000FFFF);
@@ -1175,13 +1169,6 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
         evt.timestamp |= tlow;
         evt.timestamp *= timestamp_factor[module];
 
-        // Remove trace
-        if (event_length != header_length){
-            uint32_t new_f_head = header_length << 17;
-            new_f_head |= (evt.raw_data[0] & 0x8001FFFF);
-            evt.raw_data[0] = new_f_head;
-            evt.raw_data[3] = (evt.raw_data[3] & 0x0000FFFF);
-        }
 
         {   // Creating a scope for the guard to live.
             std::lock_guard<std::mutex> queue_guard(queue_mutex);

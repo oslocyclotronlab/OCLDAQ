@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
+#include <iostream>
 
 #include <string.h>
 #include <sys/wait.h>
@@ -98,11 +99,55 @@ bool run_background(const std::string& cmd, const std::vector<std::string>& xarg
 }
 
 // ########################################################################
+bool run_forground(const std::string& cmd, const std::vector<std::string>& xargs)
+{
+    std::vector<std::string> expanded = word_expand(cmd.c_str());
+    const unsigned es = expanded.size();
+        
+    // copy to a string array
+    const unsigned NARGV = 128;
+    char* argv[NARGV];
+    if( es==0 || es + xargs.size() > NARGV-1 ){
+        //::exit(EXIT_FAILURE);
+        std::cout << "Error: args missing or too manyh args!" << std::endl;
+    }
+    unsigned int i;
+    for( i=0; i<es; ++i )
+        argv[i] = ::strdup(expanded[i].c_str());
+    for(unsigned int x=0; x<xargs.size(); ++x )
+        argv[i++] = ::strdup(xargs[x].c_str());
+    argv[i] = 0;
+
+#if !defined(NDEBUG)
+    DBGV(i);
+    for(unsigned int j=0; j<i; ++j)
+        std::cout << "argv[" << j << "] = '" << argv[j] << "'\n";
+#endif
+
+    // execute program with arguments
+    if( ::execvp(argv[0], argv) < 0 ){
+        // reached in case of execvp failure
+        ::exit(EXIT_FAILURE);
+        std::cout << "Error executing: " << argv[0] << std::endl;
+    }
+
+    return true; // not reached, but compiler does not know
+}
+
+// ########################################################################
 
 bool run_background(const std::string& cmd)
 {
     const std::vector<std::string> xargs;
     return run_background(cmd, xargs);
+}
+
+// ########################################################################
+
+bool run_forground(const std::string& cmd)
+{
+    const std::vector<std::string> xargs;
+    return run_forground(cmd, xargs);
 }
 
 // ########################################################################
@@ -179,6 +224,7 @@ bool command_list::run(const std::string& cmd_key, const std::vector<std::string
     if( cmd.empty() )
         return false;
 
+    //return run_forground(cmd, xargs);
     return run_background(cmd, xargs);
 }
 

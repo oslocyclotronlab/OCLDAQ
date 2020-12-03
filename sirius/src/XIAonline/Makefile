@@ -6,7 +6,7 @@ CC		=	gcc
 LINKER	=	$(CXX)
 
 ### Defining flags and stuff ######
-CXXFLAGS	=	-pthread -m64 -W -Wall -fPIC -O3 -mtune=native -std=c++11
+CXXFLAGS	=	-pthread -m64 -W -Wall -fPIC -std=c++11 -O3 -mtune=native
 CCFLAGS		=	-pthread -m64 -W -Wall -fPIC -O3 -mtune=native
 LIBS		=	-L../lib -lsirius
 
@@ -17,20 +17,13 @@ TARGET = XIAsort
 
 # Sources
 CXX_SRC =	main.cpp \
-			XIARoutine.cpp \
-			Histogram1D.cpp \
-			Histogram2D.cpp \
-			Histogram3D.cpp \
-			Histograms.cpp \
-			Parameters.cpp \
-			ParticleRange.cpp \
 			Event_builder.cpp \
 			Unpacker.cpp \
 			Sort_Funct.cpp \
 			spectrum_rw.cpp
 
 C_SRC	=	experimentsetup.c \
-			XIA_CFD.c
+			XIA_CFD.cpp
 
 C_OBJ = $(C_SRC:%.c=%.o)
 CXX_OBJ = $(CXX_SRC:%.cpp=%.o)
@@ -57,3 +50,4 @@ FORCE:
 
 clean:
 	rm -f *.o
+	rm -f $(TARGET)

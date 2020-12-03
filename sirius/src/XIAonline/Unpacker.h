@@ -28,7 +28,7 @@
 
 class Unpacker {
 public:
-    std::vector<word_t> ParseBuffer(const volatile uint32_t *buffer, const int &size, bool error);
+    std::vector<word_t> ParseBuffer(const volatile uint32_t *buffer, const int &size, bool &error);
 private:
     std::vector<uint32_t> overflow;
 };
