@@ -19,13 +19,18 @@ void worker_thread(const std::stop_token &token, queue_t &queue, zmq::socket_t &
     while ( !token.stop_requested() ){
         // We will first fill 64k of entries in a vector, that vector has to be serialized.
         while ( words.size() < INTERNAL_BUFFER_SIZE ){
-            queue.wait_dequeue(word);
-            words.push_back(word);
+            if ( queue.wait_dequeue_timed(word, std::chrono::seconds(1)) ) {
+                words.push_back(word);
+            } else {
+                break;
+            }
         }
 
-        // Now we can transfer a single buffer <3
-        publish_socket.send(zmq::buffer(to_string(words)));
-        words.clear();
+        if ( words.size() >= INTERNAL_BUFFER_SIZE ){
+            // Now we can transfer a single buffer <3
+            publish_socket.send(zmq::buffer(to_string(words)));
+            words.clear();
+        }
     }
 
     if ( !words.empty() ){
@@ -43,7 +48,7 @@ publisher::publisher(const std::string& addr)
     } catch (zmq::error_t &error) {
         std::cerr << "Could not bind to address '" << addr;
         std::cerr << "', got error '" << error.what() << "'." << std::endl;
-        throw std::runtime_error("Could not connect socket.");
+        exit(EXIT_FAILURE);
     }
 
     // Start worker thread

@@ -172,7 +172,7 @@ int main (int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    
+    publisher pub("tcp://*:6000");
 
     signal(SIGINT, keyb_int); // set up interrupt handler (Ctrl-C)
     signal(SIGPIPE, SIG_IGN);
@@ -217,8 +217,6 @@ int main (int argc, char* argv[])
     evtbldr = new EventBuilder;
 
     EventBuilder::Status evt_status;
-
-    publisher pub("*:6000");
 
     Event event;
     std::vector<word_t> data_p;
