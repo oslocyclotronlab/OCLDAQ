@@ -106,6 +106,7 @@ target_include_directories(XIAonline
         ${CMAKE_CURRENT_SOURCE_DIR}/external/readerwriterqueue
         ${CMAKE_CURRENT_SOURCE_DIR}/external/cereal/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external/jthread/source
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/CLI11/include
 )
 set_target_properties(XIAonline PROPERTIES
         CXX_STANDARD 11

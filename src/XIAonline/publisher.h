@@ -34,8 +34,6 @@ private:
     bool stop;
     std::thread worker;
 
-    //void worker_thread(std::stop_token token);
-
 public:
 
     explicit publisher(const std::string& addr);

@@ -61,6 +61,9 @@ publisher::publisher(const std::string& addr)
 
 void publisher::AddBuffer(const std::vector<word_t> &buffer)
 {
+    if ( stop )
+        return;
+
     for ( auto &entry : buffer ){
         queue.enqueue(entry);
     }
