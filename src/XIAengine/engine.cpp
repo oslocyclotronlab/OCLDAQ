@@ -15,20 +15,15 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <cassert>
 
 #include <thread>
 
-#include <errno.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cerrno>
+#include <csignal>
+#include <cstdlib>
+#include <cstdio>
 #include <sys/time.h>
 #include <unistd.h>
-
-#ifdef TESTGUI
-#include "pixie16app_export.h"
-#endif // OFFLINE
 
 #if _FILE_OFFSET_BITS != 64
 #error must compile with _FILE_OFFSET_BITS == 64
@@ -409,7 +404,6 @@ static void cb_disconnected(line_channel*, void*)
 // ########################################################################
 // ########################################################################
 
-#ifndef TESTGUI
 int main(int argc, char* argv[])
 {
     if( argc <= 1 ) {
@@ -468,9 +462,6 @@ int main(int argc, char* argv[])
         PXIMapping[i] = atoi(argv[i]);
 
     xiacontr = new XIAControl(&termWrite, PXIMapping);
-#ifdef MULTITHREAD
-    std::thread poll_thread(static const int MAX_BUFFER_COUNT = 8192; // max 2GB files[](){ xiacontr->XIAthread(); } );
-#endif // MULTITHREAD
 
     // attach shared memory and initialize some variables
     unsigned int* buffer  = engine_shm_attach(true);
@@ -494,16 +485,10 @@ int main(int argc, char* argv[])
     globargc = argc;
     globargv = argv;
 
-    //gui_thread(GUI_thread, argc, argv, xiacontr->GetNumMod());
-
     // main loop
     while( leaveprog == 'n' ) {
         if( !stopped ) {
-            #ifdef MULTITHREAD
-            if( xiacontr->XIA_check_buffer(datalen) ) {
-            #else
-            if ( xiacontr->XIA_check_buffer_ST(datalen) ) {
-            #endif // MULTITHREAD
+            if ( xiacontr->XIA_check_buffer(datalen) ) {
                 // a buffer is available; reset timestamp
                 *time_us = *time_s = 0;
                 // transfer the buffer
@@ -560,14 +545,6 @@ int main(int argc, char* argv[])
 
     engine_shm_detach();
 
-#ifdef MULTITHREAD
-    xiacontr->Terminate();
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-    if ( poll_thread.joinable() )
-        poll_thread.join();
-#endif // MULTITHREAD
-
     if (gui_thread.joinable())
         gui_thread.join();
 
@@ -575,31 +552,6 @@ int main(int argc, char* argv[])
     delete commands;
     return 0;
 }
-#else
-int main(int argc, char* argv[])
-{
-    if( argc <= 1 ) {
-        std::cerr << "engine runs with PXI slots as input parameters" << std::endl;
-        std::cerr << argv[0] << " 2 3 4 5" << std::endl;
-        exit(EXIT_FAILURE);
-    }
-
-    unsigned short PXIMapping[PRESET_MAX_MODULES];
-    for (int i = 0 ; i < PRESET_MAX_MODULES ; ++i)
-        PXIMapping[i] = 0;
-    for (int i = 1 ; i < argc ; ++i)
-        PXIMapping[i] = atoi(argv[i]);
-
-    xiacontr = new XIAControl(&termWrite, PXIMapping);
-
-    Pixie16LoadDSPParametersFromFile("settings.set");
-
-    QApplication a(argc, argv);
-    MainWindow w(xiacontr->GetNumMod());
-    w.show();
-    return a.exec();
-}
-#endif // TESTGUI
 
 // ########################################################################
 // ########################################################################

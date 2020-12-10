@@ -86,21 +86,6 @@ bool XIAControl::XIA_check_buffer(int bufsize)
     // Check that we are actually running.
     if (!is_running)
         return false;
-
-    // Lock the queue mutex such that we can check if we have enough data.
-    int have_data = data_avalible + overflow_queue.size();
-    have_data -= XIA_MIN_READOUT;
-    if ( have_data < bufsize)
-        return false;
-
-    return  true;
-}
-
-bool XIAControl::XIA_check_buffer_ST(int bufsize)
-{
-    // Check that we are actually running.
-    if (!is_running)
-        return false;
     double t1=last_time.tv_sec + 1e-6*last_time.tv_usec;
     double t2;
     if (CheckFIFO(XIA_FIFO_MIN_READOUT)){

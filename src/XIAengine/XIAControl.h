@@ -40,55 +40,6 @@ inline bool operator>(const Event_t &a, const Event_t &b) { return (a.timestamp>
 
 class XIAControl
 {
-public:
-
-    XIAControl(WriteTerminal *writeTerm,
-               const unsigned short PXImap[PRESET_MAX_MODULES], /*!< PXI mapping                */
-               const std::string &FWname="XIA_Firmware.txt",    /*!< Path to firmware settings  */
-               const std::string &SETname="settings.set"        /*!< Path to settings file      */);
-
-
-    // Destructor. Quite important for this
-    // class, as it will release all resorces
-    // related to the XIA modules and make sure
-    // the thread is terminated.
-    ~XIAControl();
-
-    // Set internal flag to indicate that the thread should exit.
-    void Terminate(){ }
-
-    // Poll to check if we have enough data to fill a buffer
-    // (note, this will be false until we have 65536 32-bit words of data)
-    bool XIA_check_buffer(int bufsize);
-
-    // Poll to check if we have enough data to fill a buffer, single thread
-    // (note, this will be false until we have 65536 32-bit words of data)
-    bool XIA_check_buffer_ST(int bufsize);
-
-    // Ask for a buffer of data to be committed.
-    bool XIA_fetch_buffer(uint32_t *buffer, int bufsize, unsigned int *first_header);
-
-    // Ask the class to boot the XIA modules.
-    bool XIA_boot_all();
-
-    // Ask the class to start the run in the XIA modules.
-    bool XIA_start_run();
-
-    // Check the run status
-    bool XIA_check_status();
-
-    // Ask the class to end the run in the XIA modules.
-    // We will also ask for the file where data are stored as we
-    // will need to flush all data to this file.
-    bool XIA_end_run(FILE *output_file=NULL /* Ending the run will flush all remaning data to file */);
-
-    // Ask for a reload.
-    // Will return false if run is active.
-    bool XIA_reload();
-
-    // Get number of XIA modules.
-    inline int GetNumMod() const { return num_modules; }
-
 private:
 
     // Object responsible for I/O to the stdout & stderr
@@ -146,6 +97,56 @@ private:
 
     timeval last_time;
 
+    // raw memory used during readout of list mode.
+    unsigned int *lmdata;
+
+public:
+
+    XIAControl(WriteTerminal *writeTerm,
+               const unsigned short PXImap[PRESET_MAX_MODULES], /*!< PXI mapping                */
+               const std::string &FWname="XIA_Firmware.txt",    /*!< Path to firmware settings  */
+               const std::string &SETname="settings.set"        /*!< Path to settings file      */);
+
+
+    // Destructor. Quite important for this
+    // class, as it will release all resorces
+    // related to the XIA modules and make sure
+    // the thread is terminated.
+    ~XIAControl();
+
+    // Set internal flag to indicate that the thread should exit.
+    void Terminate(){ }
+
+    // Poll to check if we have enough data to fill a buffer
+    // (note, this will be false until we have 65536 32-bit words of data)
+    bool XIA_check_buffer(int bufsize);
+
+    // Ask for a buffer of data to be committed.
+    bool XIA_fetch_buffer(uint32_t *buffer, int bufsize, unsigned int *first_header);
+
+    // Ask the class to boot the XIA modules.
+    bool XIA_boot_all();
+
+    // Ask the class to start the run in the XIA modules.
+    bool XIA_start_run();
+
+    // Check the run status
+    bool XIA_check_status();
+
+    // Ask the class to end the run in the XIA modules.
+    // We will also ask for the file where data are stored as we
+    // will need to flush all data to this file.
+    bool XIA_end_run(FILE *output_file=NULL /* Ending the run will flush all remaning data to file */);
+
+    // Ask for a reload.
+    // Will return false if run is active.
+    bool XIA_reload();
+
+    // Get number of XIA modules.
+    inline int GetNumMod() const { return num_modules; }
+
+private:
+
     // Some private functions that are needed.
 
     // Function for reading and parsing Firmware file.
@@ -200,9 +201,6 @@ private:
 
     // Parse data and commit to the queue.
     void ParseQueue(uint32_t *raw_data, size_t size, int module);
-
-    // A small test...
-    unsigned int *lmdata;
 };
 
 #endif // XIACONTROL_H
