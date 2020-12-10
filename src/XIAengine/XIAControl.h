@@ -54,20 +54,8 @@ public:
     // the thread is terminated.
     ~XIAControl();
 
-    // Function containing the thread loop.
-    void XIAthread();
-
     // Set internal flag to indicate that the thread should exit.
     void Terminate(){ }
-
-    // Set the PXISlotMap.
-    bool SetPXIMapping(const unsigned short PXImap[PRESET_MAX_MODULES]);
-
-    // Set the firmware file. Will return false if run is active.
-    bool SetFirmwareFile(const std::string &FWname);
-
-    // Set the settings file. Will return false if run is active.
-    bool SetSettingsFile(const std::string &SETname);
 
     // Poll to check if we have enough data to fill a buffer
     // (note, this will be false until we have 65536 32-bit words of data)

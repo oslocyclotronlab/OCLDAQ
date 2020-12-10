@@ -81,58 +81,6 @@ XIAControl::~XIAControl()
 }
 
 
-bool XIAControl::SetPXIMapping(const unsigned short PXImap[PRESET_MAX_MODULES])
-{
-    if (is_running)
-        return false;
-
-    if (is_booted || is_initialized ){
-        is_initialized = ExitXIA();
-        is_booted = is_initialized;
-    }
-
-    // Update the PXI mapping.
-    for (int i = 0 ; i < PRESET_MAX_MODULES ; ++i){
-        if (PXImap[i] > 0)
-            PXISlotMap[num_modules++] = PXImap[i];
-    }
-
-    // Finished!
-    return true;
-}
-
-bool XIAControl::SetFirmwareFile(const std::string &FWname)
-{
-    if (is_running)
-        return false;
-
-    is_booted = false; // We set this to zero so that we force the reboot later.
-    return ReadConfigFile(FWname.c_str());
-}
-
-bool XIAControl::SetSettingsFile(const std::string &SETname)
-{
-    if (is_running)
-        return false;
-
-    settings_file = SETname;
-
-    if (is_booted){ // First we will try writing the data without rebooting.
-        char tmp[2048];
-        sprintf(tmp, "%s", settings_file.c_str());
-        int retval = Pixie16LoadDSPParametersFromFile(tmp);
-        if (retval < 0){
-            is_booted = false; // Try again next time we boot.
-            sprintf(errmsg, "*ERROR* Pixie16LoadDSPParametersFromFile failed, retval = %d\n", retval);
-            termWrite->WriteError(errmsg);
-            Pixie_Print_MSG(errmsg);
-        }
-    }
-
-    return true; // We were at lease able to change the internal value of where to read the .set file.
-}
-
-
 bool XIAControl::XIA_check_buffer(int bufsize)
 {
     // Check that we are actually running.
