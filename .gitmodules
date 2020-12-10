@@ -4,9 +4,6 @@
 [submodule "external/readerwriterqueue"]
 	path = external/readerwriterqueue
 	url = https://github.com/cameron314/readerwriterqueue.git
-[submodule "external/jthread"]
-	path = external/jthread
-	url = https://github.com/josuttis/jthread.git
 [submodule "external/cereal"]
 	path = external/cereal
 	url = https://github.com/USCiLab/cereal.git
