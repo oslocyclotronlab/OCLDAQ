@@ -62,9 +62,7 @@ XIAControl::XIAControl(WriteTerminal *writeTerm,
     , is_initialized( false )
     , is_booted( false )
     , is_running( false )
-    , thread_is_running( false )
     , settings_file( SETname )
-    //, shmfd( -1 )
 {
     ReadConfigFile(FWname.c_str());
     num_modules = 0;
@@ -83,120 +81,9 @@ XIAControl::~XIAControl()
 }
 
 
-void XIAControl::XIAthread()
-{
-    // We set the internal flag signalizing that the thread is running.
-    thread_is_running = true;
-    timeval tim;
-    double t1=0, t2=0;
-
-    // We should run all the time, but only while there is no active
-    // runs we will be idle for 1 second at a time, then check if
-    // a run has been started or not.
-    while ( thread_is_running ){
-        if (is_running){
-
-            // Check if we have enough for reading out XIA (we require at least 16384 words)
-            if (CheckFIFO(XIA_FIFO_MIN_READOUT)){
-
-                if (!ReadFIFO())
-                    StopRun();
-            }
-
-
-            gettimeofday(&tim, NULL);
-            t2 = tim.tv_sec + 1e-6*tim.tv_usec;
-
-            if (t2 - t1 > 5){
-                if ( !WriteScalers() )
-                    StopRun();
-                t1 = t2;
-            }
-            std::this_thread::sleep_for(std::chrono::microseconds(5));
-        } else {
-            std::this_thread::sleep_for(std::chrono::seconds(1)); // We sleep for 1 second at a time... Maybe a bit much?
-        }
-    }
-
-
-    return;
-}
-
-
-bool XIAControl::SetPXIMapping(const unsigned short PXImap[PRESET_MAX_MODULES])
-{
-    if (is_running)
-        return false;
-
-    if (is_booted || is_initialized ){
-        is_initialized = ExitXIA();
-        is_booted = is_initialized ? true : false;
-    }
-
-    // Update the PXI mapping.
-    for (int i = 0 ; i < PRESET_MAX_MODULES ; ++i){
-        if (PXImap[i] > 0)
-            PXISlotMap[num_modules++] = PXImap[i];
-    }
-
-    // Finished!
-    return true;
-}
-
-bool XIAControl::SetFirmwareFile(const std::string &FWname)
-{
-    if (is_running)
-        return false;
-
-    is_booted = false; // We set this to zero so that we force the reboot later.
-    return ReadConfigFile(FWname.c_str());
-}
-
-bool XIAControl::SetSettingsFile(const std::string &SETname)
-{
-    if (is_running)
-        return false;
-
-    settings_file = SETname;
-
-    if (is_booted){ // First we will try writing the data without rebooting.
-        std::lock_guard<std::mutex> xia_guard(xia_mutex);
-        char tmp[2048];
-        sprintf(tmp, "%s", settings_file.c_str());
-        int retval = Pixie16LoadDSPParametersFromFile(tmp);
-        if (retval < 0){
-            is_booted = false; // Try again next time we boot.
-            sprintf(errmsg, "*ERROR* Pixie16LoadDSPParametersFromFile failed, retval = %d\n", retval);
-            termWrite->WriteError(errmsg);
-            Pixie_Print_MSG(errmsg);
-        }
-    }
-
-    return true; // We were at lease able to change the internal value of where to read the .set file.
-}
-
-
 bool XIAControl::XIA_check_buffer(int bufsize)
 {
     // Check that we are actually running.
-    if (!is_running)
-        return false;
-
-    // Lock the queue mutex such that we can check if we have enough data.
-    std::lock_guard<std::mutex> queue_guard(queue_mutex);
-    int have_data = data_avalible + overflow_queue.size();
-    have_data -= XIA_MIN_READOUT;
-    if ( have_data < bufsize)
-        return false;
-
-    return  true;
-}
-
-bool XIAControl::XIA_check_buffer_ST(int bufsize)
-{
-    // Check that we are actually running.
-    //if (ready_bufs.size() > 1)
-    //    return true;
     if (!is_running)
         return false;
     double t1=last_time.tv_sec + 1e-6*last_time.tv_usec;
@@ -215,67 +102,18 @@ bool XIAControl::XIA_check_buffer_ST(int bufsize)
         last_time = tmp;
     }
 
-
-    // Lock the queue mutex such that we can check if we have enough data.
-    std::lock_guard<std::mutex> queue_guard(queue_mutex);
-
     // Here we decide if we have one or more buffers for the engine to process.
     int have_data = data_avalible + overflow_queue.size();
     have_data -= XIA_MIN_READOUT;
     if ( have_data < bufsize) // First test to determine if we have enough data to make an actual buffer.
         return false;
     return true;
-    // New we start moving data into the "temporary" buffer
-    Event_t current_word;
-
-    // We check what the smallest most recent timestamp of each module is.
-    int64_t min_t=most_recent_t[0];
-    for (int i = 0 ; i < num_modules ; ++i){
-        min_t = MIN(min_t, most_recent_t[i]);
-    }
-
-    while (data_avalible > XIA_MIN_READOUT) {
-        current_word = sorted_events.top();
-        if (current_word.timestamp > min_t)
-            break;
-        if (ready_bufs.empty()){
-            Temp_Buf_t end;
-            end.pos = 0;
-            ready_bufs.push_back(end);
-        }
-
-        for (int i = 0 ; i < current_word.size_raw ; ++i){
-            ready_bufs.back().raw_data[ready_bufs.back().pos++] = current_word.raw_data[i];
-            if (ready_bufs.back().pos == 32767){
-                Temp_Buf_t end;
-                end.pos = 0;
-                ready_bufs.push_back(end);
-            }
-        }
-        
-        data_avalible -= current_word.size_raw;
-        sorted_events.pop();
-    }
-
-    return (ready_bufs.size() > 1);
 }
 
 
 
 bool XIAControl::XIA_fetch_buffer(uint32_t *buffer, int bufsize, unsigned int *first_header)
 {
-    std::lock_guard<std::mutex> queue_guard(queue_mutex);
-
-    /*if (ready_bufs.size() <= 1)
-        return false;
-
-    // Now we will transfere the zeroth built buffer!
-    for (int i = 0 ; i < bufsize ; ++i){
-        buffer[i] = ready_bufs.front().raw_data[i];
-    }
-    ready_bufs.pop_front();
-    return true;*/
-
     int current_pos = 0;
     int have_data = data_avalible + overflow_queue.size();
     have_data -= XIA_MIN_READOUT;
@@ -286,22 +124,17 @@ bool XIAControl::XIA_fetch_buffer(uint32_t *buffer, int bufsize, unsigned int *f
         return false;
     }
 
-    for (size_t i = 0 ; i < overflow_queue.size() ; ++i){
-        buffer[current_pos++] = overflow_queue[i];
+    for (auto &i : overflow_queue){
+        buffer[current_pos++] = i;
     }
     overflow_queue.clear();
     Event_t current_word;
 
-    // Use std::sort to sort all data before we do the readout of the internal buffer.
-    //std::sort(sorted_events.begin(), sorted_events.end(), std::greater<Event_t>());
-
     *first_header = current_pos;
 
     while (current_pos < bufsize){
-        //current_word = sorted_events.back();
         current_word = sorted_events.top();
         data_avalible -= current_word.size_raw;
-        //sorted_events.pop_back();
         sorted_events.pop();
 
         for (int i = 0 ; i < current_word.size_raw ; ++i){
@@ -345,20 +178,11 @@ bool XIAControl::XIA_boot_all()
 
 bool XIAControl::XIA_start_run()
 {
-    // We should NOT try to lock the XIA resources at this
-    // time since we will be using a comibination of function
-    // calls to other methods that will do the spesific things
-    // we want it to do.
-    //std::lock_guard<std::mutex> xia_guard(xia_mutex);
-
     // First we will check if there is a run currently going.
     // If so, return true?
     if (is_running){
         return true;
     }
-
-    //if (shmfd < 0)
-    //    OpenSharedMemory();
 
     // Check if the modules are initialized.
     if (!is_initialized){
@@ -381,8 +205,6 @@ bool XIAControl::XIA_start_run()
     for (int i = 0 ; i < num_modules ; ++i){
         most_recent_t[i] = 0;
     }
-
-    ready_bufs.clear();
 
     // Adjust baseline.
     //AdjustBaseline(); // At the moment, this isn't a critical error. We can keep on running.
@@ -428,24 +250,18 @@ bool XIAControl::XIA_end_run(FILE *output_file)
     termWrite->Write("... Awake again.\n");
 
     // Then we will run a readout of the FIFO.
-    if (!ReadFIFO()) // We had an error. I'm not sure how this will be fixed, if fixed...
+    if ( !ReadFIFO() ) // We had an error. I'm not sure how this will be fixed, if fixed...
         return true;
-
-
-    // Dump the rest of the data we have onto the file.
-    std::lock_guard<std::mutex> guard_queue(queue_mutex);
 
     // Allocate memory where we will dump the FIFO contents.
     unsigned int current_pos = 0;
     unsigned int size = overflow_queue.size() + data_avalible;
-    uint32_t *buf = new uint32_t[size];
-    for (unsigned int i = 0 ; i < overflow_queue.size() ; ++i)
+    auto *buf = new uint32_t[size];
+    for (auto &i : overflow_queue)
         buf[current_pos++] = overflow_queue[i];
     overflow_queue.clear();
     Event_t evt;
-    //std::sort(sorted_events.begin(), sorted_events.end(), std::greater<Event_t>());
     while (current_pos < size){
-        //evt = sorted_events.back();
         evt = sorted_events.top();
         for (int i = 0 ; i < evt.size_raw ; ++i){
             buf[current_pos++] = evt.raw_data[i];
@@ -474,7 +290,7 @@ bool XIAControl::XIA_reload()
 
     // Exit
     is_initialized = ExitXIA();
-    is_booted = is_initialized ? true : false;
+    is_booted = is_initialized;
     return !is_initialized;
 }
 
@@ -507,7 +323,7 @@ bool XIAControl::ReadConfigFile(const char *config)
             continue; // Ignore empty lines or comments.
 
         // Search for "=" sign on the line.
-        std::string::size_type pos_eq = line.find("=");
+        std::string::size_type pos_eq = line.find('=');
 
         // If not found, write a warning and continue to next line.
         if ( pos_eq == std::string::npos ){
@@ -535,10 +351,6 @@ bool XIAControl::ReadConfigFile(const char *config)
 
 bool XIAControl::InitializeXIA()
 {
-    // Lock the XIA mutex to prevent any other
-    // thread from communicating with the modules.
-    std::lock_guard<std::mutex> xia_guard(xia_mutex);
-
     int retval = Pixie16InitSystem(num_modules, PXISlotMap, 0);
 
     if (retval < 0){
@@ -613,11 +425,6 @@ bool XIAControl::GetFirmwareFile(const unsigned short &revision, const unsigned 
 
 bool XIAControl::BootXIA()
 {
-
-    // Lock the XIA mutex to prevent any other
-    // thread from communicating with the modules.
-    std::lock_guard<std::mutex> xia_guard(xia_mutex);
-
     int retval;
     char ComFPGA[2048], SPFPGA[2048], DSPCode[2048], DSPVar[2048];
     char TrigFPGA[] = "trig";
@@ -695,11 +502,6 @@ bool XIAControl::BootXIA()
 
 bool XIAControl::AdjustBaseline()
 {
-
-    // Lock the XIA mutex to prevent any other
-    // thread from communicating with the modules.
-    std::lock_guard<std::mutex> xia_guard(xia_mutex);
-
     termWrite->Write("Adjusting baseline of all modules and channels...");
     int retval = AdjustBaselineOffset(num_modules);
     if (retval < 0){
@@ -716,10 +518,6 @@ bool XIAControl::AdjustBaseline()
 
 bool XIAControl::AdjustBlCut()
 {
-    // Lock the XIA mutex to prevent any other
-    // thread from communicating with the modules.
-    std::lock_guard<std::mutex> xia_guard(xia_mutex);
-
     termWrite->Write("Acquiring the baseline cut...");
     unsigned int BLcut[PRESET_MAX_MODULES][16];
     int retval;
@@ -760,9 +558,6 @@ bool XIAControl::AdjustBlCut()
 
 bool XIAControl::StartLMR()
 {
-    // Lock the XIA mutex to prevent any other
-    // thread from communicating with the modules.
-    std::lock_guard<std::mutex> xia_guard(xia_mutex);
     int retval;
 
     // First we check if the modules have already been synchronized.
@@ -829,10 +624,6 @@ bool XIAControl::StartLMR()
 
 bool XIAControl::CheckIsRunning()
 {
-    // Lock the XIA mutex to prevent any other
-    // thread from communicating with the modules.
-    std::lock_guard<std::mutex> xia_guard(xia_mutex);
-
     bool am_I_running = true;
     int retval;
     for (int i = 0 ; i < num_modules ; ++i){
@@ -851,10 +642,6 @@ bool XIAControl::CheckIsRunning()
 
 bool XIAControl::StopRun()
 {
-    // Lock the XIA mutex to prevent any other
-    // thread from communicating with the modules.
-    std::lock_guard<std::mutex> xia_guard(xia_mutex);
-
     int retval;
 
     // In principle, we should only need to do this for one of
@@ -883,10 +670,6 @@ bool XIAControl::StopRun()
 
 bool XIAControl::SynchModules()
 {
-    // Lock the XIA mutex to prevent any other
-    // thread from communicating with the modules.
-    std::lock_guard<std::mutex> xia_guard(xia_mutex);
-
     termWrite->Write("Trying to write IN_SYNCH...\n");
     int retval = Pixie16WriteSglModPar(const_cast<char *>("IN_SYNCH"), 0, 0);
     if (retval < 0){
@@ -902,16 +685,10 @@ bool XIAControl::SynchModules()
 
 bool XIAControl::WriteScalers()
 {
-
-
     double ICR[PRESET_MAX_MODULES][16], OCR[PRESET_MAX_MODULES][16];
     unsigned int stats[448];
     int retval;
-    //UpdateSharedMemory();
     {
-        // Lock the XIA mutex to prevent any other
-        // thread from communicating with the modules.
-        std::lock_guard<std::mutex> xia_guard(xia_mutex);
         for (int i = 0 ; i < num_modules ; ++i){
             retval = Pixie16ReadStatisticsFromModule(stats, i);
             if (retval < 0){
@@ -1011,11 +788,6 @@ bool XIAControl::WriteScalers()
 
 bool XIAControl::CheckFIFO(unsigned int minReadout)
 {
-
-    // Lock the XIA mutex to prevent any other
-    // thread from communicating with the modules.
-    std::lock_guard<std::mutex> xia_guard(xia_mutex);
-
     unsigned int numFIFOwords;
     int retval;
 
@@ -1039,11 +811,6 @@ bool XIAControl::CheckFIFO(unsigned int minReadout)
 
 bool XIAControl::ReadFIFO()
 {
-
-    // Lock the XIA mutex to prevent any other
-    // thread from communicating with the modules.
-    std::lock_guard<std::mutex> xia_guard(xia_mutex);
-
     uint32_t *FIFOdata = lmdata;
     unsigned int fifoSize;
     int retval;
@@ -1055,20 +822,16 @@ bool XIAControl::ReadFIFO()
             Pixie_Print_MSG(errmsg);
             return false;
         }
-        if (fifoSize < 4/*EXTFIFO_READ_THRESH*/) // Make sure we don't read from an empty FIFO.
+        if (fifoSize < 4 /* EXTFIFO_READ_THRESH */ ) // Make sure we don't read from an empty FIFO.
             continue;
-        //FIFOdata = new uint32_t[fifoSize];
-        //retval = Pixie_ExtFIFO_Read(lmdata)
         retval = Pixie16ReadDataFromExternalFIFO(FIFOdata, fifoSize, i);
         if (retval < 0){
             sprintf(errmsg, "*ERROR* Pixie16ReadDataFromExternalFIFO failed, retval = %d\n", retval);
             termWrite->WriteError(errmsg);
             Pixie_Print_MSG(errmsg);
-            //delete[] FIFOdata;
             return false;
         }
         ParseQueue(FIFOdata, fifoSize, i);
-        //delete[] FIFOdata;
     }
 
     return true;
@@ -1083,10 +846,6 @@ bool XIAControl::ExitXIA()
         // End the current run.
         is_running = !StopRun();
     }
-
-    // Lock the XIA mutex to prevent any other
-    // thread from communicating with the modules.
-    std::lock_guard<std::mutex> xia_guard(xia_mutex);
     int retval = Pixie16ExitSystem(num_modules);
     if (retval < 0){
         sprintf(errmsg, "*ERROR* Pixie16ExitSystem failed, retval = %d\n", retval);
@@ -1097,7 +856,7 @@ bool XIAControl::ExitXIA()
 }
 
 
-void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
+void XIAControl::ParseQueue(uint32_t *raw_data, size_t size, int module)
 {
     int event_length=0, header_length=0;
     int current_position=0;
@@ -1136,12 +895,9 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
         evt.size_raw = event_length;
         delete[] tmp;
 
-        {   // Creating a scope for the guard to live.
-            std::lock_guard<std::mutex> queue_guard(queue_mutex);
-            sorted_events.push(evt);
-            most_recent_t[module] = MAX(most_recent_t[module], evt.timestamp);
-            data_avalible += evt.size_raw;
-        }
+        sorted_events.push(evt);
+        most_recent_t[module] = MAX(most_recent_t[module], evt.timestamp);
+        data_avalible += evt.size_raw;
 
         current_position = event_length - overflow_fifo[module].size();
         overflow_fifo[module].clear();
@@ -1169,92 +925,10 @@ void XIAControl::ParseQueue(uint32_t *raw_data, int size, int module)
         evt.timestamp |= tlow;
         evt.timestamp *= timestamp_factor[module];
 
-
-        {   // Creating a scope for the guard to live.
-            std::lock_guard<std::mutex> queue_guard(queue_mutex);
-            sorted_events.push(evt);
-            most_recent_t[module] = MAX(most_recent_t[module], evt.timestamp);
-            data_avalible += evt.size_raw;
-        }   // Should be released here...
+        sorted_events.push(evt);
+        most_recent_t[module] = MAX(most_recent_t[module], evt.timestamp);
+        data_avalible += evt.size_raw;
 
         current_position += event_length;
     }
-    return;
 }
-
-
-/*int XIAControl::OpenSharedMemory()
-{
-    int flag = 0;
-       if((shmsem=sem_open("sempixie16pkuxiadaq",O_CREAT,0666,1)) == SEM_FAILED)
-         {
-           std::cout<<"Cannot create seamphore!"<<std::endl;
-           flag++;
-         }
-
-       if((shmfd=shm_open("shmpixie16pkuxiadaq",O_CREAT|O_RDWR,0666)) < 0)
-         {
-           std::cout<<"Cannot create shared memory"<<std::endl;
-           flag++;
-         }
-
-       if(ftruncate(shmfd,(off_t)(SHAREDMEMORYDATAOFFSET+PRESET_MAX_MODULES*2+PRESET_MAX_MODULES*4*SHAREDMEMORYDATASTATISTICS+PRESET_MAX_MODULES*4*SHAREDMEMORYDATAENERGYLENGTH*SHAREDMEMORYDATAMAXCHANNEL)) < 0)
-         {
-
-           std::cout<<"Cannot alloc memory for shared memory!"<<std::endl;
-           flag++;
-         }
-
-       if((shmptr = (unsigned char*) mmap(NULL,SHAREDMEMORYDATAOFFSET+PRESET_MAX_MODULES*2+(PRESET_MAX_MODULES*SHAREDMEMORYDATASTATISTICS*4)+PRESET_MAX_MODULES*4*SHAREDMEMORYDATAENERGYLENGTH*SHAREDMEMORYDATAMAXCHANNEL, PROT_READ|PROT_WRITE,MAP_SHARED,shmfd,0)) == MAP_FAILED)
-         {
-           std::cout<<"Cannot mmap the shared memroy to process space"<<std::endl;
-           flag++;
-         }
-       if(flag > 0) return 0;
-       std::cout<<"SHM Opend!"<<std::endl;
-       return 1;
-}*/
-
-/*int XIAControl::UpdateSharedMemory()
-{
-  int rc;
-  rc = sem_trywait(shmsem);
-  if(rc == -1 && errno != EAGAIN)
-    {
-      std::cout<<"sem_wait error!"<<std::endl;
-      return 1;
-    }
-  else if(rc == -1) return 1; // this indicates the shm is under use
-
-  static unsigned int tmp = 0;
-  tmp++;
-  memcpy(shmptr,&tmp,sizeof(unsigned int));
-  memcpy(shmptr+4,&num_modules,sizeof(unsigned short));
-  memcpy(shmptr+6,0,sizeof(unsigned int)); // This we don't use.
-
-  int retval = 0;
-  unsigned int Statistics[SHAREDMEMORYDATASTATISTICS];
-  for(unsigned short i = 0; i < num_modules; i++)
-    {
-      unsigned short a = 500;
-      unsigned short b = 250;
-      if (timestamp_factor[i] == 10)
-        memcpy(shmptr+SHAREDMEMORYDATAOFFSET+2*i,&a,sizeof(unsigned short));
-      if (timestamp_factor[i] == 8)
-        memcpy(shmptr+SHAREDMEMORYDATAOFFSET+2*i,&b,sizeof(unsigned short));
-
-      retval = Pixie16ReadStatisticsFromModule(Statistics, i);
-      if(retval < 0)
-    {
-      std::cout<<"error in get statistics info"<<std::endl;
-    }
-      memcpy(shmptr+SHAREDMEMORYDATAOFFSET+PRESET_MAX_MODULES*2+SHAREDMEMORYDATASTATISTICS*4*i,Statistics,sizeof(unsigned int)*SHAREDMEMORYDATASTATISTICS);
-    }
-
-  if(sem_post(shmsem) == -1){
-    std::cout<<"sem_post error!"<<std::endl;
-    return 1;
-  }
-  std::cout<<"SHM updated!"<<std::endl;
-  return 0;
-}*/
