@@ -9,10 +9,6 @@
 #include <map>
 #include <functional>
 
-// Headers for handling threads
-#include <mutex>
-#include <atomic>
-
 #include <sys/time.h>
 #include <semaphore.h>
 #include <fcntl.h>
@@ -35,22 +31,12 @@ class WriteTerminal;
     #define MAX_RAWDATA_LEN 4114
 #endif // REMOVE_TRACE
 
-#define SHAREDMEMORYDATAOFFSET 10
-#define SHAREDMEMORYDATASTATISTICS 448
-#define SHAREDMEMORYDATAENERGYLENGTH 32768
-#define SHAREDMEMORYDATAMAXCHANNEL 16
-
 typedef struct {
     int64_t timestamp;                  //! Timestamp of the event.
     uint32_t raw_data[MAX_RAWDATA_LEN]; //! Pointer to the raw data.
     int size_raw;                       //! Size of the raw data in number of 32 bit words.
 } Event_t;
 inline bool operator>(const Event_t &a, const Event_t &b) { return (a.timestamp>b.timestamp); }
-
-typedef struct {
-    int pos;
-    uint32_t raw_data[32768];
-} Temp_Buf_t;
 
 class XIAControl
 {
@@ -72,7 +58,7 @@ public:
     void XIAthread();
 
     // Set internal flag to indicate that the thread should exit.
-    void Terminate(){ thread_is_running = false; }
+    void Terminate(){ }
 
     // Set the PXISlotMap.
     bool SetPXIMapping(const unsigned short PXImap[PRESET_MAX_MODULES]);
@@ -124,21 +110,11 @@ private:
     //std::vector<Event_t> sorted_events;
     std::priority_queue<Event_t, std::vector<Event_t>, std::greater<Event_t> > sorted_events;
 
-    // List of temporary buffers ready for readout.
-    std::deque<Temp_Buf_t> ready_bufs;
-
     // Number of 32-bit words in the queue
     int data_avalible;
 
     // Most recent timestamp of each module
     int64_t most_recent_t[PRESET_MAX_MODULES];
-
-    // Mutex to make sure that only one of the threads will be able to write to the queue.
-    std::mutex queue_mutex;
-
-    // Only one thread can communicate with the XIA API at any given time. We will therefor
-    // start all functions that do talk to XIA with a lock.
-    std::mutex xia_mutex;
 
     // Temporary storage for data that are trapped between two buffers.
     std::vector<uint32_t> overflow_queue;
@@ -147,23 +123,13 @@ private:
     std::vector<uint32_t> overflow_fifo[PRESET_MAX_MODULES];
 
     // Flag to indicate that modules are initialized.
-    //std::atomic_bool is_initialized;
     bool is_initialized;
 
     // Flag to indicate that modules are booted.
-    //std::atomic_bool is_booted;
     bool is_booted;
 
     // Flag to indicate that a run is active
-    //std::atomic_bool is_running;
     bool is_running;
-
-    // Flag to indicate that the thread is running.
-    //std::atomic_bool thread_is_running;
-    bool thread_is_running;
-
-    // Flag to indicate that firmware file has been successfully read.
-    //bool Have_firmwares; // I don't think we ever check this flag...
 
     // Filename of the current XIA DSP settings file.
     std::string settings_file;
@@ -192,18 +158,7 @@ private:
 
     timeval last_time;
 
-    /*// Shared memory to use scaler tool from Pekin U.
-    sem_t *shmsem; // shared memory semaphore
-    int    shmfd;  // shared memory id
-    unsigned char *shmptr;// pointer to shm
-
-    int OpenSharedMemory();
-    int UpdateSharedMemory();*/
-
     // Some private functions that are needed.
-
-    // Delete the current queue of data.
-    void flushQueue();
 
     // Function for reading and parsing Firmware file.
     // Needs attention!!! Currently does not work :(
@@ -255,11 +210,8 @@ private:
     // Release all XIA resorces.
     bool ExitXIA();
 
-    // Emergency exit. To be called if CheckFIFO or ReadFIFO fails. Will kill any run and free all resorces.
-    bool EmergencyExitXIA();
-
     // Parse data and commit to the queue.
-    void ParseQueue(uint32_t *raw_data, int size, int module);
+    void ParseQueue(uint32_t *raw_data, size_t size, int module);
 
     // A small test...
     unsigned int *lmdata;
