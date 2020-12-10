@@ -4,8 +4,11 @@ The original package contains an event builder to be ran on a dedicated Lynx com
 
 ## Pre-requisits
 Currently the OCL DAQ software requires the following packages to compile:
-* libCAENVME - CAEN VME library, can be downloaded from [here](http://www.caen.it/jsp/Template2/CaenProd.jsp?idmod=689&parent=43)
-* SBS drivers - Go to [GE's library page](http://www.geautomation.com/library) and search for "1003". Currently there are no official support for Linux 3.xx, but the source code is avalible and one could try to compile it with 3.xx.
 * X11 - Most linux distributions have X11.
 * openmotif/motif/etc - Most linux distributions have openmotif installed.
-* ROOT 5.xx - Can be downloaded from [here](https://root.cern). Currently the software are not compatible with ROOT 6.
+* ROOT ≥6.14 - Can be downloaded from [here](https://root.cern).
+* Qt5 - Get from [qt.io](https://qt.io) or your favourite repo.
+
+### Analog only pre-requisits (see tag 1.5.3 or older)
+* libCAENVME - CAEN VME library, can be downloaded from [here](http://www.caen.it/jsp/Template2/CaenProd.jsp?idmod=689&parent=43)
+* SBS drivers - Go to [GE's library page](http://www.geautomation.com/library) and search for "1003". Currently there are no official support for Linux 3.xx, but the source code is avalible and one could try to compile it with 3.xx.

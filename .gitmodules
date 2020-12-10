@@ -1,0 +1,15 @@
+[submodule "external/cppzmq"]
+	path = external/cppzmq
+	url = https://github.com/zeromq/cppzmq.git
+[submodule "external/readerwriterqueue"]
+	path = external/readerwriterqueue
+	url = https://github.com/cameron314/readerwriterqueue.git
+[submodule "external/jthread"]
+	path = external/jthread
+	url = https://github.com/josuttis/jthread.git
+[submodule "external/cereal"]
+	path = external/cereal
+	url = https://github.com/USCiLab/cereal.git
+[submodule "external/CLI11"]
+	path = external/CLI11
+	url = https://github.com/CLIUtils/CLI11.git
