@@ -8,10 +8,16 @@ option(ENABLE_RUPDATE "Build rupdate" ON)
 ##############################################
 # Declare dependencies
 
-
-# Find X11
 find_package(X11 REQUIRED)
 find_package(Motif REQUIRED)
+find_package(ROOT CONFIG REQUIRED)
+find_package(Qt5 COMPONENTS Widgets REQUIRED)
+find_package(Threads REQUIRED)
+
+include(external/cppzmq/libzmq-pkg-config/FindZeroMQ.cmake)
+if ( NOT ZeroMQ_FOUND )
+    message(FATAL_ERROR "Could not find ZeroMQ libraries")
+endif()
 
 ##############################################
 # Create target and set properties
@@ -44,7 +50,7 @@ target_include_directories(sirius
         ${CMAKE_CURRENT_SOURCE_DIR}/include/sirius
 )
 
-target_link_libraries(sirius PUBLIC m)
+target_link_libraries(sirius PUBLIC m Threads::Threads)
 
 ##############     master     ################
 # This is the GUI for starting/stopping runs.
@@ -90,142 +96,150 @@ add_executable(XIAonline
     src/XIAonline/spectrum_rw.cpp
     src/XIAonline/Unpacker.cpp
     src/XIAonline/XIA_CFD.cpp
-)
+    src/XIAonline/publisher.cpp
+    src/XIAonline/publisher.h)
 
 target_include_directories(XIAonline
-    PRIVATE
+        PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/XIAonline
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/cppzmq
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/readerwriterqueue
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/cereal/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/jthread/source
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/CLI11/include
+)
+set_target_properties(XIAonline PROPERTIES
+        CXX_STANDARD 11
+        CXX_STANDARD_REQUIRED YES
+        CXX_EXTENSIONS NO)
+
+target_link_libraries(XIAonline ${PROJECT_NAME}::sirius libzmq)
+
+###########     rupdate     #############
+# This is the rupdate for viewing hists.
+
+include("${ROOT_DIR}/RootMacros.cmake")
+
+root_generate_dictionary(G__rupdate
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/io_root.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/rupdate.h
+        OPTIONS
+            -I${CMAKE_CURRENT_SOURCE_DIR}/include
+            -I${CMAKE_CURRENT_SOURCE_DIR}/include/sirius
+        LINKDEF ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/linkdef.h)
+
+add_library(rupdate SHARED
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/io_root.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/rupdate.cpp
+        G__rupdate)
+
+target_compile_definitions(rupdate PUBLIC XIA=1)
+target_compile_options(rupdate PUBLIC -Wall -W -fPIC)
+
+target_link_libraries(rupdate
+    PUBLIC
+        ${PROJECT_NAME}::sirius
+        ROOT::Core
+        ROOT::Gpad
+        ROOT::Hist
+        ROOT::Gui
 )
 
-set_target_properties(XIAonline PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED YES
-            CXX_EXTENSIONS NO)
+add_executable(rupdate-bin
+        src/rupdate/main.cpp)
 
-target_link_libraries(XIAonline ${PROJECT_NAME}::sirius)
+target_link_libraries(rupdate-bin PRIVATE rupdate)
+set_target_properties(rupdate-bin PROPERTIES OUTPUT_NAME rupdate)
 
-if ( ENABLE_RUPDATE )
-    ###########     rupdate     #############
-    # This is the rupdate for viewing hists.
-    find_package(ROOT CONFIG REQUIRED)
-    include("${ROOT_DIR}/RootMacros.cmake")
+set_property(TARGET rupdate PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
+set_property(TARGET rupdate-bin PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-    root_generate_dictionary(G__rupdate
-            ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/io_root.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/rupdate.h
-            OPTIONS
-                -I${CMAKE_CURRENT_SOURCE_DIR}/include
-                -I${CMAKE_CURRENT_SOURCE_DIR}/include/sirius
-            LINKDEF ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/linkdef.h)
+############     plx     ##############
+# This is the XIA readout engine.
+add_library(plx STATIC
+        src/plx/Aardvark.c
+        src/plx/Eep_8000.c
+        src/plx/PlxApi.c
+        src/plx/PlxApiI2cAa.c)
 
-    add_library(rupdate SHARED
-            ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/io_root.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate/rupdate.cpp
-            G__rupdate)
+add_library(${PROJECT_NAME}::plx ALIAS plx)
+target_include_directories(plx
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/plx
+        )
 
-    target_compile_definitions(rupdate PUBLIC XIA=1)
-    target_compile_options(rupdate PUBLIC -Wall -W -fPIC)
+target_compile_definitions(plx PRIVATE PLX_64BIT PLX_LINUX PLX_LITTLE_ENDIAN GCC PCI_CODE)
 
-    target_link_libraries(rupdate
-        PUBLIC
-            ${PROJECT_NAME}::sirius
-            ROOT::Core
-            ROOT::Gpad
-            ROOT::Hist
-            ROOT::Gui
-    )
+target_compile_options(plx PRIVATE -fPIC -Wall -pipe)
 
-    add_executable(rupdate-bin
-            src/rupdate/main.cpp)
+target_link_libraries(plx PUBLIC m dl)
 
-    target_link_libraries(rupdate-bin PRIVATE rupdate)
-    set_target_properties(rupdate-bin PROPERTIES OUTPUT_NAME rupdate)
+###########     XIAlibraries     #############
+# This is the XIA libraries from XIA SDK
 
-    set_property(TARGET rupdate PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
-    set_property(TARGET rupdate-bin PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-
-endif()
-
-if( ENABLE_ENGINE )
-
-    ###########     XIAlibraries     #############
-    # This is the XIA libraries from XIA SDK
-
-    add_library(xia STATIC
+add_library(xia STATIC
         src/xia/communication.c
         src/xia/i2cm24c64.c
         src/xia/pixie16app.c
         src/xia/pixie16sys.c
         src/xia/tools.c
-        src/xia/utilities.c
-        src/xia/Aardvark.c
-        src/xia/Eep_8000.c
-        src/xia/PlxApi.c
-        src/xia/PlxApiI2cAa.c)
+        src/xia/utilities.c)
 
-    add_library(${PROJECT_NAME}::xia ALIAS xia)
+add_library(${PROJECT_NAME}::xia ALIAS xia)
 
-    target_compile_definitions(xia PUBLIC
-        PLX_LITTLE_ENDIAN
-        PCI_CODE
-        PLX_LINUX)
+target_compile_definitions(xia PUBLIC PLX_LITTLE_ENDIAN PCI_CODE PLX_LINUX)
 
-    target_compile_options(xia PRIVATE -Wall -pipe -fPIC)
+target_compile_options(xia PRIVATE -Wall -pipe -fPIC)
 
-    target_include_directories(xia
-        PUBLIC
-            $<INSTALL_INTERFACE:include>
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/xia>
-        PRIVATE
-            ${CMAKE_CURRENT_SOURCE_DIR}/src/xia
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/xia)
+target_include_directories(xia
+    PUBLIC
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/xia>
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/xia
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/xia/inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/xia)
 
-    if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-        target_link_libraries(xia PUBLIC m dl)
-    else()
-        target_link_libraries(xia PUBLIC m dl rt)
-    endif()
-
-    ############     XIAengine     ##############
-    # This is the XIA readout engine.
-
-    find_package(Qt5 COMPONENTS Widgets REQUIRED)
-    set(CMAKE_AUTOMOC ON)
-    set(CMAKE_AUTORCC ON)
-    set(CMAKE_AUTOUIC ON)
-
-    add_executable(XIAengine
-        src/XIAengine/engine.cpp
-        src/XIAengine/functions.cpp
-        src/XIAengine/mainwindow.cpp
-        src/XIAengine/WriteTerminal.cpp
-        src/XIAengine/XIAControl.cpp
-        src/XIAengine/mainwindow.ui
-    )
-
-    target_compile_definitions(XIAengine PRIVATE BUILD_GUI=1 _FILE_OFFSET_BITS=64)
-
-    target_include_directories(XIAengine
-        PRIVATE
-            ${CMAKE_CURRENT_SOURCE_DIR}/src/XIAengine
-    )
-
-    set_target_properties(XIAengine PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED YES
-            CXX_EXTENSIONS NO)
-
-    target_link_libraries(XIAengine
-        ${PROJECT_NAME}::sirius
-        ${PROJECT_NAME}::xia
-        Qt5::Widgets
-        )
-
-
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_link_libraries(xia PUBLIC m dl ${PROJECT_NAME}::plx)
+else()
+    target_link_libraries(xia PUBLIC m dl rt ${PROJECT_NAME}::plx)
 endif()
 
+############     XIAengine     ##############
+# This is the XIA readout engine.
+
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
+add_executable(XIAengine
+    src/XIAengine/engine.cpp
+    src/XIAengine/functions.cpp
+    src/XIAengine/mainwindow.cpp
+    src/XIAengine/WriteTerminal.cpp
+    src/XIAengine/XIAControl.cpp
+    src/XIAengine/mainwindow.ui
+)
+
+target_compile_definitions(XIAengine PRIVATE BUILD_GUI=1 _FILE_OFFSET_BITS=64 REMOVE_TRACE=1)
+target_compile_options(XIAengine PRIVATE -m64)
+target_include_directories(XIAengine
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/XIAengine
+)
+
+set_target_properties(XIAengine PROPERTIES
+        CXX_STANDARD 11
+        CXX_STANDARD_REQUIRED YES
+        CXX_EXTENSIONS NO)
+
+target_link_libraries(XIAengine
+    ${PROJECT_NAME}::sirius
+    ${PROJECT_NAME}::xia
+    ${PROJECT_NAME}::plx
+    Qt5::Widgets)
 
 ##########################################
 ###########  Install commands  ###########
@@ -234,16 +248,12 @@ install(TARGETS master XIAonline
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib)
 
-if ( ENABLE_ENGINE )
-    install(TARGETS XIAengine
-            RUNTIME DESTINATION bin)
-endif()
-if ( ENABLE_RUPDATE )
-    install(TARGETS XIAonline rupdate-bin
-            RUNTIME DESTINATION bin)
-    install(TARGETS rupdate
-            LIBRARY DESTINATION lib64)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/librupdate_rdict.pcm ${CMAKE_CURRENT_BINARY_DIR}/librupdate.rootmap
-            DESTINATION lib64)
-endif()
+#install(TARGETS XIAengine
+#        RUNTIME DESTINATION bin)
 
+install(TARGETS XIAonline rupdate-bin
+        RUNTIME DESTINATION bin)
+install(TARGETS rupdate
+        LIBRARY DESTINATION lib64)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/librupdate_rdict.pcm ${CMAKE_CURRENT_BINARY_DIR}/librupdate.rootmap
+        DESTINATION lib64)

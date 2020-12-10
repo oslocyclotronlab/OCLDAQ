@@ -15,7 +15,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define NDEBUG
 #include "debug.h"
 
 // ########################################################################

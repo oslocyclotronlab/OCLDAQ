@@ -16,7 +16,6 @@
 #include <iostream>
 #include <string>
 
-#define NDEBUG
 #include "debug.h"
 
 // ########################################################################
