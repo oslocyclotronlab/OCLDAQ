@@ -32,7 +32,9 @@ CPMAddPackage(
 
 find_package(ROOT CONFIG REQUIRED)
 
-CPMAddPackage(NAME sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sirius)
+if (NOT sirius_ADDED )
+    CPMAddPackage(NAME sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sirius)
+endif()
 
 include("${ROOT_DIR}/RootMacros.cmake")
 

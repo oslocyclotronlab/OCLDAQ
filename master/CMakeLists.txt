@@ -30,7 +30,9 @@ CPMAddPackage(
 		VERSION 1.4
 )
 
-CPMAddPackage(NAME sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sirius)
+if (NOT sirius_ADDED )
+	CPMAddPackage(NAME sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sirius)
+endif()
 
 find_package(X11 REQUIRED)
 find_package(Motif REQUIRED)

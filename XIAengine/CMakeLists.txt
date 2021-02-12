@@ -30,8 +30,13 @@ CPMAddPackage(
 		VERSION 1.4
 )
 
+if (NOT sirius_ADDED )
 CPMAddPackage(NAME sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sirius)
-CPMAddPackage(NAME Pixie16 SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../Pixie16)
+endif()
+
+if (NOT Pixie16_ADDED)
+	CPMAddPackage(NAME Pixie16 SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../Pixie16)
+endif()
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 

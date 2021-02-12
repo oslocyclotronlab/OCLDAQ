@@ -30,7 +30,9 @@ CPMAddPackage(
 		VERSION 1.4
 )
 
-CPMAddPackage(NAME plx SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../plx)
+if ( NOT plx_ADDED )
+	CPMAddPackage(NAME plx SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../plx)
+endif()
 
 
 

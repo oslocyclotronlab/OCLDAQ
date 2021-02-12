@@ -69,7 +69,9 @@ if ( readerwriterqueue_ADDED )
           $<BUILD_INTERFACE:${readerwriterqueue_SOURCE_DIR}>)
 endif()
 
-CPMAddPackage(NAME sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sirius)
+if (NOT sirius_ADDED )
+	CPMAddPackage(NAME sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sirius)
+endif()
 
 
 add_executable(XIAonline
