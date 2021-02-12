@@ -38,7 +38,8 @@ add_library(plx STATIC
 	${CMAKE_CURRENT_SOURCE_DIR}/src/MdioSpliceUsb.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/PlxApi.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/PlxApiDirect.c
-	${CMAKE_CURRENT_SOURCE_DIR}/src/SdbComPort.c)
+	${CMAKE_CURRENT_SOURCE_DIR}/src/SdbComPort.c
+	${CMAKE_CURRENT_SOURCE_DIR}/src/SpiFlash.c)
 
 target_include_directories(plx
 	PUBLIC
