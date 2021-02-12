@@ -68,4 +68,5 @@ set_property(TARGET master PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(master PRIVATE
 		sirius::sirius
 		Motif::Motif
-		X11::X11 X11::Xt)
+		X11::X11 X11::Xt
+)
