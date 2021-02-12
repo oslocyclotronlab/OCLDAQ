@@ -2,11 +2,15 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
 # ---- Project ----
 project(
-	sirius
-	VERSION 2.0.0
-	LANGUAGES CXX C)
+	plx
+	VERSION 8.0.0
+	LANGUAGES C)
 
 # ---- Options ----
+
+# --- Import tools ----
+
+include(../cmake/tools.cmake)
 
 # ---- Include guards ----
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
@@ -26,23 +30,32 @@ CPMAddPackage(
 		VERSION 1.4
 )
 
-add_library(sirius STATIC
-		${CMAKE_CURRENT_SOURCE_DIR}/src/engine_shm.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/net_control.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/run_command.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/sort_spectra.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/utilities.cpp)
 
-target_include_directories(sirius
+add_library(plx STATIC
+	${CMAKE_CURRENT_SOURCE_DIR}/src/Aardvark.c
+	${CMAKE_CURRENT_SOURCE_DIR}/src/Eep_8000.c
+	${CMAKE_CURRENT_SOURCE_DIR}/src/I2cAaUsb.c
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MdioSpliceUsb.c
+	${CMAKE_CURRENT_SOURCE_DIR}/src/PlxApi.c
+	${CMAKE_CURRENT_SOURCE_DIR}/src/PlxApiDirect.c
+	${CMAKE_CURRENT_SOURCE_DIR}/src/SdbComPort.c)
+
+target_include_directories(plx
 	PUBLIC
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-		$<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>)
+		$<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
+	PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-target_compile_definitions(sirius PRIVATE _FILE_OFFSET_BITS=64)
-set_target_properties(sirius PROPERTIES CXX_STANDARD 11)
-set_property(TARGET sirius PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_compile_definitions(plx PUBLIC PLX_LITTLE_ENDIAN PLX_64BIT GCC PCI_CODE PLX_LINUX)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	target_link_libraries(plx PUBLIC dl m)
+else()
+	target_link_libraries(plx PUBLIC dl rt m)
+endif()
 
-target_link_libraries(sirius PUBLIC m)
+
+set_property(TARGET plx PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # ---- Create an installable target ----
 # this allows users to install and find the library via `find_package()`.

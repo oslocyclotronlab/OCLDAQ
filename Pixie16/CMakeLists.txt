@@ -2,11 +2,15 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
 # ---- Project ----
 project(
-	sirius
-	VERSION 2.0.0
-	LANGUAGES CXX C)
+	Pixie16
+	VERSION 8.23.0
+	LANGUAGES C)
 
 # ---- Options ----
+
+# --- Import tools ----
+
+include(../cmake/tools.cmake)
 
 # ---- Include guards ----
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
@@ -26,23 +30,34 @@ CPMAddPackage(
 		VERSION 1.4
 )
 
-add_library(sirius STATIC
-		${CMAKE_CURRENT_SOURCE_DIR}/src/engine_shm.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/net_control.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/run_command.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/sort_spectra.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/utilities.cpp)
+CPMAddPackage(NAME plx SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../plx)
 
-target_include_directories(sirius
+
+
+add_library(Pixie16 STATIC
+	${CMAKE_CURRENT_SOURCE_DIR}/src/communication.c
+	${CMAKE_CURRENT_SOURCE_DIR}/src/i2cm24c64.c
+	${CMAKE_CURRENT_SOURCE_DIR}/src/pixie16app.c
+	${CMAKE_CURRENT_SOURCE_DIR}/src/pixie16sys.c
+	${CMAKE_CURRENT_SOURCE_DIR}/src/tools.c
+	${CMAKE_CURRENT_SOURCE_DIR}/src/utilities.c)
+
+target_include_directories(Pixie16
 	PUBLIC
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-		$<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>)
+		$<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
+	PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-target_compile_definitions(sirius PRIVATE _FILE_OFFSET_BITS=64)
-set_target_properties(sirius PROPERTIES CXX_STANDARD 11)
-set_property(TARGET sirius PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_compile_definitions(Pixie16 PUBLIC PLX_LITTLE_ENDIAN PLX_64BIT GCC PCI_CODE PLX_LINUX)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	target_link_libraries(Pixie16 PUBLIC dl m plx::plx)
+else()
+	target_link_libraries(Pixie16 PUBLIC dl rt m plx::plx)
+endif()
 
-target_link_libraries(sirius PUBLIC m)
+
+set_property(TARGET Pixie16 PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # ---- Create an installable target ----
 # this allows users to install and find the library via `find_package()`.

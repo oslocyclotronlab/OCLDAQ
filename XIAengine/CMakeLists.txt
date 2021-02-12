@@ -1,0 +1,59 @@
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+
+# ---- Project ----
+project(
+	XIAengine
+	VERSION 2.0.0
+	LANGUAGES CXX C)
+
+# --- Import tools ----
+
+include(../cmake/tools.cmake)
+
+# ---- Options ----
+
+# ---- Include guards ----
+if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+  message(
+    FATAL_ERROR
+      "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there."
+  )
+endif()
+
+# ---- Add dependencies via CPM ----
+# see https://github.com/TheLartians/CPM.cmake for more info
+include(../cmake/CPM.cmake)
+
+CPMAddPackage(
+		NAME PackageProject.cmake
+		GITHUB_REPOSITORY TheLartians/PackageProject.cmake
+		VERSION 1.4
+)
+
+CPMAddPackage(NAME sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sirius)
+CPMAddPackage(NAME Pixie16 SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../Pixie16)
+
+find_package(Qt5 COMPONENTS Widgets REQUIRED)
+
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
+
+add_executable(XIAengine
+		${CMAKE_CURRENT_SOURCE_DIR}/src/engine.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/functions.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/mainwindow.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/WriteTerminal.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/XIAControl.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/mainwindow.ui)
+
+target_include_directories(XIAengine
+	PRIVATE
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
+
+target_compile_definitions(XIAengine PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1)
+set_target_properties(XIAengine PROPERTIES CXX_STANDARD 11)
+set_property(TARGET XIAengine PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+target_link_libraries(XIAengine PUBLIC Pixie16::Pixie16 sirius::sirius Qt5::Widgets)
