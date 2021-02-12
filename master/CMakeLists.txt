@@ -65,4 +65,7 @@ target_compile_definitions(master PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOV
 set_target_properties(master PROPERTIES CXX_STANDARD 11)
 set_property(TARGET master PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-target_link_libraries(master PRIVATE sirius::sirius Motif::Motif X11::X11 X11::Xt)
+target_link_libraries(master PRIVATE
+		sirius::sirius
+		Motif::Motif
+		X11::X11 X11::Xt)
