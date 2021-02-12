@@ -1,3 +1,0 @@
--n .depend-run_command.dep 
-run_command.o: run_command.cpp ../../include/run_command.h \
-  ../../include/utilities.h ../../include/debug.h

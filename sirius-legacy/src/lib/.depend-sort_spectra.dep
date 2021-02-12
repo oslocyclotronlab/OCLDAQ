@@ -1,3 +1,0 @@
--n .depend-sort_spectra.dep 
-sort_spectra.o: sort_spectra.cpp ../../include/sort_spectra.h \
-  ../../include/spec_defs.h ../../include/utilities.h
