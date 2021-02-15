@@ -790,7 +790,7 @@ PIXIE16APP_EXPORT double PIXIE16APP_API IEEEFloating2Decimal(unsigned int IEEEFl
 *
 ****************************************************************/
 
-int Pixie_Init_DSPVarAddress(char *DSPVarFile, unsigned short ModNum)
+int Pixie_Init_DSPVarAddress(const char *DSPVarFile, unsigned short ModNum)
 {
 	char DSP_Parameter_Names[N_DSP_PAR][MAX_PAR_NAME_LENGTH];
 	char *DSP_Parameter_AddrStr;

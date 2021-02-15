@@ -214,23 +214,23 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16TauFinder (
 	double         *Tau );        // 16 returned Tau values, in µs
 
 PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16WriteSglModPar (
-	char *ModParName,             // the name of the module parameter
+	const char *ModParName,             // the name of the module parameter
 	unsigned int   ModParData,    // the module parameter value to be written to the module
 	unsigned short ModNum );      // module number
 
 PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16ReadSglModPar (
-	char *ModParName,             // the name of the module parameter
+	const char *ModParName,             // the name of the module parameter
 	unsigned int   *ModParData,   // the module parameter value to be read from the module
 	unsigned short ModNum );      // module number
 
 PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16WriteSglChanPar (
-	char *ChanParName,            // the name of the channel parameter
+	const char *ChanParName,            // the name of the channel parameter
 	double ChanParData,           // the channel parameter value to be written to the module
 	unsigned short ModNum,        // module number
 	unsigned short ChanNum );     // channel number
 
 PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16ReadSglChanPar (
-	char *ChanParName,            // the name of the channel parameter
+	const char *ChanParName,            // the name of the channel parameter
 	double *ChanParData,          // the channel parameter value to be read from the module
 	unsigned short ModNum,        // module number
 	unsigned short ChanNum );     // channel number

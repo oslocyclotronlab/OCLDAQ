@@ -93,7 +93,7 @@ int Pixie_CopyDSPParameters (
 	unsigned short DestinationModule,    // destination module number
 	unsigned short DestinationChannel ); // destination channel number
 
-int Pixie_Init_DSPVarAddress(char *DSPVarFile, unsigned short ModNum);
+int Pixie_Init_DSPVarAddress(const char *DSPVarFile, unsigned short ModNum);
 
 int Pixie_Copy_DSPVarAddress(unsigned short SourceModNum, unsigned short DestinationModNum);
 

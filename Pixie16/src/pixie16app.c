@@ -1180,7 +1180,7 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16IMbufferIO (
 	if( Offline == 1 )
 	{
 		// Only return parameter values stored in DSP_Parameter_Values for MOD_READ
-		if( (Direction == MOD_READ) )
+		if( Direction == MOD_READ )
 		{
 			for(k=0; k<NumWords; k++)
 			{
@@ -2484,7 +2484,7 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16TauFinder (
 ****************************************************************/
 
 PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16WriteSglModPar (
-	char *ModParName,          // the name of the module parameter
+	const char *ModParName,    // the name of the module parameter
 	unsigned int   ModParData, // the module parameter value to be written to the module
 	unsigned short ModNum )    // module number
 {
@@ -2904,7 +2904,7 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16WriteSglModPar (
 ****************************************************************/
 
 PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16ReadSglModPar (
-	char *ModParName,           // the name of the module parameter
+	const char *ModParName,     // the name of the module parameter
 	unsigned int   *ModParData, // the module parameter value to be read from the module
 	unsigned short ModNum )     // module number
 {
@@ -3091,7 +3091,7 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16ReadSglModPar (
 ****************************************************************/
 
 PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16WriteSglChanPar (
-	char *ChanParName,         // the name of the channel parameter
+	const char *ChanParName,   // the name of the channel parameter
 	double ChanParData,        // the channel parameter value to be written to the module
 	unsigned short ModNum,     // module number
 	unsigned short ChanNum )   // channel number
@@ -4359,7 +4359,7 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16WriteSglChanPar (
 ****************************************************************/
 
 PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16ReadSglChanPar (
-	char *ChanParName,         // the name of the channel parameter
+	const char *ChanParName,   // the name of the channel parameter
 	double *ChanParData,       // the channel parameter value to be read from the module
 	unsigned short ModNum,     // module number
 	unsigned short ChanNum )   // channel number
