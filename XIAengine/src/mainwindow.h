@@ -20,6 +20,8 @@ private slots:
 
     void on_current_channel_valueChanged(int arg1);
 
+    //void on_peak_sample_enable(bool enabled);
+
     void on_WriteButton_clicked();
 
     void on_SaveButton_clicked();

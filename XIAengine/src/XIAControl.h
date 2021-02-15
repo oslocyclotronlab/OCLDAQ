@@ -125,7 +125,7 @@ public:
     bool XIA_fetch_buffer(uint32_t *buffer, int bufsize, unsigned int *first_header);
 
     // Ask the class to boot the XIA modules.
-    bool XIA_boot_all();
+    bool XIA_boot_all(const bool &offline = false);
 
     // Ask the class to start the run in the XIA modules.
     bool XIA_start_run();
@@ -154,7 +154,7 @@ private:
     bool ReadConfigFile(const char *config);
 
     // Function to initialize the XIA modules.
-    bool InitializeXIA();
+    bool InitializeXIA(const bool &offline = false);
 
     // Helper function to decide which firmware files to use
     bool GetFirmwareFile(const unsigned short &revision,    /*!< Module revision                                    */

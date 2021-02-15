@@ -38,6 +38,10 @@ if (NOT Pixie16_ADDED)
 	CPMAddPackage(NAME Pixie16 SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../Pixie16)
 endif()
 
+if (NOT firmware_ADDED)
+	CPMAddPackage(NAME firmware SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../firmware)
+endif()
+
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
@@ -57,8 +61,33 @@ target_include_directories(XIAengine
 	PRIVATE
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
 
-target_compile_definitions(XIAengine PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	target_compile_definitions(XIAengine PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1 OFFLINE=1)
+else()
+	target_compile_definitions(XIAengine PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1)
+endif()
 set_target_properties(XIAengine PROPERTIES CXX_STANDARD 11)
 set_property(TARGET XIAengine PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(XIAengine PUBLIC Pixie16::Pixie16 sirius::sirius Qt5::Widgets)
+
+add_custom_command(
+		TARGET XIAengine POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy
+		${firmware_BINARY_DIR}/XIA_Firmware.txt
+		${CMAKE_CURRENT_BINARY_DIR}/XIA_Firmware.txt
+)
+
+add_custom_command(
+		TARGET XIAengine POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy
+		${CMAKE_CURRENT_LIST_DIR}/../template/pxisys.ini
+		${CMAKE_CURRENT_BINARY_DIR}/pxisys.ini
+)
+
+add_custom_command(
+		TARGET XIAengine POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy
+		${CMAKE_CURRENT_LIST_DIR}/../template/settings.set
+		${CMAKE_CURRENT_BINARY_DIR}/settings.set
+)

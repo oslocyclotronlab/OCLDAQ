@@ -15,8 +15,8 @@
 #include <cstring>
 #include <sys/time.h>
 
-#include "pixie16app_export.h"
-#include "pixie16sys_export.h"
+#include <pixie16app_export.h>
+#include <pixie16sys_export.h>
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
@@ -148,14 +148,14 @@ bool XIAControl::XIA_fetch_buffer(uint32_t *buffer, int bufsize, unsigned int *f
     return true;
 }
 
-bool XIAControl::XIA_boot_all()
+bool XIAControl::XIA_boot_all(const bool &offline)
 {
     if (is_running)
         return true;
 
     // Check if initialized, if not, initialize.
     if (!is_initialized)
-        is_initialized = InitializeXIA();
+        is_initialized = InitializeXIA(offline);
 
     // Check that we successfully initialized.
     if ( !is_initialized )
@@ -349,9 +349,9 @@ bool XIAControl::ReadConfigFile(const char *config)
     return true;
 }
 
-bool XIAControl::InitializeXIA()
+bool XIAControl::InitializeXIA(const bool &offline)
 {
-    int retval = Pixie16InitSystem(num_modules, PXISlotMap, 0);
+    int retval = Pixie16InitSystem(num_modules, PXISlotMap, offline ? 1 : 0);
 
     if (retval < 0){
         sprintf(errmsg, "*ERROR* Pixie16InitSystem failed, retval = %d\n", retval);

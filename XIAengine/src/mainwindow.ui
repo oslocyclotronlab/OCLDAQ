@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>584</width>
-    <height>868</height>
+    <height>796</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -240,6 +240,19 @@
                    </item>
                    <item>
                     <layout class="QHBoxLayout" name="horizontalLayout_47">
+                     <item>
+                      <widget class="QCheckBox" name="peak_sample_enable">
+                       <property name="enabled">
+                        <bool>true</bool>
+                       </property>
+                       <property name="text">
+                        <string/>
+                       </property>
+                       <property name="checkable">
+                        <bool>true</bool>
+                       </property>
+                      </widget>
+                     </item>
                      <item>
                       <widget class="QLabel" name="label_55">
                        <property name="text">
@@ -1776,7 +1789,7 @@
      <x>0</x>
      <y>0</y>
      <width>584</width>
-     <height>25</height>
+     <height>24</height>
     </rect>
    </property>
   </widget>

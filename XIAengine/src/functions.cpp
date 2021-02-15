@@ -1,7 +1,7 @@
 #include "Functions.h"
 
-#include "pixie16app_export.h"
-#include "pixie16app_defs.h"
+#include <pixie16app_export.h>
+#include <pixie16app_defs.h>
 
 
 int AdjustBaselineOffset(unsigned short modNo)

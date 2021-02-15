@@ -52,6 +52,10 @@ static int globargc;
 static char **globargv;
 command_list* commands = 0;
 
+#ifndef OFFLINE
+#define OFFLINE false
+#endif // OFFLINE
+
 // ########################################################################
 // ######################################################################## 
 
@@ -477,13 +481,20 @@ int main(int argc, char* argv[])
     /*const unsigned int*/ datalen_char = datalen*sizeof(int);
 
     // We will now boot before anything else will happend.
-    if ( !xiacontr->XIA_boot_all() )
+    if ( !xiacontr->XIA_boot_all(OFFLINE) )
         leaveprog = 'y';
 
 
     // Now we can start the GUI.
     globargc = argc;
     globargv = argv;
+
+    // If offline we will start GUI thread
+    if ( OFFLINE ) {
+        GUI_thread(xiacontr->GetNumMod());
+        leaveprog = 'y';
+    }
+
 
     // main loop
     while( leaveprog == 'n' ) {
