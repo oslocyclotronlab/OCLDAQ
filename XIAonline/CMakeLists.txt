@@ -63,6 +63,8 @@ CPMAddPackage(
     "JUST_INSTALL_CEREAL ON"
 )
 
+FIND_PACKAGE(Threads REQUIRED)
+
 if ( readerwriterqueue_ADDED )
   add_library(readerwriterqueue::readerwriterqueue ALIAS readerwriterqueue)
   target_include_directories(readerwriterqueue INTERFACE
@@ -92,4 +94,4 @@ target_compile_definitions(XIAonline PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 RE
 set_target_properties(XIAonline PROPERTIES CXX_STANDARD 11)
 set_property(TARGET XIAonline PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-target_link_libraries(XIAonline PUBLIC sirius::sirius cppzmq readerwriterqueue CLI11::CLI11 cereal)
+target_link_libraries(XIAonline PUBLIC sirius::sirius cppzmq readerwriterqueue CLI11::CLI11 cereal Threads::Threads)
