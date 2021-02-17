@@ -60,11 +60,4 @@ target_link_libraries(rupdate-bin PRIVATE rupdate)
 set_target_properties(rupdate-bin PROPERTIES OUTPUT_NAME rupdate)
 
 install(TARGETS rupdate-bin DESTINATION bin)
-
-packageProject(
-		NAME ${PROJECT_NAME}
-		VERSION ${PROJECT_VERSION}
-		NAMESPACE ${PROJECT_NAME}
-		BINARY_DIR ${PROJECT_BINARY_DIR}
-		DEPENDENCIES ""
-)
+install(TARGETS rupdate DESTINATION lib)
