@@ -233,7 +233,7 @@ bool XIAControl::XIA_check_status()
     return is_running;
 }
 
-bool XIAControl::XIA_end_run(FILE *output_file)
+bool XIAControl::XIA_end_run(FILE *output_file, const char *fname)
 {
 
     // Check if run is ongoing. If not, return true.
@@ -275,6 +275,24 @@ bool XIAControl::XIA_end_run(FILE *output_file)
         if ( fwrite(buf, sizeof(uint32_t), size, output_file) != size ){
             termWrite->WriteError("Error while writing to file...\n");
         }
+
+        // Lastly we will save run statistics from each module
+        unsigned int run_statistics[448];
+        std::string outname = std::string(fname) + ".stats";
+        auto stat_file = fopen(outname.c_str(), "w");
+        for ( int mod = 0 ; mod < num_modules ; ++mod ){
+            auto retval = Pixie16ReadStatisticsFromModule(run_statistics, mod);
+            if ( retval < 0 ){
+                std::cerr << "*Error* (Pixie16SaveHistogramToFile): Pixie16ReadHistogramFromFile failed, retval=";
+                std::cerr << retval << std::endl;
+            }
+            fprintf(stat_file, "mod %d: %d", mod, run_statistics[0]);
+            for ( int i = 1 ; i < 448 ; ++i ){
+                fprintf(stat_file, ", %d", run_statistics[i]);
+            }
+            fprintf(stat_file, "\n");
+        }
+        fclose(stat_file);
     }
     delete[] buf;
 
