@@ -3,7 +3,7 @@
 #ifndef IO_XTAPP_H
 #define IO_XTAPP_H 1
 
-#include "net_control.h"
+#include <net_control.h>
 
 #include <TSysEvtHandler.h>
 

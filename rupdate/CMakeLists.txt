@@ -39,17 +39,22 @@ endif()
 include("${ROOT_DIR}/RootMacros.cmake")
 
 root_generate_dictionary(G__rupdate
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/io_root.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate.h
-    OPTIONS
-        -I${CMAKE_CURRENT_SOURCE_DIR}/src
-        -I${CMAKE_CURRENT_SOURCE_DIR}/../sirius/include
-    LINKDEF ${CMAKE_CURRENT_SOURCE_DIR}/src/linkdef.h) 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/io_root.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/rupdate.h
+	OPTIONS
+		-I${CMAKE_CURRENT_SOURCE_DIR}/../sirius/include
+    LINKDEF ${CMAKE_CURRENT_SOURCE_DIR}/include/linkdef.h)
 
 add_library(rupdate SHARED
         ${CMAKE_CURRENT_SOURCE_DIR}/src/io_root.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/rupdate.cpp
         G__rupdate)
+
+target_include_directories(rupdate
+		PUBLIC
+			$<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
+			$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+		)
 
 target_compile_definitions(rupdate PUBLIC XIA=1)
 target_compile_options(rupdate PUBLIC -Wall -W -fPIC)
