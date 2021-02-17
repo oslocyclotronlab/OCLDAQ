@@ -127,7 +127,7 @@ static bool open_file()
 
 static void do_stop()
 {
-    xiacontr->XIA_end_run(output_file);
+    xiacontr->XIA_end_run(output_file, output_filename.c_str());
     close_file();
     stopped = true;
     last_time.tv_sec = last_time.tv_usec = 0;
