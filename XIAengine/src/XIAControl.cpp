@@ -286,9 +286,9 @@ bool XIAControl::XIA_end_run(FILE *output_file, const char *fname)
                 std::cerr << "*Error* (Pixie16SaveHistogramToFile): Pixie16ReadHistogramFromFile failed, retval=";
                 std::cerr << retval << std::endl;
             }
-            fprintf(stat_file, "mod %d: %d", mod, run_statistics[0]);
+            fprintf(stat_file, "mod %d: %u", mod, run_statistics[0]);
             for ( int i = 1 ; i < 448 ; ++i ){
-                fprintf(stat_file, ", %d", run_statistics[i]);
+                fprintf(stat_file, ", %u", run_statistics[i]);
             }
             fprintf(stat_file, "\n");
         }
