@@ -58,3 +58,16 @@ target_link_libraries(rupdate PUBLIC sirius::sirius ROOT::Core ROOT::Gpad ROOT::
 add_executable(rupdate-bin ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 target_link_libraries(rupdate-bin PRIVATE rupdate)
 set_target_properties(rupdate-bin PROPERTIES OUTPUT_NAME rupdate)
+
+install(TARGETS rupdate-bin DESTINATION bin)
+
+packageProject(
+		NAME ${PROJECT_NAME}
+		VERSION ${PROJECT_VERSION}
+		NAMESPACE ${PROJECT_NAME}
+		BINARY_DIR ${PROJECT_BINARY_DIR}
+		INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
+		INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
+		VERSION_HEADER "${VERSION_HEADER_LOCATION}"
+		DEPENDENCIES ""
+)

@@ -91,3 +91,5 @@ add_custom_command(
 		${CMAKE_CURRENT_LIST_DIR}/../template/settings.set
 		${CMAKE_CURRENT_BINARY_DIR}/settings.set
 )
+
+install(TARGETS ${PROJECT_NAME} DESTINATION bin)

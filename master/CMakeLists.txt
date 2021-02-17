@@ -70,3 +70,5 @@ target_link_libraries(master PRIVATE
 		Motif::Motif
 		X11::X11 X11::Xt
 )
+
+install(TARGETS ${PROJECT_NAME} DESTINATION bin)
