@@ -97,10 +97,4 @@ set_property(TARGET XIAonline PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(XIAonline PUBLIC sirius::sirius cppzmq readerwriterqueue CLI11::CLI11 cereal Threads::Threads)
 
 
-string(TOLOWER ${PROJECT_NAME}/version.h VERSION_HEADER_LOCATION)
-packageProject(
-		NAME ${PROJECT_NAME}
-		VERSION ${PROJECT_VERSION}
-		BINARY_DIR ${PROJECT_BINARY_DIR}
-		DEPENDENCIES ""
-)
+install(TARGETS ${PROJECT_NAME} DESTINATION bin)
