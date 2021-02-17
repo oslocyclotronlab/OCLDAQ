@@ -59,7 +59,8 @@ add_executable(master
 
 target_include_directories(master
 	PRIVATE
-		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+		${MOTIF_INCLUDE_DIR})
 
 target_compile_definitions(master PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1)
 set_target_properties(master PROPERTIES CXX_STANDARD 11)
@@ -67,8 +68,9 @@ set_property(TARGET master PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(master PRIVATE
 		sirius::sirius
-		Motif::Motif
-		X11::X11 X11::Xt
+		${MOTIF_LIBRARIES}
+		X11::X11
+		X11::Xt
 )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
