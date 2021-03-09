@@ -42,6 +42,17 @@ void sort_singles(std::vector<word_t> buffer)
             break;
         case ppac:
             spec_fill(PPAC_ID, buffer[i].adcdata, dinfo.detectorNum);
+            /*for ( auto &evt : buffer ){
+                auto di = GetDetector(evt.address);
+                if ( di.type == labr ){
+                    double tdiff = double(evt.timestamp - buffer[i].timestamp);
+                    tdiff += evt.cfdcorr - buffer[i].cfdcorr;
+                    spec_fill(TPPAC_ID, 16384 +  tdiff*10, di.detectorNum );
+                    if ( dinfo.detectorNum == 1 && di.detectorNum == 10 ){
+                        spec_fill(EDESS_ID, evt.adcdata, tdiff + 1000);
+                    }
+                }
+            }*/
             break;
         default:
             break;

@@ -6,6 +6,7 @@
 
 #include "WriteTerminal.h"
 #include "XIAControl.h"
+#include "functions.h"
 
 #include "mainwindow.h"
 
@@ -410,10 +411,32 @@ static void cb_disconnected(line_channel*, void*)
 
 int main(int argc, char* argv[])
 {
-    if( argc <= 1 ) {
-        std::cerr << "engine runs with PXI slots as input parameters" << std::endl;
-        std::cerr << argv[0] << " 2 3 4 5" << std::endl;
-        exit(EXIT_FAILURE);
+    unsigned short PXIMapping[PRESET_MAX_MODULES];
+    for (unsigned short & mapping : PXIMapping)
+        mapping = 0;
+
+    // If there is a mapping given in the command line we will read that, if not we will try
+    // to determine the slot mapping our self.
+    if ( argc == 1 ){
+        try {
+            auto mapping = ReadSlotMap();
+            if ( mapping.size() >= PRESET_MAX_MODULES ){
+                std::string errmsg = "Too many PCI devices found, found " + std::to_string(mapping.size());
+                throw std::runtime_error(errmsg);
+            }
+            int set = 0;
+            for ( auto &entry : mapping ){
+                PXIMapping[set++] = entry;
+            }
+        } catch ( std::exception &ex ){
+            std::cerr << "Could not determine PLX slot mapping, got error " << ex.what() << std::endl;
+            std::cerr << "Try with manual PXI slot mapping, e.g.:" << std::endl;
+            std::cerr << argv[0] << " 2 3 4 5" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+    } else {
+        for (int i = 1 ; i < argc ; ++i)
+            PXIMapping[i] = atoi(argv[i]);
     }
 
     signal(SIGINT, keyb_int); // set up interrupt handler (Ctrl-C)
@@ -458,12 +481,6 @@ int main(int argc, char* argv[])
 
     // sleep a little to avoid repeated timestamps
     usleep(10);
-
-    unsigned short PXIMapping[PRESET_MAX_MODULES];
-    for (int i = 0 ; i < PRESET_MAX_MODULES ; ++i)
-        PXIMapping[i] = 0;
-    for (int i = 1 ; i < argc ; ++i)
-        PXIMapping[i] = atoi(argv[i]);
 
     xiacontr = new XIAControl(&termWrite, PXIMapping);
 
