@@ -2,7 +2,7 @@
 
 #include "WriteTerminal.h"
 #include "utilities.h"
-#include "Functions.h"
+#include "functions.h"
 
 #include <algorithm>
 #include <thread>
