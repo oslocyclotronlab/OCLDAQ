@@ -57,15 +57,14 @@ std::map<pci_addr_t, unsigned short> GetMapping(const char *ini_file = "pxisys.i
 std::vector<unsigned short> ReadSlotMap(const char *ini_file)
 {
     auto map = GetMapping(ini_file);
-    for ( auto &e : map ){
-        std::cout << "(" << e.first.PCIBusNum << "," << e.first.PCIDevNum << "): " << e.second << std::endl;
-    }
     auto devices = exec("lspci | grep \"PLX Technology, Inc. PCI9054 32-bit 33MHz PCI <-> IOBus Bridge (rev 0b)\"");
     std::vector<unsigned short> slotMap;
 
     // Next we need to decode the output. We read the string, line by line.
     std::istringstream stream(devices);
     std::string line;
+    std::vector<pci_addr_t> addresses;
+    int min_pci = 255;
     while ( std::getline(stream, line) ){
         // First we need to decode the first two characters
         std::string PCIBusNumber(line.begin(), line.begin()+2);
@@ -73,16 +72,28 @@ std::vector<unsigned short> ReadSlotMap(const char *ini_file)
 
         int busNum = std::stoi(PCIBusNumber, nullptr, 16);
         int devNum = std::stoi(PCIDevNumber, nullptr, 16);
+        addresses.push_back({busNum, devNum});
+        min_pci = ( busNum < min_pci ) ? busNum : min_pci;
+    }
 
+    // If the min PCI bus found is larger than the minimum PCI bus in the config file,
+    // we will need figure out the offset
+    int min_plx = 255;
+    for ( auto &m : map ){
+        min_plx =  ( m.first.PCIBusNum < min_plx ) ? m.first.PCIBusNum : min_plx;
+    }
 
-        if ( map.find({busNum, devNum}) == map.end() ){
-            std::string errmsg = "Could not find PCI bus " + std::to_string(busNum);
-            errmsg += ", dev " + std::to_string(devNum);
+    int offset = min_pci - min_plx;
+    for ( auto &addr : addresses ){
+        // sometimes there may be a busOffset, if so, we will
+        if ( map.find({addr.PCIBusNum-offset, addr.PCIDevNum}) == map.end() ){
+            std::string errmsg = "Could not find PCI bus " + std::to_string(addr.PCIBusNum-offset);
+            errmsg += ", dev " + std::to_string(addr.PCIDevNum);
             throw std::runtime_error(errmsg);
         }
-
-        slotMap.push_back(map[{busNum, devNum}]);
+        slotMap.push_back(map[{addr.PCIBusNum-offset, addr.PCIDevNum}]);
     }
+
     std::sort(std::begin(slotMap), std::end(slotMap));
     return slotMap;
 }
