@@ -1,4 +1,4 @@
-#include "Functions.h"
+#include "functions.h"
 
 #include <pixie16app_export.h>
 #include <pixie16app_defs.h>
