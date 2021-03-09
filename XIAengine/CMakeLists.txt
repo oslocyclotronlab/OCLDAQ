@@ -30,6 +30,18 @@ CPMAddPackage(
 		VERSION 1.4
 )
 
+CPMAddPackage(
+	NAME inih
+	GITHUB_REPOSITORY jtilly/inih
+	GIT_TAG 1185eac0f0977654f9ac804055702e110bb4da91
+)
+
+if ( inih_ADDED )
+	add_library(inih INTERFACE)
+	target_include_directories(inih INTERFACE ${inih_SOURCE_DIR})
+	add_library(inih::inih ALIAS inih)
+endif()
+
 if (NOT sirius_ADDED )
 CPMAddPackage(NAME sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sirius)
 endif()
@@ -69,7 +81,7 @@ endif()
 set_target_properties(XIAengine PROPERTIES CXX_STANDARD 11)
 set_property(TARGET XIAengine PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-target_link_libraries(XIAengine PUBLIC Pixie16::Pixie16 sirius::sirius Qt5::Widgets)
+target_link_libraries(XIAengine PUBLIC Pixie16::Pixie16 sirius::sirius Qt5::Widgets inih::inih)
 
 add_custom_command(
 		TARGET XIAengine POST_BUILD
