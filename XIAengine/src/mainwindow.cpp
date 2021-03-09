@@ -298,7 +298,7 @@ void MainWindow::UpdateViewChannel()
 
     Pixie16ReadSglChanPar("TRIGGER_RISETIME", &trigRiseTime, module, channel);
     Pixie16ReadSglChanPar("TRIGGER_FLATTOP", &trigFlatTop, module, channel);
-    Pixie16ReadSglChanPar("PEAKSAMPLE", &peakSample, module, channel);
+    //Pixie16ReadSglChanPar("PEAKSAMPLE", &peakSample, module, channel);
     Pixie16ReadSglChanPar("TRIGGER_THRESHOLD", &tmp, module, channel);
     trigThreshold = tmp;
     Pixie16ReadSglChanPar("ENERGY_RISETIME", &energyRiseTime, module, channel);
@@ -554,7 +554,7 @@ void MainWindow::on_WriteButton_clicked()
 
     // If the peak sample is enabled we will change the value to be whatever we currently have set
     if ( ui->peak_sample->isEnabled() ){
-        write_if_different_chan("PEAKSAMPLE", module, channel, ui->peak_sample->value());
+        //write_if_different_chan("PEAKSAMPLE", module, channel, ui->peak_sample->value());
     }
 
     write_if_different_chan("CFDDelay", module, channel, ui->cfdDelay->value());
