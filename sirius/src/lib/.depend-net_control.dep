@@ -1,0 +1,3 @@
+-n .depend-net_control.dep 
+net_control.o: net_control.cpp ../../include/net_control.h \
+  ../../include/utilities.h ../../include/debug.h
