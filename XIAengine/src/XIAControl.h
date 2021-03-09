@@ -136,7 +136,8 @@ public:
     // Ask the class to end the run in the XIA modules.
     // We will also ask for the file where data are stored as we
     // will need to flush all data to this file.
-    bool XIA_end_run(FILE *output_file=NULL /* Ending the run will flush all remaning data to file */);
+    bool XIA_end_run(FILE *output_file=NULL, /* Ending the run will flush all remaning data to file */
+                     const char *fname = "");
 
     // Ask for a reload.
     // Will return false if run is active.
