@@ -1,0 +1,8 @@
+mama     = xterm -bg moccasin -fg black -geometry 80x25+5-60 -e ../../../prog/bin/mama
+rupdate  = ../rupdate/rupdate 
+loadsort = xterm -bg khaki -fg black -geometry 100x25-50+0 -e ../sort/loadsort
+readme   = gedit $HOME/Uni/Oslo/Applications/sirius/help/README
+manual   = firefox http://ocl.uio.no/workshop09/
+sort     = xterm -e ../sort/acq_sort
+engine   = xterm -e ../net/usb-engine
+elog     = elog -h localhost -p 8080 -l exp -a Type=Other -a Category=ACQ 
