@@ -7,6 +7,7 @@
 #include <array>
 #include <map>
 #include <sstream>
+#include <memory>
 
 #include <INIReader.h>
 
