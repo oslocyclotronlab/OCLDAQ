@@ -4,7 +4,7 @@
 #include <pixie16app_defs.h>
 #include <pixie16app_export.h>
 
-#include "Functions.h"
+#include "functions.h"
 #include "run_command.h"
 
 #include <iostream>
