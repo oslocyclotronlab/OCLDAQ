@@ -8,6 +8,7 @@
 #include <map>
 #include <sstream>
 #include <memory>
+#include <iostream>
 
 #include <INIReader.h>
 
@@ -56,6 +57,9 @@ std::map<pci_addr_t, unsigned short> GetMapping(const char *ini_file = "pxisys.i
 std::vector<unsigned short> ReadSlotMap(const char *ini_file)
 {
     auto map = GetMapping(ini_file);
+    for ( auto &e : map ){
+        std::cout << "(" << e.first.PCIBusNum << "," << e.first.PCIDevNum << "): " << e.second << std::endl;
+    }
     auto devices = exec("lspci | grep \"PLX Technology, Inc. PCI9054 32-bit 33MHz PCI <-> IOBus Bridge (rev 0b)\"");
     std::vector<unsigned short> slotMap;
 
