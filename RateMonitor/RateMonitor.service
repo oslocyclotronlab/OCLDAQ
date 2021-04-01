@@ -1,0 +1,15 @@
+
+[Unit]
+Description=RateMonitor service
+
+[Service]
+ExecStart=/usr/bin/RateMonitor -d
+
+# Automatically restart the service if it crashes
+Restart=on-failure
+
+# Our service will notify systemd once it is up and running
+Type=notify
+
+[Install]
+WantedBy=default.target
