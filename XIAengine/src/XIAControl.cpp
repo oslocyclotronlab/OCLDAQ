@@ -9,6 +9,7 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 
 #include <cstdlib>
 #include <cstdio>
@@ -775,9 +776,13 @@ bool XIAControl::WriteScalers()
 
     FILE *scaler_file_in = fopen(SCALER_FILE_NAME_IN, "w");
     FILE *scaler_file_out = fopen(SCALER_FILE_NAME_OUT, "w");
+    FILE *scaler_csv = fopen(SCALER_FILE_CSV, "w");
 
     fprintf(scaler_file_in, "Input count rate:\n\n\n");
     fprintf(scaler_file_out, "Output count rate:\n\n\n");
+
+    std::stringstream csv_stream;
+    csv_stream << "module,channel,input,output\n";
 
     for (int i = 0 ; i < 16 ; ++i){
         fprintf(scaler_file_in, "\t%d", i);
@@ -792,6 +797,7 @@ bool XIAControl::WriteScalers()
         for (int j = 0 ; j < 16 ; ++j){
             fprintf(scaler_file_in, "\t%.2f", ICR[i][j]);
             fprintf(scaler_file_out, "\t%.2f", OCR[i][j]);
+            csv_stream << i << "," << j << "," << ICR[i][j] << "," << OCR[i][j] << "\n";
         }
         fprintf(scaler_file_in, "\n");
         fprintf(scaler_file_out, "\n");
@@ -799,6 +805,11 @@ bool XIAControl::WriteScalers()
 
     fclose(scaler_file_in);
     fclose(scaler_file_out);
+
+    {
+        std::ofstream csv_file(SCALER_FILE_CSV);
+        csv_file << csv_stream.str();
+    }
 
     return true;
 }
