@@ -91,7 +91,7 @@ class EventHandler(FileSystemEventHandler):
         # file name is equal to rates.csv
         path = Path(event.src_path)
         self.logger.debug(f"File name: {path.name}")
-        if path.name != "rates.csv":
+        if path.name != "scalers.csv":
             return
 
         # Now we can actually do something fun!
