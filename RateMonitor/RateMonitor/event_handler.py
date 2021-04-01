@@ -65,7 +65,6 @@ class EventHandler(FileSystemEventHandler):
             module = int(row['module'])
             channel = int(row['channel'])
             tags = copy.deepcopy(self.tags[(module, channel)])
-            print(tags)
             tags['experiment'] = exp_name
             rates.append({
                 "measurement": "rate",

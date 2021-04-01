@@ -776,7 +776,6 @@ bool XIAControl::WriteScalers()
 
     FILE *scaler_file_in = fopen(SCALER_FILE_NAME_IN, "w");
     FILE *scaler_file_out = fopen(SCALER_FILE_NAME_OUT, "w");
-    FILE *scaler_csv = fopen(SCALER_FILE_CSV, "w");
 
     fprintf(scaler_file_in, "Input count rate:\n\n\n");
     fprintf(scaler_file_out, "Output count rate:\n\n\n");
