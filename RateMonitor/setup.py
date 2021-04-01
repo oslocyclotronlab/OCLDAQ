@@ -11,7 +11,7 @@ REQUIRED = [
     "pandas",
     "pytz",
     "influxdb_client",
-    "watchdog"
+    "watchdog",
     "systemd;platform_system=='Linux'"]
 
 
