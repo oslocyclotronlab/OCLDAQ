@@ -14,36 +14,38 @@ static calibration_t calibration;
 
 calibration_t *GetCalibration(){ return &calibration; }
 
-void sort_singles(std::vector<word_t> buffer)
+void sort_singles(const std::vector<word_t> &buffer)
 {
 
     DetectorInfo_t dinfo;
-    for (size_t i = 0 ; i < buffer.size() ; ++i){
+    for (auto &entry : buffer){
 
-        dinfo = GetDetector(buffer[i].address);
+        dinfo = GetDetector(entry.address);
 
         switch (dinfo.type) {
         case labr:
-            spec_fill(LABRSP_ID, buffer[i].adcdata, dinfo.detectorNum);
-            spec_fill(LABRCSP_ID, calibration.gain_labr[dinfo.detectorNum]*buffer[i].adcdata + calibration.shift_labr[dinfo.detectorNum], dinfo.detectorNum);
-            if ( buffer[i].cfdfail )
-                spec_fill(LABRCFD_ID, buffer[i].adcdata, dinfo.detectorNum);
+            spec_fill(LABRSP_ID, entry.adcdata, dinfo.detectorNum);
+            spec_fill(LABRCSP_ID,
+                      calibration.gain_labr[dinfo.detectorNum]*(entry.adcdata + drand48() - 0.5) + calibration.shift_labr[dinfo.detectorNum],
+                      dinfo.detectorNum);
+            if ( entry.cfdfail )
+                spec_fill(LABRCFD_ID, entry.adcdata, dinfo.detectorNum);
             break;
         case deDet:
-            spec_fill(DESP_ID, buffer[i].adcdata, dinfo.detectorNum + 8*dinfo.telNum);
-            if ( buffer[i].cfdfail )
-                spec_fill(DECFD_ID, buffer[i].adcdata, dinfo.detectorNum + 8*dinfo.telNum);
+            spec_fill(DESP_ID, entry.adcdata, dinfo.detectorNum + 8*dinfo.telNum);
+            if ( entry.cfdfail )
+                spec_fill(DECFD_ID, entry.adcdata, dinfo.detectorNum + 8*dinfo.telNum);
             break;
         case eDet:
-            spec_fill(ESP_ID, buffer[i].adcdata, dinfo.detectorNum);
-            if ( buffer[i].cfdfail )
-                spec_fill(ECFD_ID, buffer[i].adcdata, dinfo.detectorNum);
+            spec_fill(ESP_ID, entry.adcdata, dinfo.detectorNum);
+            if ( entry.cfdfail )
+                spec_fill(ECFD_ID, entry.adcdata, dinfo.detectorNum);
             break;
         case eGuard:
-            spec_fill(GUARD_ID, buffer[i].adcdata, dinfo.detectorNum);
+            spec_fill(GUARD_ID, entry.adcdata, dinfo.detectorNum);
             break;
         case ppac:
-            spec_fill(PPAC_ID, buffer[i].adcdata, dinfo.detectorNum);
+            spec_fill(PPAC_ID, entry.adcdata, dinfo.detectorNum);
             break;
         default:
             break;
@@ -64,6 +66,11 @@ void Sort_Particle_Event(Event &event)
         for (int i = 0 ; i < NUM_SI_DE_TEL ; ++i){
             for (int j = 0 ; j < event.n_dEdet[telNo][i] ; ++j){
                 spec_fill(EDESP_ID, event.trigger.adcdata / 8, event.w_dEdet[telNo][i][j].adcdata / 8);
+
+                spec_fill(EDECC_ID,
+                          calibration.gain_e[telNo]*(event.trigger.adcdata + drand48() - 0.5) + calibration.shift_e[telNo],
+                          calibration.gain_de[i]*(event.w_dEdet[telNo][i][j].adcdata + drand48() - 0.5) + calibration.shift_de[i]);
+
 
                 // We want a spectra for dE strip 3 with E 4... Choosen at random :p
                 if (telNo == 4 && i == 3)
