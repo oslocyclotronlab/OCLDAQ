@@ -77,6 +77,7 @@ endif()
 
 
 add_executable(XIAonline
+		${CMAKE_CURRENT_SOURCE_DIR}/src/Calib.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/Event_builder.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/experimentsetup.c
 		${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
