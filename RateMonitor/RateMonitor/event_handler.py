@@ -20,13 +20,15 @@ def GetTags():
     mapping[(0, 15)] = {"name": "unused0", "type": "unused"}
     mapping[(1, 15)] = {"name": "unused0", "type": "unused"}
 
-    for i in range(8):
+    for i in range(4):
         for j in range(8):
-            mapping[(2+int(i/2), j)] = {"name": f"deltaE_{i}_{j}",
-                                        "type": "deltaE"}
+            mapping[(2+i, j)] = {"name": f"deltaE_{i}_{j}",
+                                 "type": "deltaE"}
+            mapping[(2+i, j+8)] = {"name": f"deltaE_{2*i}_{j}",
+                                   "type": "deltaE"}
     for i in range(8):
-        mapping[(6, i)] = {"name": f"guardRing{i}", "type": "guardRing"}
-        mapping[(6, i+1)] = {"name": f"eDet{i+1}", "type": "eDet"}
+        mapping[(6, 2*i)] = {"name": f"guardRing{i}", "type": "guardRing"}
+        mapping[(6, 2*i+1)] = {"name": f"eDet{i+1}", "type": "eDet"}
     for i in range(4):
         mapping[(6, i)] = {"name": "PPAC{i}", "type": "PPAC"}
     return mapping
@@ -63,6 +65,7 @@ class EventHandler(FileSystemEventHandler):
             module = int(row['module'])
             channel = int(row['channel'])
             tags = copy.deepcopy(self.tags[(module, channel)])
+            print(tags)
             tags['experiment'] = exp_name
             rates.append({
                 "measurement": "rate",
