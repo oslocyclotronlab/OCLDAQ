@@ -13,8 +13,9 @@ try:
     import systemd
     systemd_handler = systemd.journal.JournalHandler()
     systemd_handler.setFormatter(formatter)
-except ModuleNotFoundError:
+except Exception:
     pass
+
 
 output_handler.setFormatter(formatter)
 
