@@ -82,7 +82,8 @@ class EventHandler(FileSystemEventHandler):
 
         # If event type isn't created
         # or modified we will return
-        if not (event.event_type == "created" or event.event_type == "modified"):  # noqa
+        if not (event.event_type == "created" or event.event_type == "modified"
+                or event.event_type == "closed"):  # noqa
             return
 
         # Next we will get the full path
