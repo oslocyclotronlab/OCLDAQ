@@ -248,6 +248,11 @@ int main (int argc, char* argv[])
                               new line_cb(cb_connected), new line_cb(cb_disconnected),
                               new command_cb(sort_commands, "407 error_cmd"));
 
+    // Attach shared memory
+    if ( !spectra_attach_all(true) ){
+        std::cerr << "Failed to attach shm spectra." << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
     // attach shared databuffer segment (written by engine)
     unsigned int *engine_shm = engine_shm_attach(false);
@@ -261,11 +266,7 @@ int main (int argc, char* argv[])
     const volatile unsigned int  datalen = engine_shm[ENGINE_DATA_SIZE];
     const volatile unsigned int* first_header = (unsigned int*)&engine_shm[ENGINE_FIRST_HEADER];
 
-    // Attach shared memory
-    if ( !spectra_attach_all(true) ){
-        std::cerr << "Failed to attach shm spectra." << std::endl;
-        exit(EXIT_FAILURE);
-    }
+
 
     if ( publish_data ) {
         address += ":" + std::to_string(port);

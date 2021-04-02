@@ -5,6 +5,7 @@
 #include "utilities.h"
 
 #include <fstream>
+#include <cstdio>
 
 // ######################################################################## 
 // ######################################################################## 
@@ -82,6 +83,7 @@ bool spectra_attach_all(bool online)
 {
     for(int i=1; sort_spectra[i].specno>0; ++i) {
         sort_spectrum_t *s = &sort_spectra[i];
+        printf("Attaching spectra '%s' (no. %d) with key %d and size %ld bytes\n", s->name, s->specno, s->key, s->size);
 
         key_t key = s->key;
         if( !online )
