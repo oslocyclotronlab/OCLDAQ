@@ -39,7 +39,6 @@ class EventHandler(FileSystemEventHandler):
     def __init__(self, host, token, log_handler,
                  log_level=logging.INFO):
         self.logger = logging.getLogger("RateMonitor")
-        self.logger.propagate = False
         self.logger.addHandler(log_handler)
         self.logger.setLevel(log_level)
         self.logger.debug(f"Trying to connect to '{host}' using token '{token}'")

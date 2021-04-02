@@ -10,8 +10,8 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(funcName)s - %(levelna
 output_handler = logging.StreamHandler()
 systemd_handler = None
 try:
-    import systemd
-    systemd_handler = systemd.journal.JournalHandler()
+    import cysystemd as systemd
+    systemd_handler = systemd.journal.JournaldLogHandler()
     systemd_handler.setFormatter(formatter)
 except Exception:
     pass
@@ -39,5 +39,6 @@ def main():
                                  log_handler=handler, log_level=log_level)
 
     if args.d:
-        systemd.daemon.notify('READY=1')
+        from cysystemd.daemon import notify, Notification
+        notify(Notification.READY)
     event_handler.watch(args.src)

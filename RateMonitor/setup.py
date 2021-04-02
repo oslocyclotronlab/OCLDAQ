@@ -12,7 +12,7 @@ REQUIRED = [
     "pytz",
     "influxdb_client",
     "watchdog",
-    "systemd-python;platform_system=='Linux'"]
+    "cysystemd;platform_system=='Linux'"]
 
 
 about = {}
