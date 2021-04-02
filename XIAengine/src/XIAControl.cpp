@@ -97,7 +97,7 @@ bool XIAControl::XIA_check_buffer(int bufsize)
     timeval tmp;
     gettimeofday(&tmp, NULL);
     t2 = tmp.tv_sec + 1e-6*tmp.tv_usec;
-    if (t2 - t1 > 5 ){
+    if (t2 - t1 > 1.0 ){
         if (!WriteScalers())
             StopRun();
         last_time = tmp;
