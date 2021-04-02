@@ -88,6 +88,10 @@ class EventHandler(FileSystemEventHandler):
                 or event.event_type == "closed"):  # noqa
             return
 
+        # We will only process the file once it is closed
+        if event.event_type != "closed":
+            return
+
         # Next we will get the full path
         # to the file and check that the
         # file name is equal to rates.csv
