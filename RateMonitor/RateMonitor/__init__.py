@@ -14,6 +14,7 @@ try:
     systemd_handler = systemd.journal.JournaldLogHandler()
     systemd_handler.setFormatter(formatter)
 except Exception:
+    print("Unable to locate systemd handler")
     pass
 
 
