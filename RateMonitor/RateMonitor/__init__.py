@@ -10,11 +10,10 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(funcName)s - %(levelna
 output_handler = logging.StreamHandler()
 systemd_handler = None
 try:
-    import cysystemd
-    systemd_handler = cysystemd.journal.JournaldLogHandler()
+    from cysystemd import journal
+    systemd_handler = journal.JournaldLogHandler()
     systemd_handler.setFormatter(formatter)
 except Exception:
-    print("Unable to locate systemd handler")
     pass
 
 
