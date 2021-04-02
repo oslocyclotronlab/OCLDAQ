@@ -30,6 +30,7 @@ def main():
         log_level = logging.DEBUG
 
     handler = output_handler
+    print(systemd_handler)
     if args.d:
         if systemd_handler is None:
             print("Could not find systemd try again, but not as daemon")
