@@ -17,7 +17,8 @@ calibration_t *GetCalibration(){ return &calibration; }
 void sort_singles(const std::vector<word_t> &buffer)
 {
 
-    DetectorInfo_t dinfo;
+    DetectorInfo_t dinfo, dinfo2;
+    double tdiff_c, tdiff_f, tdiff;
     for (auto &entry : buffer){
 
         dinfo = GetDetector(entry.address);
@@ -46,6 +47,15 @@ void sort_singles(const std::vector<word_t> &buffer)
             break;
         case ppac:
             spec_fill(PPAC_ID, entry.adcdata, dinfo.detectorNum);
+            for ( auto &gamma : buffer ){
+                dinfo2 = GetDetector(gamma.address);
+                if ( dinfo2.type != labr ){
+                    tdiff_c = entry.timestamp - gamma.timestamp;
+                    tdiff_f = entry.cfdcorr - gamma.cfdcorr;
+                    tdiff = tdiff_c + tdiff_f;
+                    spec_fill(TPPAC_ID, tdiff + 16384, dinfo2.detectorNum);
+                }
+            }
             break;
         default:
             break;
