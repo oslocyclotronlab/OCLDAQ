@@ -49,7 +49,7 @@ void sort_singles(const std::vector<word_t> &buffer)
             spec_fill(PPAC_ID, entry.adcdata, dinfo.detectorNum);
             for ( auto &gamma : buffer ){
                 dinfo2 = GetDetector(gamma.address);
-                if ( dinfo2.type != labr ){
+                if ( dinfo2.type == labr ){
                     tdiff_c = entry.timestamp - gamma.timestamp;
                     tdiff_f = entry.cfdcorr - gamma.cfdcorr;
                     tdiff = tdiff_c + tdiff_f;
