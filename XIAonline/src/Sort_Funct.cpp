@@ -68,7 +68,7 @@ void Sort_Particle_Event(Event &event)
     int64_t tdiff_c;
     double tdiff_f, tdiff;
 
-    int telNo = GetDetector(event.trigger.address).telNum;
+    int telNo = GetDetector(event.trigger.address).detectorNum;
 
     // We want to check if we have only one dE strip in this telescope.
     // If we see more than one, we don't continue.
