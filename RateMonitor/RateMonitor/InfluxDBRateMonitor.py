@@ -166,7 +166,6 @@ def parse_args():
                         default="https://rates.ocl.wtf",
                         help="Hostname of the InfluxDB HTTP API")
     parser.add_argument("--token", type=str, required=False,
-                        default="nh5Za_nA1jQ4y5Qj1tcNhV8UIb07iJ2SxDTP7y0sq4nTg3S9povxLrRymT2taK7Y8R4Z3cuMI_Y1ubZN4PLd1w==",  # noqa
                         help="InfluxDB access token")
     parser.add_argument("-v", action='store_true', help="Verbose output")
     parser.add_argument("-d", action='store_true',
