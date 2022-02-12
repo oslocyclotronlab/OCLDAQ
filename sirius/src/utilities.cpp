@@ -56,13 +56,17 @@ int* attach_shared(key_t key, size_t size, bool create)
 
     /* allocate shared memory segment */
     int shmid = shmget(key, size, 0666 | (create ? IPC_CREAT : 0));
-    if (shmid == -1)
-        return 0;
+    if (shmid == -1) {
+        perror("attach_shared (shmget)");
+        return nullptr;
+    }
 
     /* attach shared memory segment to process */
     shmptr = (int*)shmat(shmid, NULL, 0);
-    if( shmptr == (void*)-1 )
-        return 0;
+    if( shmptr == (void*)-1 ) {
+        perror("attach_shared (shmat)");
+        return nullptr;
+    }
 
     return shmptr;
 }

@@ -116,7 +116,8 @@ bool EventBuilder::UnpackOneEvent(Event &event)
     word_t curr_w;
     for (size_t i = curr_pos ; i < buffer.size() ; ++i){
         curr_w = buffer[i];
-        if ( ( GetDetector(curr_w.address).type == eDet ) ){
+        if ( ( GetDetector(curr_w.address).type == eDet ) ||
+             ( GetDetector(curr_w.address).type == ppac) ){
 
             // We find all events that are within MAX_TDIFF before the
             // E event.
