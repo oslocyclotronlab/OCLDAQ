@@ -1,4 +1,4 @@
-# OCLDAQ [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1206106.svg)](https://doi.org/10.5281/zenodo.1206106)
+# OCLDAQ [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6052828.svg)](https://doi.org/10.5281/zenodo.6052828)
 The OCL DAQ software is a package of programs that are used for readout of data aquisition systems for nuclear physics experiments.
 The original package contains an event builder to be ran on a dedicated Lynx computer in a VME crate. Newer verions will transition to a XIA based system.
 
