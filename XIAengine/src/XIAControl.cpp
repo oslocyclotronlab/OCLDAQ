@@ -9,6 +9,7 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 
 #include <cstdlib>
 #include <cstdio>
@@ -96,7 +97,7 @@ bool XIAControl::XIA_check_buffer(int bufsize)
     timeval tmp;
     gettimeofday(&tmp, NULL);
     t2 = tmp.tv_sec + 1e-6*tmp.tv_usec;
-    if (t2 - t1 > 5 ){
+    if (t2 - t1 > 1.0 ){
         if (!WriteScalers())
             StopRun();
         last_time = tmp;
@@ -779,6 +780,9 @@ bool XIAControl::WriteScalers()
     fprintf(scaler_file_in, "Input count rate:\n\n\n");
     fprintf(scaler_file_out, "Output count rate:\n\n\n");
 
+    std::stringstream csv_stream;
+    csv_stream << "module,channel,input,output\n";
+
     for (int i = 0 ; i < 16 ; ++i){
         fprintf(scaler_file_in, "\t%d", i);
         fprintf(scaler_file_out, "\t%d", i);
@@ -792,6 +796,7 @@ bool XIAControl::WriteScalers()
         for (int j = 0 ; j < 16 ; ++j){
             fprintf(scaler_file_in, "\t%.2f", ICR[i][j]);
             fprintf(scaler_file_out, "\t%.2f", OCR[i][j]);
+            csv_stream << i << "," << j << "," << ICR[i][j] << "," << OCR[i][j] << "\n";
         }
         fprintf(scaler_file_in, "\n");
         fprintf(scaler_file_out, "\n");
@@ -799,6 +804,11 @@ bool XIAControl::WriteScalers()
 
     fclose(scaler_file_in);
     fclose(scaler_file_out);
+
+    {
+        std::ofstream csv_file(SCALER_FILE_CSV);
+        csv_file << csv_stream.str();
+    }
 
     return true;
 }
