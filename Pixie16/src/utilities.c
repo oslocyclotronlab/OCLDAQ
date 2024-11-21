@@ -51,7 +51,7 @@
 #include "pixie16app_globals.h"
 #include "pixie16sys_export.h"
 #include "pixie16app_export.h"
-#include "pixie16app_common.h"
+//#include "pixie16app_common.h"
 #include "xia_common.h"
 
 #include <time.h>
@@ -63,6 +63,10 @@
 #include <unistd.h>
 #endif
 
+int Pixie_Check_Run_Status (
+        unsigned short ModNum );
+int Pixie_End_Run (
+        unsigned short ModNum );
 
 /****************************************************************
 *	Pixie_Start_Run:
