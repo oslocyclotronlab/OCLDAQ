@@ -40,6 +40,7 @@ add_library(Pixie16 STATIC
 	${CMAKE_CURRENT_SOURCE_DIR}/src/communication.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/i2cm24c64.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/pixie16app.c
+	${CMAKE_CURRENT_SOURCE_DIR}/src/pixie16app_globals.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/pixie16sys.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/pixie16sys_globals.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/tools.c
