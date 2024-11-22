@@ -2,6 +2,9 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QLoggingCategory>
+
+extern QLoggingCategory gui_category;
 
 namespace Ui {
 class MainWindow;

@@ -491,9 +491,10 @@ line_server::line_server(io_control& ioc, int port, std::string const& name,
 {
     DBGL;
     if( !listen() ) {
-	std::cerr << name << ": could not listen on port " << port
-		  << "Exit." << std::endl;
-	exit(EXIT_FAILURE);
+        std::string err_msg = name + ": could not listen on port " + std::to_string(port);
+	    //std::cerr << name << ": could not listen on port " << port << "Exit." << std::endl;
+	    //exit(EXIT_FAILURE);
+        throw std::runtime_error(err_msg);
     }
 }
 

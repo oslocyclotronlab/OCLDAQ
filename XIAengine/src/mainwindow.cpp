@@ -13,29 +13,37 @@
 #include <unistd.h>
 
 #include <QFileDialog>
+#include <QtLogging>
 
 extern command_list* commands;
+QLoggingCategory gui_category("XIAGUI");
 
 template<typename T>
-void write_if_different_chan(const char *par_name, unsigned short mod, unsigned short chan, T new_val)
+void write_if_different_chan(const char *par_name, const unsigned short &mod, const unsigned short &chan, const T &new_val)
 {
     T old_val;
     Pixie16ReadSglChanPar(par_name, reinterpret_cast<double *>(&old_val), mod, chan);
-    if ( new_val != old_val )
+    qCDebug(gui_category) << "Channel parameter '" << par_name << "' in module " << mod << ", channel " << chan << ": old_val=" << old_val << ", new_val=" << new_val << ".";
+    if ( new_val != old_val ) {
         Pixie16WriteSglChanPar(par_name, new_val, mod, chan);
+        qCInfo(gui_category) << "Channel parameter '" << par_name << "' in module " << mod << ", channel " << chan << " was changed from " << old_val << " to " << new_val << ".";
+    }
 }
 
 template<typename T>
-void write_if_different_mod(const char *par_name, unsigned short mod, T new_val)
+void write_if_different_mod(const char *par_name, const unsigned short &mod, const T &new_val)
 {
     T old_val;
     Pixie16ReadSglModPar(par_name, reinterpret_cast<unsigned int*>(&old_val), mod);
-    if ( new_val != old_val )
+    qCDebug(gui_category) << "Module parameter '" << par_name << "' in module " << mod << ": old_val=" << old_val << ", new_val=" << new_val << ".";
+    if ( new_val != old_val ) {
         Pixie16WriteSglModPar(par_name, new_val, mod);
+        qCInfo(gui_category) << "Module parameter '" << par_name << "' in module " << mod << " was changed from " << old_val << " to " << new_val << ".";
+    }
 }
 
-MainWindow::MainWindow(int num_mod, QWidget *parent) :
-    QMainWindow(parent)
+MainWindow::MainWindow(int num_mod, QWidget *parent)
+    : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , n_modules( num_mod )
     , current_module( 0 )
@@ -49,7 +57,10 @@ MainWindow::MainWindow(int num_mod, QWidget *parent) :
     // Set module limits
     ui->current_mod->setMinimum(0);
     ui->current_mod->setValue(0);
-    ui->current_mod->setMaximum(num_mod-1 /* call function to determine current max */);
+    if ( num_mod == 0 )
+        ui->current_mod->setMaximum(0);
+    else
+        ui->current_mod->setMaximum(num_mod-1 /* call function to determine current max */);
 
     // Set channel limits
     ui->current_channel->setMinimum(0);
@@ -158,6 +169,12 @@ void MainWindow::UpdateLimits()
     unsigned short modRev=0xF, modADCBits=16, modADCMPS=500;
     unsigned int modSerNum=12;
     Pixie16ReadModuleInfo(current_module, &modRev, &modSerNum, &modADCBits, &modADCMPS); // This works anyways?!
+
+#if NDEBUG
+    qDebug(gui_category) << "Module " << current_modue << ": Rev. " << modRev << " Ser. " << modSerNum << " ADC " << modADCMPS << " MHz " << modADCBits << "-bit";
+
+#endif // NDEBUG
+
 
     int fastfilterrange = 0;
     int rev = modRev;
@@ -496,7 +513,7 @@ void MainWindow::on_WriteButton_clicked()
     unsigned short module = current_module, channel = current_channel;
     unsigned long tmp;
     unsigned int tmpI;
-    std::cout << "Writing parameters to module "<< module << ", channel " << channel;
+    qCInfo(gui_category) << "Writing parameters to module "<< module << ", channel " << channel;
 
     // First we will read the CSRA value
     unsigned long csra;

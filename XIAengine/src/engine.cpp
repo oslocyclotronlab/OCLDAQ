@@ -34,7 +34,6 @@
 static const int MAX_BUFFER_COUNT = 16384; // max 2GB files
 
 char leaveprog='n'; // leave program (Ctrl-C / INT)
-
 static bool stopped = true;
 static int buffer_count = -1;
 static float buffer_rate = 0;
@@ -409,8 +408,151 @@ static void cb_disconnected(line_channel*, void*)
 // ########################################################################
 // ########################################################################
 
+int main_engine(int argc, char* argv[])
+{
+
+    commands = new command_list();
+    if( (commands->read("acq_master_commands.txt")) ) {
+        std::cerr << "Using commands from acq_master_commands.txt." << std::endl;
+    } else {
+        std::cerr << "Using default commands." << std::endl;
+        commands->read_text(
+                "mama     = xterm -bg moccasin -fg black -geometry 80x25+5-60 -e mama\n"
+                "rupdate  = rupdate\n"
+                "loadsort = xterm -bg khaki -fg black -geometry 100x25-50+0 -e loadsort\n"
+                "readme   = echo\n"
+                "manual   = firefox http://ocl.uio.no/sirius/\n"
+                "sort     = xterm -e acq_sort\n"
+                "engine   = xterm -e usb-engine\n"
+                "elog     = echo\n"
+        );
+    }
+
+    io_select ioc;
+
+    static command_cb::command engine_commands[] = {
+            { "quit",        false, command_quit,        0 },
+            { "stop",        false, command_stop,        0 },
+            { "start",       false, command_start,       0 },
+            { "output_none", false, command_output_none, 0 },
+            { "output_file", true,  command_output_file, 0 },
+            { "output_get_dir", false, command_output_get_dir, 0 },
+            { "output_dir",  true,  command_output_dir,  0 },
+            { "status",      false, command_status,      0 },
+            { "reload",      false, command_reload,      0 },
+            { 0, 0, 0, 0 }
+    };
+
+    try {
+        ls_engine = new line_server
+                (ioc, 32009, "engine",
+                 new line_cb(cb_connected), new line_cb(cb_disconnected),
+                 new command_cb(engine_commands, "407 error_cmd"));
+    } catch ( const std::exception &ex ){
+        std::cerr << ex.what() << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    // attach shared memory and initialize some variables
+    unsigned int* buffer  = engine_shm_attach(true);
+    if( !buffer ) {
+        std::cerr << "engine: Failed to attach shared memory." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    unsigned int* time_us       = &buffer[ENGINE_TIME_US];
+    unsigned int* time_s        = &buffer[ENGINE_TIME_S ];
+    unsigned int* data          = buffer + buffer[ENGINE_DATA_START];
+    unsigned int* first_header  = &buffer[ENGINE_FIRST_HEADER];
+    const unsigned int datalen  = buffer[ENGINE_DATA_SIZE];
+    /*const unsigned int*/ datalen_char = datalen*sizeof(int);
+
+    // main loop
+    while( leaveprog == 'n' ) {
+        if( !stopped ) {
+            if ( xiacontr->XIA_check_buffer(datalen) ) {
+                // a buffer is available; reset timestamp
+                *time_us = *time_s = 0;
+                // transfer the buffer
+                if( !xiacontr->XIA_fetch_buffer(data, datalen, first_header) ) {
+                    // the buffer was not transferred completely, stop
+                    do_stop();
+                } else {
+
+                    // write actual timestamp
+                    timeval t{};
+                    gettimeofday(&t, 0);
+                    *time_us = t.tv_usec;
+                    *time_s  = t.tv_sec;
+
+                    // write buffer
+                    if( output_file ) {
+                        unsigned int w = fwrite(data, 1, datalen_char, output_file);
+                        if( w != datalen_char ) {
+                            ls_engine->send_all("503 error_file Write error, closing file and stopping.\n");
+                            do_stop();
+                        }
+                    }
+
+                    // calculate buffer rate
+                    if( last_time.tv_sec!=0 && last_time.tv_usec!=0 ) {
+                        // but only if this is not the first buffer
+                        buffer_rate = (t.tv_sec + 1e-6*t.tv_usec)
+                                      -(last_time.tv_sec + 1e-6*last_time.tv_usec);
+                        if( buffer_rate>0 )
+                            buffer_rate = 1/buffer_rate;
+                        else
+                            buffer_rate = 999999;
+                    } else {
+                        buffer_rate = 0;
+                    }
+                    last_time = t;
+
+
+                    // send message about new buffer count
+                    buffer_count += 1;
+                    broadcast_buffer_count();
+                    if( output_file && buffer_count == MAX_BUFFER_COUNT )
+                        change_output_file();
+                }
+                continue;
+            }
+
+            if( !xiacontr->XIA_check_status() )
+                do_stop();
+        }
+        struct timeval timeout = { 0, 250 };
+        ioc.run(&timeout);
+    }
+
+    engine_shm_detach();
+
+
+    delete commands;
+    return 0;
+
+}
+
+// ########################################################################
+// ########################################################################
+
+int main_gui(int nmod, QApplication &app)
+{
+    MainWindow w(nmod);
+    w.show();
+    /*while ( leaveprog == 'n' ){
+        global_app->processEvents();
+    }*/
+    return app.exec();
+}
+
+// ########################################################################
+// ########################################################################
+
 int main(int argc, char* argv[])
 {
+    QApplication app(argc, argv);
+    QLoggingCategory::setFilterRules(QStringLiteral("XIAGUI.debug=true"));
+    std::cout << "I'm debugging!" << std::endl;
     unsigned short PXIMapping[PRESET_MAX_MODULES];
     for (unsigned short & mapping : PXIMapping)
         mapping = 0;
@@ -442,143 +584,24 @@ int main(int argc, char* argv[])
     signal(SIGINT, keyb_int); // set up interrupt handler (Ctrl-C)
     signal(SIGPIPE, SIG_IGN);
 
-    commands = new command_list();
-    if( (commands->read("acq_master_commands.txt")) ) {
-        std::cerr << "Using commands from acq_master_commands.txt." << std::endl;
-    } else {
-        std::cerr << "Using default commands." << std::endl;
-        commands->read_text(
-            "mama     = xterm -bg moccasin -fg black -geometry 80x25+5-60 -e mama\n"
-            "rupdate  = rupdate\n"
-            "loadsort = xterm -bg khaki -fg black -geometry 100x25-50+0 -e loadsort\n"
-            "readme   = echo\n"
-            "manual   = firefox http://ocl.uio.no/sirius/\n"
-            "sort     = xterm -e acq_sort\n"
-            "engine   = xterm -e usb-engine\n"
-            "elog     = echo\n"
-            );
-    }
-
-    io_select ioc;
-
-    static command_cb::command engine_commands[] = {
-        { "quit",        false, command_quit,        0 },
-        { "stop",        false, command_stop,        0 },
-        { "start",       false, command_start,       0 },
-        { "output_none", false, command_output_none, 0 },
-        { "output_file", true,  command_output_file, 0 },
-        { "output_get_dir", false, command_output_get_dir, 0 },
-        { "output_dir",  true,  command_output_dir,  0 },
-        { "status",      false, command_status,      0 },
-        { "reload",      false, command_reload,      0 },
-        { 0, 0, 0, 0 }
-    };
-
-    ls_engine = new line_server
-        (ioc, 32009, "engine",
-         new line_cb(cb_connected), new line_cb(cb_disconnected),
-         new command_cb(engine_commands, "407 error_cmd"));
-
     // sleep a little to avoid repeated timestamps
     usleep(10);
 
     xiacontr = new XIAControl(&termWrite, PXIMapping);
 
-    // attach shared memory and initialize some variables
-    unsigned int* buffer  = engine_shm_attach(true);
-    if( !buffer ) {
-        std::cerr << "engine: Failed to attach shared memory." << std::endl;
-        exit(EXIT_FAILURE);
-    }
-    unsigned int* time_us       = &buffer[ENGINE_TIME_US];
-    unsigned int* time_s        = &buffer[ENGINE_TIME_S ];
-    unsigned int* data          = buffer + buffer[ENGINE_DATA_START];
-    unsigned int* first_header  = &buffer[ENGINE_FIRST_HEADER];
-    const unsigned int datalen  = buffer[ENGINE_DATA_SIZE];
-    /*const unsigned int*/ datalen_char = datalen*sizeof(int);
-
     // We will now boot before anything else will happend.
     if ( !xiacontr->XIA_boot_all(OFFLINE) )
         leaveprog = 'y';
 
+    auto nmod = xiacontr->GetNumMod();
 
-    // Now we can start the GUI.
-    globargc = argc;
-    globargv = argv;
+    // Now we are ready to start the two threads, this will launch the settings window!
+    auto engine_thread = std::thread(main_engine, argc, argv);
+    auto r = main_gui(nmod, app);
 
-    // If offline we will start GUI thread
-    if ( OFFLINE ) {
-        GUI_thread(xiacontr->GetNumMod());
-        leaveprog = 'y';
-    }
+    if ( engine_thread.joinable() ) engine_thread.join();
 
-
-    // main loop
-    while( leaveprog == 'n' ) {
-        if( !stopped ) {
-            if ( xiacontr->XIA_check_buffer(datalen) ) {
-                // a buffer is available; reset timestamp
-                *time_us = *time_s = 0;
-                // transfer the buffer
-                if( !xiacontr->XIA_fetch_buffer(data, datalen, first_header) ) {
-                    // the buffer was not transferred completely, stop
-                    do_stop();
-                } else {
-
-                    // write actual timestamp
-                    timeval t;
-                    gettimeofday(&t, 0);
-                    *time_us = t.tv_usec;
-                    *time_s  = t.tv_sec;
-
-                    // write buffer
-                    if( output_file ) {
-                        unsigned int w = fwrite(data, 1, datalen_char, output_file);
-                        if( w != datalen_char ) {
-                            ls_engine->send_all("503 error_file Write error, closing file and stopping.\n");
-                            do_stop();
-                        }
-                    }
-
-                    // calculate buffer rate
-                    if( last_time.tv_sec!=0 && last_time.tv_usec!=0 ) {
-                        // but only if this is not the first buffer
-                        buffer_rate = (t.tv_sec + 1e-6*t.tv_usec)
-                            -(last_time.tv_sec + 1e-6*last_time.tv_usec);
-                        if( buffer_rate>0 )
-                            buffer_rate = 1/buffer_rate;
-                        else
-                            buffer_rate = 999999;
-                    } else {
-                        buffer_rate = 0;
-                    }
-                    last_time = t;
-
-
-                    // send message about new buffer count
-                    buffer_count += 1;
-                    broadcast_buffer_count();
-                    if( output_file && buffer_count == MAX_BUFFER_COUNT )
-                        change_output_file();
-                }
-                continue;
-            }
-            
-            if( !xiacontr->XIA_check_status() )
-                do_stop();
-        }
-        struct timeval timeout = { 0, 250 };
-        ioc.run(&timeout);
-    }
-
-    engine_shm_detach();
-
-    if (gui_thread.joinable())
-        gui_thread.join();
-
-
-    delete commands;
-    return 0;
+    return r;
 }
 
 // ########################################################################
