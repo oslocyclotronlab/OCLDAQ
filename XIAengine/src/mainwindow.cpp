@@ -35,9 +35,12 @@ void write_if_different_mod(const char *par_name, unsigned short mod, T new_val)
 }
 
 MainWindow::MainWindow(int num_mod, QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow),
-    n_modules( num_mod )
+    QMainWindow(parent)
+    , ui(new Ui::MainWindow)
+    , n_modules( num_mod )
+    , current_module( 0 )
+    , current_channel( 0 )
+    , current_slow_filter( 0 )
 {
     ui->setupUi(this);
 

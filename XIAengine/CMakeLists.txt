@@ -54,7 +54,8 @@ if (NOT firmware_ADDED)
 	CPMAddPackage(NAME firmware SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../firmware)
 endif()
 
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
+# To find Qt5: -DQt5_DIR=/opt/homebrew/opt/qt@5/lib/cmake/Qt5
+find_package(Qt6 COMPONENTS Widgets REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -81,7 +82,7 @@ endif()
 set_target_properties(XIAengine PROPERTIES CXX_STANDARD 11)
 set_property(TARGET XIAengine PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-target_link_libraries(XIAengine PUBLIC Pixie16::Pixie16 sirius::sirius Qt5::Widgets inih::inih)
+target_link_libraries(XIAengine PUBLIC Pixie16::Pixie16 sirius::sirius Qt6::Widgets inih::inih)
 
 add_custom_command(
 		TARGET XIAengine POST_BUILD
