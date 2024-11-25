@@ -293,6 +293,8 @@ void MainWindow::UpdateLimits()
     ui->QDCLen6->setMaximum( QDCLEN_MAX / QDCfactor );
     ui->QDCLen7->setMinimum( QDCLEN_MIN / QDCfactor );
     ui->QDCLen7->setMaximum( QDCLEN_MAX / QDCfactor );
+
+    ui->ResetDelay->setMaximum(RESET_DELAY_MAX);
 }
 
 
@@ -309,7 +311,7 @@ void MainWindow::UpdateViewChannel()
     double cfdDelay;
     unsigned int cfdScale, cfdThreshold;
     double trace_length, trace_delay;
-    double fastTrigBackLen, extTrigStrech, ExternDelayLen, FtrigDelay, VetoStrech, ChanTrigStrech;
+    double fastTrigBackLen, extTrigStrech, ExternDelayLen, FtrigDelay, VetoStrech, ChanTrigStrech, ResetDelay;
     unsigned int chanMultMaskL, chanMultMaskH;
     double QDCLen0, QDCLen1, QDCLen2, QDCLen3, QDCLen4, QDCLen5, QDCLen6, QDCLen7;
     unsigned int csra;
@@ -343,6 +345,7 @@ void MainWindow::UpdateViewChannel()
     Pixie16ReadSglChanPar("FtrigoutDelay", &FtrigDelay, module, channel);
     Pixie16ReadSglChanPar("VetoStretch", &VetoStrech, module, channel);
     Pixie16ReadSglChanPar("ChanTrigStretch", &ChanTrigStrech, module, channel);
+    Pixie16ReadSglChanPar("Reset_Delay", &ResetDelay, module, channel);
     Pixie16ReadSglChanPar("MultiplicityMaskL", &tmp, module, channel);
     chanMultMaskL = tmp;
     Pixie16ReadSglChanPar("MultiplicityMaskH", &tmp, module, channel);
@@ -379,6 +382,7 @@ void MainWindow::UpdateViewChannel()
     ui->FtrigoutDelay->setValue(FtrigDelay);
     ui->VetoStrech->setValue(VetoStrech);
     ui->ChanTrigStrech->setValue(ChanTrigStrech);
+    ui->ResetDelay->setValue(ResetDelay);
     ui->QDCLen0->setValue(QDCLen0);
     ui->QDCLen1->setValue(QDCLen1);
     ui->QDCLen2->setValue(QDCLen2);
@@ -590,6 +594,7 @@ void MainWindow::on_WriteButton_clicked()
     write_if_different_chan("FtrigoutDelay", module, channel, ui->FtrigoutDelay->value());
     write_if_different_chan("VetoStretch", module, channel, ui->VetoStrech->value());
     write_if_different_chan("ChanTrigStretch", module, channel, ui->ChanTrigStrech->value());
+    write_if_different_chan("Reset_Delay", module, channel, ui->ResetDelay->value());
 
     write_if_different_chan("QDCLen0", module, channel, ui->QDCLen0->value());
     write_if_different_chan("QDCLen1", module, channel, ui->QDCLen1->value());
