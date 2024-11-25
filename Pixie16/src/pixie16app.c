@@ -3106,7 +3106,7 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16WriteSglChanPar (
 	unsigned int baselinepercent, energylow, log2ebin, newchancsra, oldchancsra, chancsrb;
 	unsigned int baselinecut, fasttrigbacklen, baselineaverage;
 	int retval;
-	unsigned int cfddelay, cfdscale, qdclen, exttrigstretch, vetostretch, externdelaylen, multiplicitymaskl, multiplicitymaskh, ftrigoutdelay;
+	unsigned int cfddelay, cfdscale, qdclen, exttrigstretch, vetostretch, externdelaylen, multiplicitymaskl, multiplicitymaskh, ftrigoutdelay, resetdelay;
 	unsigned int chantrigstretch, cfdthresh;
 
 	// Check if ModNum is valid
@@ -4335,6 +4335,34 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16WriteSglChanPar (
 			return(-4);
 		}
 	}
+    else if (strcmp(ChanParName, "RESET_DELAY") == 0)
+    {
+        resetdelay = (unsigned int)ChanParData;
+        /*if(Module_Information[ModNum].Module_ADCMSPS == 100)
+            resetdelay = (unsigned int)ROUND(ChanParData * (double)Module_Information[ModNum].Module_ADCMSPS);
+        else if(Module_Information[ModNum].Module_ADCMSPS == 250)
+            resetdelay = (unsigned int)ROUND(ChanParData * (double)(Module_Information[ModNum].Module_ADCMSPS / 2));
+        else if(Module_Information[ModNum].Module_ADCMSPS == 500)
+            resetdelay = (unsigned int)ROUND(ChanParData * (double)(Module_Information[ModNum].Module_ADCMSPS / 5));*/
+
+        // Range check
+        if ( resetdelay > RESET_DELAY_MAX )
+            resetdelay = RESET_DELAY_MAX;
+
+        // Update DSP parameter ResetDelay
+        Pixie_Devices[ModNum].DSP_Parameter_Values[ResetDelay_Address[ModNum] + ChanNum - DATA_MEMORY_ADDRESS] = resetdelay;
+        // Download to the selected Pixie module
+        Pixie16IMbufferIO(&resetdelay, 1, (unsigned int)(ResetDelay_Address[ModNum] + ChanNum), MOD_WRITE, ModNum);
+
+        // Program FiPPI to apply ResetDelay settings to the FPGA
+        retval = Pixie16ProgramFippi(ModNum);
+        if(retval < 0)
+        {
+            sprintf(ErrMSG, "*ERROR* (Pixie16WriteSglChanPar): ProgramFippi failed in module %d channel %d after downloading ResetDelay, retval=%d", ModNum, ChanNum, retval);
+            Pixie_Print_MSG(ErrMSG);
+            return(-4);
+        }
+    }
 	else
 	{
 		sprintf(ErrMSG, "*ERROR* (Pixie16WriteSglChanPar): invalid channel parameter name %s", ChanParName);
@@ -4373,7 +4401,7 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16ReadSglChanPar (
 	unsigned int xwait;
 	unsigned int baselinepercent, energylow, log2ebin, chancsra, chancsrb;
 	unsigned int baselinecut, fasttrigbacklen, baselineaverage;
-	unsigned int cfddelay, cfdscale, qdclen, exttrigstretch, vetostretch, externdelaylen, multiplicitymaskl, multiplicitymaskh, ftrigoutdelay;
+	unsigned int cfddelay, cfdscale, qdclen, exttrigstretch, vetostretch, externdelaylen, multiplicitymaskl, multiplicitymaskh, ftrigoutdelay, resetdelay;
 	unsigned int chantrigstretch, cfdthresh;
 
 	// Check if ModNum is valid
@@ -4862,6 +4890,21 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16ReadSglChanPar (
 		else if(Module_Information[ModNum].Module_ADCMSPS == 500)
 			*ChanParData = (double)chantrigstretch / (double)(Module_Information[ModNum].Module_ADCMSPS / 5);
 	}
+    else if (strcmp(ChanParName, "Reset_Delay") == 0)
+    {
+        Pixie16IMbufferIO(&resetdelay, 1, (unsigned int)(ResetDelay_Address[ModNum] + ChanNum), MOD_READ, ModNum);
+        Pixie_Devices[ModNum].DSP_Parameter_Values[ResetDelay_Address[ModNum] + ChanNum - DATA_MEMORY_ADDRESS] = resetdelay;
+
+        *ChanParData = (double)resetdelay;
+
+        /*if(Module_Information[ModNum].Module_ADCMSPS == 100)
+            *ChanParData = (double)resetdelay / (double)Module_Information[ModNum].Module_ADCMSPS;
+        else if(Module_Information[ModNum].Module_ADCMSPS == 250)
+            *ChanParData = (double)resetdelay / (double)(Module_Information[ModNum].Module_ADCMSPS / 2);
+        else if(Module_Information[ModNum].Module_ADCMSPS == 500)
+            *ChanParData = (double)resetdelay / (double)(Module_Information[ModNum].Module_ADCMSPS / 5);
+        */
+    }
 	else
 	{
 		sprintf(ErrMSG, "*ERROR* (Pixie16ReadSglChanPar): invalid channel parameter name %s", ChanParName);

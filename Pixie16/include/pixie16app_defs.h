@@ -231,6 +231,8 @@ extern "C" {
 #define CHANTRIGSTRETCH_MAX 4095
 #define CHANTRIGSTRETCH_MIN 1
 
+#define RESET_DELAY_MAX 255
+
 /*------------------------------------- 
 	CHANCSRA bits definitions
  --------------------------------------*/ 
