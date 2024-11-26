@@ -13,7 +13,7 @@
 #include <unistd.h>
 
 #include <QFileDialog>
-#include <QtLogging>
+//#include <QtLogging>
 
 extern command_list* commands;
 QLoggingCategory gui_category("XIAGUI");
