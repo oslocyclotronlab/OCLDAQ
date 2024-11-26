@@ -520,7 +520,10 @@ void MainWindow::on_WriteButton_clicked()
     qCInfo(gui_category) << "Writing parameters to module "<< module << ", channel " << channel;
 
     // First we will read the CSRA value
-    unsigned long csra;
+    unsigned int csra;
+    double tmpD;
+    Pixie16ReadSglChanPar("CHANNEL_CSRA", &tmpD, module, channel);
+    csra = (double)tmpD;
     csra = ( ui->CSRA_0->isChecked() ) ? APP32_SetBit(CCSRA_FTRIGSEL, csra) : APP32_ClrBit(CCSRA_FTRIGSEL, csra);
     csra = ( ui->CSRA_1->isChecked() ) ? APP32_SetBit(CCSRA_EXTTRIGSEL, csra) : APP32_ClrBit(CCSRA_EXTTRIGSEL, csra);
     csra = ( ui->CSRA_2->isChecked() ) ? APP32_SetBit(CCSRA_GOOD, csra) : APP32_ClrBit(CCSRA_GOOD, csra);
@@ -545,6 +548,7 @@ void MainWindow::on_WriteButton_clicked()
 
     // Next we do the module CSRB values.
     unsigned int csrb;
+    Pixie16ReadSglModPar("MODULE_CSRB", &csrb, current_module);
     csrb = ( ui->MODCSRB_0->isChecked() ) ? APP32_SetBit(MODCSRB_CPLDPULLUP, csrb) : APP32_ClrBit(MODCSRB_CPLDPULLUP, csrb);
     csrb = ( ui->MODCSRB_4->isChecked() ) ? APP32_SetBit(MODCSRB_DIRMOD, csrb) : APP32_ClrBit(MODCSRB_DIRMOD, csrb);
     csrb = ( ui->MODCSRB_6->isChecked() ) ? APP32_SetBit(MODCSRB_CHASSISMASTER, csrb) : APP32_ClrBit(MODCSRB_CHASSISMASTER, csrb);
@@ -621,7 +625,7 @@ void MainWindow::on_WriteButton_clicked()
 void MainWindow::SaveSettings(char *filename)
 {
     // First we need to read the entire settings file as it currently is on disk (as a backup copy)
-    FILE *file = fopen(filename, "rb");
+    /*FILE *file = fopen(filename, "rb");
     bool have_bck = true;
     unsigned int config_raw[N_DSP_PAR * PRESET_MAX_MODULES];
     if (fread(config_raw, sizeof(unsigned int), N_DSP_PAR*PRESET_MAX_MODULES, file) != N_DSP_PAR*PRESET_MAX_MODULES){
@@ -630,7 +634,7 @@ void MainWindow::SaveSettings(char *filename)
     }
 
     fclose(file); // We are done with the file.
-
+    */
     std::cout << "Trying to save settings to file '" << filename << "'" << std::endl;
 
     int retval = Pixie16SaveDSPParametersToFile(filename);
@@ -639,19 +643,19 @@ void MainWindow::SaveSettings(char *filename)
         return;
     } else if (retval == -1) {
         std::cout << "... Failed, unable to read DSP parameter value from modules. Please restart engine and check the 'Pixie16msg.txt' file." << std::endl;
-        if (!have_bck){
+        /*if (!have_bck){
             std::cout << "Warning: Unable to restore old '" << filename << "' file" << std::endl;
             return;
-        }
+        }*/
     } else {
         std::cout << "... Failed, unable to write to disk." << std::endl;
-        if (!have_bck){
+        /*if (!have_bck){
             std::cout << "Warning: Unable to restore old '" << filename << "' file" << std::endl;
             return;
-        }
+        }*/
     }
 
-    file = fopen(filename, "wb");
+    /*file = fopen(filename, "wb");
 
     // Writing to file...
     if (fwrite(config_raw, sizeof(unsigned int), N_DSP_PAR*PRESET_MAX_MODULES, file) != N_DSP_PAR*PRESET_MAX_MODULES){
@@ -659,6 +663,7 @@ void MainWindow::SaveSettings(char *filename)
     }
 
     fclose(file); // Done!
+    */
 }
 
 void MainWindow::on_SaveButton_clicked()

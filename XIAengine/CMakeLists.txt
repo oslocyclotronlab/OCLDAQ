@@ -82,12 +82,21 @@ endif()
 set_target_properties(XIAengine PROPERTIES CXX_STANDARD 11)
 set_property(TARGET XIAengine PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-target_link_libraries(XIAengine PUBLIC Pixie16::Pixie16 sirius::sirius Qt6::Widgets inih::inih)
+target_link_libraries(XIAengine
+	PUBLIC
+		Pixie16::Pixie16
+		sirius::sirius
+		Qt6::Core
+		Qt6::Widgets
+		inih::inih
+		Threads::Threads
+)
 
 add_custom_command(
 		TARGET XIAengine POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy
-		${firmware_BINARY_DIR}/XIA_Firmware.txt
+		#${firmware_BINARY_DIR}/XIA_Firmware.txt
+		${CMAKE_CURRENT_LIST_DIR}/../template/XIA_Firmware.txt
 		${CMAKE_CURRENT_BINARY_DIR}/XIA_Firmware.txt
 )
 

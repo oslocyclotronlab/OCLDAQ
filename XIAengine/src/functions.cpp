@@ -52,8 +52,6 @@ bool operator<(const pci_addr_t &lhs, const pci_addr_t &rhs);
 std::string exec(const char* cmd);
 std::map<pci_addr_t, unsigned short> GetMapping(const char *ini_file = "pxisys.ini");
 
-
-
 std::vector<unsigned short> ReadSlotMap(const char *ini_file)
 {
     auto map = GetMapping(ini_file);
