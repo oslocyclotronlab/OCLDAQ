@@ -70,9 +70,12 @@ void Sort_Particle_Event(Event &event)
     int telNo = GetDetector(event.trigger.address).detectorNum;
 
     // Time-energy spectrum, x-axis energy, y-axis time
-    for (int j = 0 ; j < event.n_labr[1] ; ++j){
-        tdiff = double(event.w_labr[1][j].timestamp - event.trigger.timestamp) + (event.w_labr[1][j].cfdcorr - event.trigger.cfdcorr);
-        spec_fill(TIME_ENERGY_ID, event.w_labr[1][j].adcdata * double(1000)/double(16384), tdiff + 500);
+    if ( !event.trigger.cfdfail ) {
+        for (int j = 0; j < event.n_labr[1]; ++j) {
+            tdiff = double(event.w_labr[1][j].timestamp - event.trigger.timestamp) +
+                    (event.w_labr[1][j].cfdcorr - event.trigger.cfdcorr);
+            spec_fill(TIME_ENERGY_ID, event.w_labr[1][j].adcdata * double(1000) / double(16384), tdiff + 500);
+        }
     }
 
     // We want to check if we have only one dE strip in this telescope.
