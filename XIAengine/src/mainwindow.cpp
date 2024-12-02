@@ -257,6 +257,9 @@ void MainWindow::UpdateLimits()
         ui->ResetDelay->setMaximum(10 /*RESET_DELAY_MAX / double( msps )*/);
     }
 
+    ui->ResetDelay->setMinimum(0);
+    ui->ResetDelay->setMaximum(TRACEDELAY_MAX);
+
     // Timing limits
     ui->fastTrigBackLen->setMinimum( FASTTRIGBACKLEN_MIN_100MHZFIPCLK / adcFactor );
     ui->fastTrigBackLen->setMaximum( FASTTRIGBACKLEN_MAX / adcFactor );
