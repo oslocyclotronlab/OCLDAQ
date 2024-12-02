@@ -70,7 +70,7 @@ void Sort_Particle_Event(Event &event)
     int telNo = GetDetector(event.trigger.address).detectorNum;
 
     // Time-energy spectrum, x-axis energy, y-axis time
-    if ( !event.trigger.cfdfail ) {
+    if ( !event.trigger.cfdfail && (event.trigger.adcdata > 3600 && event.trigger.adcdata < 3800) ) {
         for (int j = 0; j < event.n_labr[1]; ++j) {
             if ( event.w_labr[1][j].cfdfail )
                 continue;
