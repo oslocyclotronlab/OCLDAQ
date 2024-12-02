@@ -4335,15 +4335,15 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16WriteSglChanPar (
 			return(-4);
 		}
 	}
-    else if (strcmp(ChanParName, "RESET_DELAY") == 0)
+    else if (strcmp(ChanParName, "ResetDelay") == 0)
     {
         resetdelay = (unsigned int)ChanParData;
-        /*if(Module_Information[ModNum].Module_ADCMSPS == 100)
+        if(Module_Information[ModNum].Module_ADCMSPS == 100)
             resetdelay = (unsigned int)ROUND(ChanParData * (double)Module_Information[ModNum].Module_ADCMSPS);
         else if(Module_Information[ModNum].Module_ADCMSPS == 250)
             resetdelay = (unsigned int)ROUND(ChanParData * (double)(Module_Information[ModNum].Module_ADCMSPS / 2));
         else if(Module_Information[ModNum].Module_ADCMSPS == 500)
-            resetdelay = (unsigned int)ROUND(ChanParData * (double)(Module_Information[ModNum].Module_ADCMSPS / 5));*/
+            resetdelay = (unsigned int)ROUND(ChanParData * (double)(Module_Information[ModNum].Module_ADCMSPS / 5));
 
         // Range check
         if ( resetdelay > RESET_DELAY_MAX )
@@ -4890,20 +4890,17 @@ PIXIE16APP_EXPORT int PIXIE16APP_API Pixie16ReadSglChanPar (
 		else if(Module_Information[ModNum].Module_ADCMSPS == 500)
 			*ChanParData = (double)chantrigstretch / (double)(Module_Information[ModNum].Module_ADCMSPS / 5);
 	}
-    else if (strcmp(ChanParName, "Reset_Delay") == 0)
+    else if (strcmp(ChanParName, "ResetDelay") == 0)
     {
         Pixie16IMbufferIO(&resetdelay, 1, (unsigned int)(ResetDelay_Address[ModNum] + ChanNum), MOD_READ, ModNum);
         Pixie_Devices[ModNum].DSP_Parameter_Values[ResetDelay_Address[ModNum] + ChanNum - DATA_MEMORY_ADDRESS] = resetdelay;
 
-        *ChanParData = (double)resetdelay;
-
-        /*if(Module_Information[ModNum].Module_ADCMSPS == 100)
+        if(Module_Information[ModNum].Module_ADCMSPS == 100)
             *ChanParData = (double)resetdelay / (double)Module_Information[ModNum].Module_ADCMSPS;
         else if(Module_Information[ModNum].Module_ADCMSPS == 250)
             *ChanParData = (double)resetdelay / (double)(Module_Information[ModNum].Module_ADCMSPS / 2);
         else if(Module_Information[ModNum].Module_ADCMSPS == 500)
             *ChanParData = (double)resetdelay / (double)(Module_Information[ModNum].Module_ADCMSPS / 5);
-        */
     }
 	else
 	{
