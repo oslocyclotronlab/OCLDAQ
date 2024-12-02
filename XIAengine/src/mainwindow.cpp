@@ -240,21 +240,21 @@ void MainWindow::UpdateLimits()
         ui->traceDelay->setMinimum( 0 );
         ui->traceDelay->setMaximum( TRACEDELAY_MAX / ( (msps / 5 ) * pow(2.0, fastfilterrange) ) );
         ui->ResetDelay->setMinimum(0);
-        ui->ResetDelay->setMaximum(RESET_DELAY_MAX / (msps / 5 ));
+        ui->ResetDelay->setMaximum(RESET_DELAY_MAX / double(msps / 5 ));
     } else if ( msps == 250 ) {
         ui->traceLength->setMinimum( TRACELEN_MIN_250OR100MHZADC / ( msps * pow(2., current_slow_filter) ) );
         ui->traceLength->setMaximum( 999999999 );
         ui->traceDelay->setMinimum( 0 );
         ui->traceDelay->setMaximum( TRACEDELAY_MAX / ( (msps / 2 ) * pow(2.0, fastfilterrange) ) );
         ui->ResetDelay->setMinimum(0);
-        ui->ResetDelay->setMaximum(RESET_DELAY_MAX / (msps / 2 ));
+        ui->ResetDelay->setMaximum(RESET_DELAY_MAX / double(msps / 2 ));
     } else if ( msps == 100 ) {
         ui->traceLength->setMinimum( TRACELEN_MIN_250OR100MHZADC / ( msps * pow(2., current_slow_filter) ) );
         ui->traceLength->setMaximum( 999999999 );
         ui->traceDelay->setMinimum( 0 );
         ui->traceDelay->setMaximum( TRACEDELAY_MAX / ( msps  * pow(2.0, fastfilterrange) ) );
         ui->ResetDelay->setMinimum(0);
-        ui->ResetDelay->setMaximum(RESET_DELAY_MAX / ( msps ));
+        ui->ResetDelay->setMaximum(RESET_DELAY_MAX / double( msps ));
     }
 
     // Timing limits
