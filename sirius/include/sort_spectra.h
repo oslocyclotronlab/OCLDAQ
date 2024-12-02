@@ -37,7 +37,8 @@ enum {
     LABRCFD_ID  =  11,
     DECFD_ID    =  12,
     ECFD_ID     =  13,
-    GUARD_ID    =  14
+    GUARD_ID    =  14,
+    TIME_ENERGY_ID = 15
 };
 #endif // XIA
 
