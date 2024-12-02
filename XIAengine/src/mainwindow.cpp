@@ -626,6 +626,7 @@ void MainWindow::on_WriteButton_clicked()
 
     std::cout << " ... Done! " << std::endl;
     SaveSettings(const_cast<char *>("settings.set"));
+    UpdateView();
 }
 
 void MainWindow::SaveSettings(char *filename)
