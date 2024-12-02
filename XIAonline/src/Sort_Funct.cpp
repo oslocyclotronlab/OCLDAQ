@@ -100,8 +100,9 @@ void Sort_Particle_Event(Event &event)
     }
 
     // Time-energy spectrum, x-axis energy, y-axis time
-    for (int j = 0 ; j < event.n_labr[16] ; ++j){
-        tdiff = double(event.w_labr[16][j].timestamp - event.trigger.timestamp) + (event.w_labr[1][j].cfdcorr - event.trigger.cfdcorr);
+    for (int j = 0 ; j < event.n_labr[1] ; ++j){
+        tdiff = double(event.w_labr[1][j].timestamp - event.trigger.timestamp) + (event.w_labr[1][j].cfdcorr - event.trigger.cfdcorr);
+        std::cout << "Event time: " << tdiff << std::endl;
         spec_fill(TIME_ENERGY_ID, event.w_labr[1][j].adcdata * double(1000)/double(16384), tdiff + 500);
     }
 
