@@ -16,7 +16,6 @@ calibration_t *GetCalibration(){ return &calibration; }
 
 void sort_singles(const std::vector<word_t> &buffer)
 {
-
     DetectorInfo_t dinfo, dinfo2;
     double tdiff_c, tdiff_f, tdiff;
     for (auto &entry : buffer){
@@ -130,6 +129,9 @@ void sort_coincidence(Event &event)
 
     switch (GetDetector(event.trigger.address).type) {
     case eDet :
+        Sort_Particle_Event(event);
+        break;
+    case labr :
         Sort_Particle_Event(event);
         break;
     case ppac:
