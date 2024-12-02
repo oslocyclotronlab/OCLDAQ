@@ -167,23 +167,21 @@ bool EventBuilder::UnpackOneEvent(Event &event)
 
             // We find all events that are within MAX_TDIFF before the
             // E event.
-            for (int j = curr_pos ; j > 0 ; --j){
+            for (int j = curr_pos-1 ; j > 0 ; --j){
 
-                timediff = buffer[j-1].timestamp - curr_w.timestamp;
-
-
+                timediff = buffer[j].timestamp - curr_w.timestamp;
                 if (std::abs(timediff) > MAX_TDIFF){
-                    start = j;
+                    start = j+1;
                     break;
                 }
             }
 
             // We find all events that are withn MAX_TDIFF after the
             // E event
-            for (int j = curr_pos ; j < buffer.size() - 1 ; ++j){
-                timediff = buffer[j+1].timestamp - curr_w.timestamp;
+            for (int j = curr_pos+1 ; j < buffer.size() - 1 ; ++j){
+                timediff = buffer[j].timestamp - curr_w.timestamp;
                 if (std::abs(timediff) > MAX_TDIFF){
-                    stop = j+1;
+                    stop = j;
                     break;
                 }
             }
