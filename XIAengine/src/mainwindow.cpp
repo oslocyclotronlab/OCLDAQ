@@ -239,16 +239,22 @@ void MainWindow::UpdateLimits()
         ui->traceLength->setMaximum( 999999999 );
         ui->traceDelay->setMinimum( 0 );
         ui->traceDelay->setMaximum( TRACEDELAY_MAX / ( (msps / 5 ) * pow(2.0, fastfilterrange) ) );
+        ui->ResetDelay->setMinimum(0);
+        ui->ResetDelay->setMaximum(RESET_DELAY_MAX / (msps / 5 ));
     } else if ( msps == 250 ) {
         ui->traceLength->setMinimum( TRACELEN_MIN_250OR100MHZADC / ( msps * pow(2., current_slow_filter) ) );
         ui->traceLength->setMaximum( 999999999 );
         ui->traceDelay->setMinimum( 0 );
         ui->traceDelay->setMaximum( TRACEDELAY_MAX / ( (msps / 2 ) * pow(2.0, fastfilterrange) ) );
+        ui->ResetDelay->setMinimum(0);
+        ui->ResetDelay->setMaximum(RESET_DELAY_MAX / (msps / 2 ));
     } else if ( msps == 100 ) {
         ui->traceLength->setMinimum( TRACELEN_MIN_250OR100MHZADC / ( msps * pow(2., current_slow_filter) ) );
         ui->traceLength->setMaximum( 999999999 );
         ui->traceDelay->setMinimum( 0 );
         ui->traceDelay->setMaximum( TRACEDELAY_MAX / ( msps  * pow(2.0, fastfilterrange) ) );
+        ui->ResetDelay->setMinimum(0);
+        ui->ResetDelay->setMaximum(RESET_DELAY_MAX / ( msps ));
     }
 
     // Timing limits
@@ -294,7 +300,7 @@ void MainWindow::UpdateLimits()
     ui->QDCLen7->setMinimum( QDCLEN_MIN / QDCfactor );
     ui->QDCLen7->setMaximum( QDCLEN_MAX / QDCfactor );
 
-    ui->ResetDelay->setMaximum(RESET_DELAY_MAX);
+
 }
 
 
@@ -345,7 +351,7 @@ void MainWindow::UpdateViewChannel()
     Pixie16ReadSglChanPar("FtrigoutDelay", &FtrigDelay, module, channel);
     Pixie16ReadSglChanPar("VetoStretch", &VetoStrech, module, channel);
     Pixie16ReadSglChanPar("ChanTrigStretch", &ChanTrigStrech, module, channel);
-    Pixie16ReadSglChanPar("Reset_Delay", &ResetDelay, module, channel);
+    Pixie16ReadSglChanPar("ResetDelay", &ResetDelay, module, channel);
     Pixie16ReadSglChanPar("MultiplicityMaskL", &tmp, module, channel);
     chanMultMaskL = tmp;
     Pixie16ReadSglChanPar("MultiplicityMaskH", &tmp, module, channel);
@@ -598,7 +604,7 @@ void MainWindow::on_WriteButton_clicked()
     write_if_different_chan("FtrigoutDelay", module, channel, ui->FtrigoutDelay->value());
     write_if_different_chan("VetoStretch", module, channel, ui->VetoStrech->value());
     write_if_different_chan("ChanTrigStretch", module, channel, ui->ChanTrigStrech->value());
-    write_if_different_chan("Reset_Delay", module, channel, ui->ResetDelay->value());
+    write_if_different_chan("ResetDelay", module, channel, ui->ResetDelay->value());
 
     write_if_different_chan("QDCLen0", module, channel, ui->QDCLen0->value());
     write_if_different_chan("QDCLen1", module, channel, ui->QDCLen1->value());

@@ -713,7 +713,21 @@
                       </widget>
                      </item>
                      <item>
-                      <widget class="QSpinBox" name="ResetDelay"/>
+                      <widget class="QDoubleSpinBox" name="ResetDelay">
+                       <property name="decimals">
+                        <number>3</number>
+                       </property>
+                       <property name="singleStep">
+                        <double>0.001000000000000</double>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLabel" name="label_929">
+                       <property name="text">
+                        <string>us</string>
+                       </property>
+                      </widget>
                      </item>
                     </layout>
                    </item>
