@@ -72,6 +72,8 @@ void Sort_Particle_Event(Event &event)
     // Time-energy spectrum, x-axis energy, y-axis time
     if ( !event.trigger.cfdfail ) {
         for (int j = 0; j < event.n_labr[1]; ++j) {
+            if ( event.w_labr[1][j].cfdfail )
+                continue;
             tdiff = double(event.w_labr[1][j].timestamp - event.trigger.timestamp) +
                     (event.w_labr[1][j].cfdcorr - event.trigger.cfdcorr);
             spec_fill(TIME_ENERGY_ID, event.w_labr[1][j].adcdata * double(1000) / double(16384), tdiff + 500);
