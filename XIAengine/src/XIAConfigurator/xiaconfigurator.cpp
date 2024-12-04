@@ -21,7 +21,6 @@
 #endif // NUMBER_OF_CHANNELS
 
 #include <iostream>
-#include <format>
 #include <bitset>
 
 #include "TimingFilterTab.h"
