@@ -8,6 +8,8 @@
 
 #include <iostream>
 #include <cfloat>
+#include <cmath>
+#include <cstring>
 
 XIAInterfaceAPI2::XIAInterfaceAPI2(const size_t &num)
     : XIAInterface( num )
