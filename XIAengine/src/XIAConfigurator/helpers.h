@@ -6,6 +6,7 @@
 #define XIACONFIGURATOR_HELPERS_H
 
 #include <string>
+#include <bitset>
 #include <QLoggingCategory>
 
 #include "xiainterface.h"
