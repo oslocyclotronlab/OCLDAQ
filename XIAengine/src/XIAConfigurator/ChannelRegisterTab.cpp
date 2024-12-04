@@ -166,7 +166,7 @@ void ChannelRegisterTab::UpdateSettings(const int &module, const int &channel)
         set_bit(CSRAmap[i].bit, csra_value, csra[i]->isChecked());
     }
 
-    for ( size_t i = 0 ; i < sizeof(CSRAmap) ; ++i ){
+    for ( size_t i = 0 ; i < 20 ; ++i ){
         if ( csra[i]->isChecked() )
             APP32_SetBit(CSRAmap[i].bit, csra_value);
         else
