@@ -62,21 +62,21 @@ void set_widget_numeric_value(const size_t &module, const size_t &channel, T *wi
 {
     auto value = interface->GetChnParam(module, channel, par_map[widget]);
     qCDebug(logger) << "Module " << module << " channel " << channel << ", setting parameter '" << par_map[widget] << "' from API, got " << *reinterpret_cast<B *>(&value);
-    widget->setValue(*reinterpret_cast<B *>(&value));
+    widget->setValue(B(value));
 }
 
 template<typename T>
 T read_channel_numeric_value(const size_t &module, const size_t &channel, XIAInterface *interface, const char *parName)
 {
     auto value = interface->GetChnParam(module, channel, parName);
-    return *reinterpret_cast<T *>(&value);
+    return T(value);
 }
 
 template<typename T>
 T read_module_numeric_value(const size_t &module, XIAInterface *interface, const char *parName)
 {
     auto value = interface->GetModParam(module, parName);
-    return *reinterpret_cast<T *>(&value);
+    return T(value);
 }
 
 template<typename T>
