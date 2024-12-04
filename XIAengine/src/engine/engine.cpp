@@ -9,6 +9,7 @@
 #include "functions.h"
 
 //#include "mainwindow.h"
+#include "xiainterface.h"
 #include "xiainterface2.h"
 #include <QApplication>
 
