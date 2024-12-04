@@ -52,16 +52,16 @@ template<typename B, typename T>
 void get_numeric_limits(const size_t &module, const size_t &channel, T *widget, XIAInterface *interface, std::map<QWidget *, const char *> par_map)
 {
     auto limits = interface->GetChnLimits(module, channel, par_map[widget]);
-    qCDebug(logger) << "Parameter '" << par_map[widget] << "' limits: [" << *reinterpret_cast<B *>(&limits.first) << " " << *reinterpret_cast<B *>(&limits.second) << "]";
-    widget->setMinimum(*reinterpret_cast<B *>(&limits.first));
-    widget->setMaximum(*reinterpret_cast<B *>(&limits.second));
+    qCDebug(logger) << "Parameter '" << par_map[widget] << "' limits: [" << B(limits.first) << " " << B(limits.second) << "]";
+    widget->setMinimum(limits.first);
+    widget->setMaximum(limits.second);
 }
 
 template<typename B, typename T>
 void set_widget_numeric_value(const size_t &module, const size_t &channel, T *widget, XIAInterface *interface, std::map<QWidget *, const char *> par_map)
 {
     auto value = interface->GetChnParam(module, channel, par_map[widget]);
-    qCDebug(logger) << "Module " << module << " channel " << channel << ", setting parameter '" << par_map[widget] << "' from API, got " << *reinterpret_cast<B *>(&value);
+    qCDebug(logger) << "Module " << module << " channel " << channel << ", setting parameter '" << par_map[widget] << "' from API, got " << B(value);
     widget->setValue(B(value));
 }
 
