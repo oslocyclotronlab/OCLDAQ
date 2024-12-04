@@ -58,9 +58,9 @@ BaselineFilter::BaselineFilter(XIAInterface *_interface, QWidget *parent)
 void BaselineFilter::UpdateLimits(const int &module, const int &channel)
 {
     get_numeric_limits<double>(module, channel, baselineOffset, interface, param_map);
-    get_numeric_limits<long long>(module, channel, baselinePercent, interface, param_map);
-    get_numeric_limits<long long>(module, channel, baselineAverage, interface, param_map);
-    get_numeric_limits<long long>(module, channel, baselineCut, interface, param_map);
+    get_numeric_limits<double>(module, channel, baselinePercent, interface, param_map);
+    get_numeric_limits<double>(module, channel, baselineAverage, interface, param_map);
+    get_numeric_limits<double>(module, channel, baselineCut, interface, param_map);
 }
 
 void BaselineFilter::UpdateView(const int &module, const int &channel)
@@ -68,9 +68,9 @@ void BaselineFilter::UpdateView(const int &module, const int &channel)
     // Need to fetch the current settings for the module and populate the data.
     UpdateLimits(module, channel);
     set_widget_numeric_value<double>(module, channel, baselineOffset, interface, param_map);
-    set_widget_numeric_value<long long>(module, channel, baselinePercent, interface, param_map);
-    set_widget_numeric_value<long long>(module, channel, baselineAverage, interface, param_map);
-    set_widget_numeric_value<long long>(module, channel, baselineCut, interface, param_map);
+    set_widget_numeric_value<double>(module, channel, baselinePercent, interface, param_map);
+    set_widget_numeric_value<double>(module, channel, baselineAverage, interface, param_map);
+    set_widget_numeric_value<double>(module, channel, baselineCut, interface, param_map);
 }
 
 void BaselineFilter::UpdateSettings(const int &module, const int &channel)
