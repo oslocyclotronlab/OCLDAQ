@@ -159,38 +159,31 @@ void ChannelRegisterTab::UpdateView(const int &module, const int &channel)
 
 }
 
+#include <iostream>
+
 void ChannelRegisterTab::UpdateSettings(const int &module, const int &channel)
 {
-    unsigned long long csra_value = interface->GetChnParam(module, channel, "CHANNEL_CSRA");
+    unsigned long long csra_value = 0;
     for ( size_t i = 0 ; i < 20 ; ++i ){
-        set_bit(CSRAmap[i].bit, csra_value, csra[i]->isChecked());
+        csra_value = set_bit(CSRAmap[i].bit, csra_value, csra[i]->isChecked());
     }
-
-    for ( size_t i = 0 ; i < 20 ; ++i ){
-        if ( csra[i]->isChecked() )
-            APP32_SetBit(CSRAmap[i].bit, csra_value);
-        else
-            APP32_ClrBit(CSRAmap[i].bit, csra_value);
-    }
-
-
 
     switch( pileup->currentIndex() ){
         case 0:
-            set_bit(CCSRA_PILEUPCTRL, csra_value, false);
-            set_bit(CCSRA_INVERSEPILEUP, csra_value, false);
+            csra_value = set_bit(CCSRA_PILEUPCTRL, csra_value, false);
+            csra_value = set_bit(CCSRA_INVERSEPILEUP, csra_value, false);
             break;
         case 1:
-            set_bit(CCSRA_PILEUPCTRL, csra_value, true);
-            set_bit(CCSRA_INVERSEPILEUP, csra_value, false);
+            csra_value = set_bit(CCSRA_PILEUPCTRL, csra_value, true);
+            csra_value = set_bit(CCSRA_INVERSEPILEUP, csra_value, false);
             break;
         case 2:
-            set_bit(CCSRA_PILEUPCTRL, csra_value, false);
-            set_bit(CCSRA_INVERSEPILEUP, csra_value, true);
+            csra_value = set_bit(CCSRA_PILEUPCTRL, csra_value, false);
+            csra_value = set_bit(CCSRA_INVERSEPILEUP, csra_value, true);
             break;
         case 3:
-            set_bit(CCSRA_PILEUPCTRL, csra_value, false);
-            set_bit(CCSRA_INVERSEPILEUP, csra_value, true);
+            csra_value = set_bit(CCSRA_PILEUPCTRL, csra_value, false);
+            csra_value = set_bit(CCSRA_INVERSEPILEUP, csra_value, true);
             break;
         default:
             // This is an error...

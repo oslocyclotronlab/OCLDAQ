@@ -51,8 +51,8 @@ QHBoxLayout *getLayoutUnitless(QWidget *parent, const char *prefix, QWidget *wid
 template<typename B, typename T>
 void get_numeric_limits(const size_t &module, const size_t &channel, T *widget, XIAInterface *interface, std::map<QWidget *, const char *> par_map)
 {
-    auto limits = interface->GetChnLimits(module, channel, par_map[widget]);
-    qCDebug(logger) << "Parameter '" << par_map[widget] << "' limits: [" << B(limits.first) << " " << B(limits.second) << "]";
+    auto limits = static_cast<std::pair<B, B>>(interface->GetChnLimits(module, channel, par_map[widget]));
+    qCDebug(logger) << "Parameter '" << par_map[widget] << "' limits: [" << limits.first << " " << limits.second << "]";
     widget->setMinimum(limits.first);
     widget->setMaximum(limits.second);
 }
@@ -60,16 +60,16 @@ void get_numeric_limits(const size_t &module, const size_t &channel, T *widget, 
 template<typename B, typename T>
 void set_widget_numeric_value(const size_t &module, const size_t &channel, T *widget, XIAInterface *interface, std::map<QWidget *, const char *> par_map)
 {
-    auto value = interface->GetChnParam(module, channel, par_map[widget]);
-    qCDebug(logger) << "Module " << module << " channel " << channel << ", setting parameter '" << par_map[widget] << "' from API, got " << B(value);
-    widget->setValue(B(value));
+    auto value = static_cast<B>(interface->GetChnParam(module, channel, par_map[widget]));
+    qCDebug(logger) << "Module " << module << " channel " << channel << ", setting parameter '" << par_map[widget] << "' from API, got " << value;
+    widget->setValue(value);
 }
 
 template<typename T>
 T read_channel_numeric_value(const size_t &module, const size_t &channel, XIAInterface *interface, const char *parName)
 {
     auto value = interface->GetChnParam(module, channel, parName);
-    return T(value);
+    return static_cast<T>(value);
 }
 
 template<typename T>
@@ -84,7 +84,7 @@ T write_channel_value(const size_t &module, const size_t &channel, XIAInterface 
 {
     T old_value = read_channel_numeric_value<T>(module, channel, interface, parName);
     if ( old_value != value ){
-        interface->SetChnParam(module, channel, parName, *reinterpret_cast<const double *>(&value));
+        interface->SetChnParam(module, channel, parName, static_cast<double>(value));
     }
     T new_value = read_channel_numeric_value<T>(module, channel, interface, parName);
     qCDebug(logger) << "Module " << module << " channel " << channel << ", updating parameter '" << parName << "' from API, old value=" << old_value << " new value=" << value << " value after upload=" << new_value;
@@ -96,7 +96,7 @@ T write_module_value(const size_t &module, XIAInterface *interface, const char *
 {
     T old_value = read_module_numeric_value<T>(module, interface, parName);
     if ( old_value != value ){
-        interface->SetModParam(module, parName, *reinterpret_cast<const unsigned int*>(&value));
+        interface->SetModParam(module, parName, static_cast<const unsigned int>(value));
     }
     T new_value = read_module_numeric_value<T>(module, interface, parName);
     qCDebug(logger) << "Module " << module << ", updating parameter '" << parName << "' from API, old value=" << old_value << " new value=" << value << " value after upload=" << new_value;
