@@ -147,6 +147,7 @@ XIAInterface::ChanLim_t XIAInterfaceAPI2::GetChnLimits(const size_t &module, con
     } else if (strcmp("ResetDelay", ChanParName) == 0 ){
         return {0, RESET_DELAY_MAX};
     } else {
+        std::cerr << "Unknown parameter '" << ChanParName << "'" << std::endl;
         return {0, 0}; // Not sure how to handle other...
     }
 
