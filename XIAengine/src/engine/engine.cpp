@@ -8,8 +8,8 @@
 #include "XIAControl.h"
 #include "functions.h"
 
-#include "mainwindow.h"
-
+//#include "mainwindow.h"
+#include "xiainterface2.h"
 #include <QApplication>
 
 #include <algorithm>
@@ -25,6 +25,8 @@
 #include <cstdio>
 #include <sys/time.h>
 #include <unistd.h>
+
+#include <xiaconfigurator.h>
 
 #if _FILE_OFFSET_BITS != 64
 #error must compile with _FILE_OFFSET_BITS == 64
@@ -73,13 +75,14 @@ void keyb_int(int sig_num)
 
 int GUI_thread(int nmod)
 {
-    QApplication a(globargc, globargv);
+    /*QApplication a(globargc, globargv);
     MainWindow w(nmod);
     w.show();
     gui_is_running = 1;
     int foo = a.exec();
     gui_is_running = 0;
-    return foo;
+    return foo;*/
+    return 0;
 }
 
 
@@ -88,10 +91,10 @@ static void close_file()
 {
     if( output_file ) {
         char tmp[2048];
-        sprintf(tmp, "engine: file '%s' was closed.\n", output_filename.c_str());
+        snprintf(tmp, sizeof(tmp), "engine: file '%s' was closed.\n", output_filename.c_str());
         fflush(output_file);
         fclose(output_file);
-        output_file = 0;
+        output_file = nullptr;
     }
     buffer_count = 0;
 }
@@ -117,7 +120,7 @@ static bool open_file()
         const long fs = ftell(output_file);
         buffer_count = fs / datalen_char;
         char tmp[2048];
-        sprintf(tmp, "engine: file '%s' (%d buffers) was opened.\n", output_filename.c_str(), buffer_count);
+        snprintf(tmp, sizeof(tmp), "engine: file '%s' (%d buffers) was opened.\n", output_filename.c_str(), buffer_count);
         termWrite.Write(tmp);
         return true;
     }
@@ -535,10 +538,10 @@ int main_engine(int argc, char* argv[])
 // ########################################################################
 // ########################################################################
 
-int main_gui(int nmod, QApplication &app)
+int main_gui(int nmod, QApplication &app, XIAInterface &interface)
 {
-    MainWindow w(nmod);
-    w.show();
+    XIAConfigurator c(&interface);
+    c.show();
     /*while ( leaveprog == 'n' ){
         global_app->processEvents();
     }*/
@@ -551,8 +554,8 @@ int main_gui(int nmod, QApplication &app)
 int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
-    QLoggingCategory::setFilterRules(QStringLiteral("XIAGUI.debug=true"));
-    std::cout << "I'm debugging!" << std::endl;
+    /*QLoggingCategory::setFilterRules(QStringLiteral("XIAGUI.debug=true"));
+    std::cout << "I'm debugging!" << std::endl;*/
     unsigned short PXIMapping[PRESET_MAX_MODULES];
     for (unsigned short & mapping : PXIMapping)
         mapping = 0;
@@ -594,10 +597,11 @@ int main(int argc, char* argv[])
         leaveprog = 'y';
 
     auto nmod = xiacontr->GetNumMod();
+    XIAInterfaceAPI2 interface(nmod);
 
     // Now we are ready to start the two threads, this will launch the settings window!
     auto engine_thread = std::thread(main_engine, argc, argv);
-    auto r = main_gui(nmod, app);
+    auto r = main_gui(nmod, app, interface);
 
     if ( engine_thread.joinable() ) engine_thread.join();
 

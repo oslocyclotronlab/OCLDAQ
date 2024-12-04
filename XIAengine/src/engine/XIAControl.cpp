@@ -346,7 +346,7 @@ bool XIAControl::ReadConfigFile(const char *config)
 
         // If not found, write a warning and continue to next line.
         if ( pos_eq == std::string::npos ){
-            sprintf(errmsg, "Could not understand line '%s', continuing...\n", line.c_str());
+            snprintf(errmsg, sizeof(errmsg), "Could not understand line '%s', continuing...\n", line.c_str());
             termWrite->WriteError(errmsg);
             continue;
         }
@@ -356,7 +356,7 @@ bool XIAControl::ReadConfigFile(const char *config)
 
         // If the key have already been entered.
         if ( fw.find(key) != fw.end() ){
-            sprintf(errmsg, "Mutiple definitions of '%s'\n", key.c_str());
+            snprintf(errmsg, sizeof(errmsg), "Mutiple definitions of '%s'\n", key.c_str());
             termWrite->WriteError(errmsg);
             return false;
         }
@@ -373,7 +373,7 @@ bool XIAControl::InitializeXIA(const bool &offline)
     int retval = Pixie16InitSystem(num_modules, PXISlotMap, offline ? 1 : 0);
 
     if (retval < 0){
-        sprintf(errmsg, "*ERROR* Pixie16InitSystem failed, retval = %d\n", retval);
+        snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16InitSystem failed, retval = %d\n", retval);
         termWrite->WriteError(errmsg);
         Pixie_Print_MSG(errmsg);
         return false;
@@ -403,32 +403,32 @@ bool XIAControl::GetFirmwareFile(const unsigned short &revision, const unsigned 
         key_DSPVar = "DSPVarFile_RevF_" + std::to_string(ADCMSPS) + "MHz_" + std::to_string(ADCbits) + "Bit";
 
     } else {
-        sprintf(errmsg, "Unknown Pixie-16 revision, rev=%d\n", revision);
+        snprintf(errmsg, sizeof(errmsg), "Unknown Pixie-16 revision, rev=%d\n", revision);
         termWrite->WriteError(errmsg);
         return false;
     }
 
     // Search our map for the firmware files.
     if ( firmwares.find(key_Com) == firmwares.end() ){
-        sprintf(errmsg, "Missing firmware file '%s'\n", key_Com.c_str());
+        snprintf(errmsg, sizeof(errmsg), "Missing firmware file '%s'\n", key_Com.c_str());
         termWrite->WriteError(errmsg);
         return false;
     }
 
     if ( firmwares.find(key_SPFPGA) == firmwares.end() ){
-        sprintf(errmsg, "Missing firmware file '%s'\n", key_SPFPGA.c_str());
+        snprintf(errmsg, sizeof(errmsg), "Missing firmware file '%s'\n", key_SPFPGA.c_str());
         termWrite->WriteError(errmsg);
         return false;
     }
 
     if ( firmwares.find(key_DSPcode) == firmwares.end() ){
-        sprintf(errmsg, "Missing firmware file '%s'\n", key_DSPcode.c_str());
+        snprintf(errmsg, sizeof(errmsg), "Missing firmware file '%s'\n", key_DSPcode.c_str());
         termWrite->WriteError(errmsg);
         return false;
     }
 
     if ( firmwares.find(key_DSPVar) == firmwares.end() ){
-        sprintf(errmsg, "Missing firmware file '%s'\n", key_DSPVar.c_str());
+        snprintf(errmsg, sizeof(errmsg), "Missing firmware file '%s'\n", key_DSPVar.c_str());
         termWrite->WriteError(errmsg);
         return false;
     }
@@ -458,7 +458,7 @@ bool XIAControl::BootXIA()
     for (int i = 0 ; i < num_modules ; ++i){
         retval = Pixie16ReadModuleInfo(i, &rev[i], &sn[i], &bit[i], &MHz[i]);
         if (retval < 0){
-            sprintf(errmsg, "*ERROR* Pixie16ReadModuleInfo failed, retval = %d\n", retval);
+            snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16ReadModuleInfo failed, retval = %d\n", retval);
             termWrite->WriteError(errmsg);
             Pixie_Print_MSG(errmsg);
             return false;
@@ -469,7 +469,7 @@ bool XIAControl::BootXIA()
         if (!GetFirmwareFile(rev[i], bit[i], MHz[i],
                              ComFPGA, SPFPGA,
                              DSPCode, DSPVar)) {
-            sprintf(errmsg, "Module %d: Unknown module\n", i);
+            snprintf(errmsg, sizeof(errmsg), "Module %d: Unknown module\n", i);
             termWrite->Write(errmsg);
             return false;
         }
@@ -490,7 +490,7 @@ bool XIAControl::BootXIA()
         }
 
 
-        sprintf(errmsg, "Booting Pixie-16 module #%d, Rev=%d, S/N=%d, Bits=%d, MSPS=%d\n", i, rev[i], sn[i], bit[i], MHz[i]);
+        snprintf(errmsg, sizeof(errmsg), "Booting Pixie-16 module #%d, Rev=%d, S/N=%d, Bits=%d, MSPS=%d\n", i, rev[i], sn[i], bit[i], MHz[i]);
         termWrite->Write(errmsg);
         termWrite->Write("ComFPGAConfigFile:\t");
         termWrite->Write(ComFPGA);
@@ -505,7 +505,7 @@ bool XIAControl::BootXIA()
         termWrite->Write("\n----------------------------------------\n\n");
         
         if (retval < 0){
-            sprintf(errmsg, "*ERROR* Pixie16BootModule failed, retval = %d\n", retval);
+            snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16BootModule failed, retval = %d\n", retval);
             termWrite->WriteError(errmsg);
             Pixie_Print_MSG(errmsg);
             return false;
@@ -524,7 +524,7 @@ bool XIAControl::AdjustBaseline()
     termWrite->Write("Adjusting baseline of all modules and channels...");
     int retval = AdjustBaselineOffset(num_modules);
     if (retval < 0){
-        sprintf(errmsg, "*ERROR* Pixie16AdjustOffsets failed, retval = %d\n", retval);
+        snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16AdjustOffsets failed, retval = %d\n", retval);
         termWrite->Write("\n");
         termWrite->WriteError(errmsg);
         Pixie_Print_MSG(errmsg);
@@ -544,7 +544,7 @@ bool XIAControl::AdjustBlCut()
         for (int j = 0 ; j < 16 ; ++j){
             retval = Pixie16BLcutFinder(i, j, &BLcut[i][j]);
             if (retval < 0){
-                sprintf(errmsg, "*ERROR* Pixie16BLcutFinder for mod = %d, ch = %d failed, retval = %d\n", i, j, retval);
+                snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16BLcutFinder for mod = %d, ch = %d failed, retval = %d\n", i, j, retval);
                 termWrite->Write("\n");
                 termWrite->WriteError(errmsg);
                 Pixie_Print_MSG(errmsg);
@@ -556,16 +556,16 @@ bool XIAControl::AdjustBlCut()
     termWrite->Write("\n... Done.\n");
     termWrite->Write("Module:");
     for (int i = 0 ; i < 16 ; ++i){
-        sprintf(errmsg, "\tCh. %d:",i);
+        snprintf(errmsg, sizeof(errmsg), "\tCh. %d:",i);
         termWrite->Write(errmsg);
     }
     termWrite->Write("\n");
 
     for (int i = 0 ; i < num_modules ; ++i){
-        sprintf(errmsg, "%d:", i);
+        snprintf(errmsg, sizeof(errmsg), "%d:", i);
         termWrite->Write(errmsg);
         for (int j = 0 ; j < 16 ; ++j){
-            sprintf(errmsg, "\t%d", BLcut[i][j]);
+            snprintf(errmsg, sizeof(errmsg), "\t%d", BLcut[i][j]);
             termWrite->Write(errmsg);
         }
         termWrite->Write("\n");
@@ -607,7 +607,7 @@ bool XIAControl::StartLMR()
         termWrite->Write("Trying to write IN_SYNCH...\n");
         retval = Pixie16WriteSglModPar(const_cast<char *>("IN_SYNCH"), 0, 0);
         if (retval < 0){
-            sprintf(errmsg, "*ERROR* Pixie16WriteSglModPar writing IN_SYNCH failed, retval = %d\n", retval);
+            snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16WriteSglModPar writing IN_SYNCH failed, retval = %d\n", retval);
             termWrite->WriteError(errmsg);
             Pixie_Print_MSG(errmsg);
             return false;
@@ -622,7 +622,7 @@ bool XIAControl::StartLMR()
     termWrite->Write("Trying to write SYNCH_WAIT...\n");
     retval = Pixie16WriteSglModPar(const_cast<char *>("SYNCH_WAIT"), 1, 0);
     if (retval < 0){
-        sprintf(errmsg, "*ERROR* Pixie16WriteSglModPar writing SYNCH_WAIT failed, retval = %d\n", retval);
+        snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16WriteSglModPar writing SYNCH_WAIT failed, retval = %d\n", retval);
         termWrite->WriteError(errmsg);
         Pixie_Print_MSG(errmsg);
         return false;
@@ -632,7 +632,7 @@ bool XIAControl::StartLMR()
     termWrite->Write("About to start list mode run...\n");
     retval = Pixie16StartListModeRun(num_modules, 0x100, NEW_RUN);
     if (retval < 0){
-        sprintf(errmsg, "*ERROR* Pixie16StartListModeRun failed, retval = %d\n", retval);
+        snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16StartListModeRun failed, retval = %d\n", retval);
         termWrite->WriteError(errmsg);
         Pixie_Print_MSG(errmsg);
         return false;
@@ -648,7 +648,7 @@ bool XIAControl::CheckIsRunning()
     for (int i = 0 ; i < num_modules ; ++i){
         retval = Pixie16CheckRunStatus(i);
         if (retval < 0){
-            sprintf(errmsg, "*ERROR* Pixie16CheckRunStatus failed, retval = %d\n", retval);
+            snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16CheckRunStatus failed, retval = %d\n", retval);
             termWrite->WriteError(errmsg);
             Pixie_Print_MSG(errmsg);
         }
@@ -670,13 +670,13 @@ bool XIAControl::StopRun()
         // First we check that the module are in fact running.
         retval = Pixie16CheckRunStatus(i);
         if (retval < 0){
-            sprintf(errmsg, "*ERROR* Pixie16CheckRunStatus failed, retval = %d\n", retval);
+            snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16CheckRunStatus failed, retval = %d\n", retval);
             termWrite->WriteError(errmsg);
             Pixie_Print_MSG(errmsg);
         } else if (retval > 0){
             retval = Pixie16EndRun(i);
             if (retval < 0){
-                sprintf(errmsg, "*ERROR* Pixie16EndRun failed, retval = %d\n", retval);
+                snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16EndRun failed, retval = %d\n", retval);
                 termWrite->WriteError(errmsg);
                 Pixie_Print_MSG(errmsg);
                 return false;
@@ -692,7 +692,7 @@ bool XIAControl::SynchModules()
     termWrite->Write("Trying to write IN_SYNCH...\n");
     int retval = Pixie16WriteSglModPar(const_cast<char *>("IN_SYNCH"), 0, 0);
     if (retval < 0){
-        sprintf(errmsg, "*ERROR* Pixie16WriteSglModPar writing IN_SYNCH failed, retval = %d\n", retval);
+        snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16WriteSglModPar writing IN_SYNCH failed, retval = %d\n", retval);
         termWrite->WriteError(errmsg);
         Pixie_Print_MSG(errmsg);
         return false;
@@ -711,7 +711,7 @@ bool XIAControl::WriteScalers()
         for (int i = 0 ; i < num_modules ; ++i){
             retval = Pixie16ReadStatisticsFromModule(stats, i);
             if (retval < 0){
-                sprintf(errmsg, "*ERROR* Pixie16ReadStatisticsFromModule failed, retval = %d\n", retval);
+                snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16ReadStatisticsFromModule failed, retval = %d\n", retval);
                 termWrite->WriteError(errmsg);
                 Pixie_Print_MSG(errmsg);
             }
@@ -822,7 +822,7 @@ bool XIAControl::CheckFIFO(unsigned int minReadout)
     for (int i = 0 ; i < num_modules ; ++i){
         retval = Pixie16CheckExternalFIFOStatus(&numFIFOwords, i);
         if (retval < 0){
-            sprintf(errmsg, "*ERROR* Pixie16CheckExternalFIFOStatus failed, retval = %d\n", i);
+            snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16CheckExternalFIFOStatus failed, retval = %d\n", i);
             termWrite->WriteError(errmsg);
             Pixie_Print_MSG(errmsg);
             return false;
@@ -845,7 +845,7 @@ bool XIAControl::ReadFIFO()
     for (int i = 0 ; i < num_modules ; ++i){
         retval = Pixie16CheckExternalFIFOStatus(&fifoSize, i);
         if (retval < 0){
-            sprintf(errmsg, "*ERROR* Pixie16CheckExternalFIFOStatus failed, retval = %d\n", i);
+            snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16CheckExternalFIFOStatus failed, retval = %d\n", i);
             termWrite->WriteError(errmsg);
             Pixie_Print_MSG(errmsg);
             return false;
@@ -854,7 +854,7 @@ bool XIAControl::ReadFIFO()
             continue;
         retval = Pixie16ReadDataFromExternalFIFO(FIFOdata, fifoSize, i);
         if (retval < 0){
-            sprintf(errmsg, "*ERROR* Pixie16ReadDataFromExternalFIFO failed, retval = %d\n", retval);
+            snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16ReadDataFromExternalFIFO failed, retval = %d\n", retval);
             termWrite->WriteError(errmsg);
             Pixie_Print_MSG(errmsg);
             return false;
@@ -876,7 +876,7 @@ bool XIAControl::ExitXIA()
     }
     int retval = Pixie16ExitSystem(num_modules);
     if (retval < 0){
-        sprintf(errmsg, "*ERROR* Pixie16ExitSystem failed, retval = %d\n", retval);
+        snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16ExitSystem failed, retval = %d\n", retval);
         termWrite->Write(errmsg);
         return false;
     }
