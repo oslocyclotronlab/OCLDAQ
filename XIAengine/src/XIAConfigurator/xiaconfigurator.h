@@ -41,7 +41,7 @@ class XIAConfigurator : public QDialog
 Q_OBJECT
 public:
     XIAConfigurator(XIAInterface *interface, QWidget *parent = nullptr);
-    ~XIAConfigurator();
+    ~XIAConfigurator() = default;
 
     void UpdateView(const int &modID, const int &chanID);
     void WriteView(const int &modID, const int &chanID);
@@ -50,6 +50,8 @@ private slots:
     void module_change(int);
     void channel_change(int);
     void WriteButtonClick(bool);
+    void MeasureBaselineCut(bool);
+    void MeasureBaselineOffset(bool);
 
 private:
     XIAInterface *interface;

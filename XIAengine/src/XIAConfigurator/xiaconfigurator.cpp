@@ -87,6 +87,9 @@ XIAConfigurator::XIAConfigurator(XIAInterface *_interface, QWidget *parent)
         throw std::runtime_error("There has to be at least one module.");
 
     connect(buttons->writeBtn, SIGNAL(clicked(bool)), this, SLOT(WriteButtonClick(bool)));
+    connect(buttons->blcutAdjustBtn, SIGNAL(clicked(bool)), this, SLOT(MeasureBaselineCut(bool)));
+    connect(buttons->blAdjustBtn, SIGNAL(clicked(bool)), this, SLOT(MeasureBaselineOffset(bool)));
+
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     UpdateView(0, 0);
@@ -186,7 +189,18 @@ void XIAConfigurator::WriteButtonClick(bool)
     UpdateView(moduleNumber, channelNumber);
 }
 
-XIAConfigurator::~XIAConfigurator()
+void XIAConfigurator::MeasureBaselineCut(bool)
 {
+    int moduleNumber = module->value();
+    int channelNumber = channel->value();
+    auto cut = interface->MeasureBLCut(moduleNumber, channelNumber);
+    UpdateView(moduleNumber, channelNumber);
 }
 
+void XIAConfigurator::MeasureBaselineOffset(bool)
+{
+    int moduleNumber = module->value();
+    int channelNumber = channel->value();
+    interface->MeasureBaseline(moduleNumber);
+    UpdateView(moduleNumber, channelNumber);
+}

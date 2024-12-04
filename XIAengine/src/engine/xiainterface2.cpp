@@ -199,3 +199,21 @@ void XIAInterfaceAPI2::SetModParam(const size_t &module, const char *ModParName,
         std::cerr << "*Error* (Pixie16WriteSglModPar): Pixie16ReadSglModPar failed, retval=" << retval << std::endl;
     }
 }
+
+unsigned int XIAInterfaceAPI2::MeasureBLCut(const unsigned short &module, const unsigned short &channel)
+{
+    unsigned int blcut = 0;
+    auto retval = Pixie16BLcutFinder(module, channel, &blcut);
+    if ( retval < 0 ){
+        std::cerr << "*Error* (Pixie16BLcutFinder): Pixie16ReadSglModPar failed, retval=" << retval << std::endl;
+    }
+    return blcut;
+}
+
+void XIAInterfaceAPI2::MeasureBaseline(const unsigned short &module)
+{
+    auto retval = Pixie16AdjustOffsets(module);
+    if ( retval < 0 ){
+        std::cerr << "*Error* (Pixie16AdjustOffsets): Pixie16AdjustOffsets failed, retval=" << retval << std::endl;
+    }
+}

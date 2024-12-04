@@ -35,6 +35,9 @@ public:
     virtual ModLim_t GetModLimits(const size_t &module, const char *ModParName) = 0;
     virtual ModPar_t GetModParam(const size_t &module, const char *ModParName) = 0;
     virtual void SetModParam(const size_t &module, const char *ModParName, const ModPar_t &parameter) = 0;
+
+    virtual unsigned int MeasureBLCut(const unsigned short &module, const unsigned short &channel) = 0;
+    virtual void MeasureBaseline(const unsigned short &module) = 0;
 };
 
 

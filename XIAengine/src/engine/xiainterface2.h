@@ -26,6 +26,9 @@ public:
     ModPar_t GetModParam(const size_t &module, const char *ModParName) override;
     void SetModParam(const size_t &module, const char *ModParName, const ModPar_t &parameter) override;
 
+    unsigned int MeasureBLCut(const unsigned short &module, const unsigned short &channel) override;
+    void MeasureBaseline(const unsigned short &module) override;
+
 private:
     struct ModuleInfo_t moduleInfo[PRESET_MAX_MODULES];
 };
