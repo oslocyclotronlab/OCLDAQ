@@ -13,6 +13,17 @@
 
 #include "helpers.h"
 
+unsigned int APP32_SetBit (unsigned short bit, unsigned int value)
+{
+    return(value | (unsigned int)(pow(2.0, (double)bit)));
+}
+
+unsigned int APP32_ClrBit (unsigned short bit, unsigned int value)
+{
+    value = APP32_SetBit(bit, value);
+    return(value ^ (unsigned int)(pow(2.0, (double)bit)));
+}
+
 const char *CSRAnames[] = {
         "Fast trig. sel. [0]",
         "Ext. trig. sel. [1]",
@@ -150,10 +161,19 @@ void ChannelRegisterTab::UpdateView(const int &module, const int &channel)
 
 void ChannelRegisterTab::UpdateSettings(const int &module, const int &channel)
 {
-    unsigned long long csra_value = 0;
+    unsigned long long csra_value = interface->GetChnParam(module, channel, "CHANNEL_CSRA");
     for ( size_t i = 0 ; i < 20 ; ++i ){
         set_bit(CSRAmap[i].bit, csra_value, csra[i]->isChecked());
     }
+
+    for ( size_t i = 0 ; i < sizeof(CSRAmap) ; ++i ){
+        if ( csra[i]->isChecked() )
+            APP32_SetBit(CSRAmap[i].bit, csra_value);
+        else
+            APP32_ClrBit(CSRAmap[i].bit, csra_value);
+    }
+
+
 
     switch( pileup->currentIndex() ){
         case 0:
