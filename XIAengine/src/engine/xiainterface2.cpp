@@ -86,7 +86,7 @@ XIAInterface::ChanLim_t XIAInterfaceAPI2::GetChnLimits(const size_t &module, con
     } else if (strcmp("BASELINE_AVERAGE", ChanParName) == 0 ){
         return {0, 16};
     } else if (strcmp("BLCUT", ChanParName) == 0 ){
-        return {0, INTMAX_MAX};
+        return {0, 1e99};
     } else if (strcmp("FASTTRIGBACKLEN", ChanParName) == 0 ){
         if ( moduleInfo[module].adc_msps == 250 )
             return {FASTTRIGBACKLEN_MIN_125MHZFIPCLK / adcFactor, FASTTRIGBACKLEN_MAX / adcFactor};
