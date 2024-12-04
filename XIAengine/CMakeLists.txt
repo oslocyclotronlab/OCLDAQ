@@ -54,9 +54,9 @@ if (NOT firmware_ADDED)
 	CPMAddPackage(NAME firmware SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../firmware)
 endif()
 
-if (NOT XIAConfigurator_ADDED)
-	CPMAddPackage(NAME XIAConfigurator SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../XIAConfigurator)
-endif()
+#if (NOT XIAConfigurator_ADDED)
+#	CPMAddPackage(NAME XIAConfigurator SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../XIAConfigurator)
+#endif()
 
 find_package(Threads REQUIRED)
 
@@ -128,7 +128,7 @@ target_link_libraries(XIAengine
 		#Qt6::Widgets
 		inih::inih
 		Threads::Threads
-		XIA::XIAConfigurator
+		#XIA::XIAConfigurator
 )
 
 qt_add_executable(XIAengine2 MANUAL_FINALIZATION ${GUI_PROJECT_SOURCES}
