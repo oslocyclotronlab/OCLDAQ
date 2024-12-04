@@ -159,8 +159,6 @@ void ChannelRegisterTab::UpdateView(const int &module, const int &channel)
 
 }
 
-#include <iostream>
-
 void ChannelRegisterTab::UpdateSettings(const int &module, const int &channel)
 {
     unsigned long long csra_value = 0;
