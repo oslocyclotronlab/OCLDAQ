@@ -54,9 +54,6 @@ if (NOT firmware_ADDED)
 	CPMAddPackage(NAME firmware SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../firmware)
 endif()
 
-#if (NOT XIAConfigurator_ADDED)
-#	CPMAddPackage(NAME XIAConfigurator SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../XIAConfigurator)
-#endif()
 
 find_package(Threads REQUIRED)
 
