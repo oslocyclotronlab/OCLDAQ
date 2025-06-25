@@ -173,10 +173,10 @@ static void cb_disconnected(line_channel*, void*)
 
 static void broadcast_gainshift(line_channel* lc=0)
 {
-    std::ostringstream o;
+    /*std::ostringstream o;
     o << "201 status_gain " << format_gainshift(*GetCalibration()) << '\n';
 
-    send_1_or_all(o.str(), lc);
+    send_1_or_all(o.str(), lc);*/
 }
 
 // ########################################################################
@@ -190,13 +190,13 @@ static void command_status_gain(line_channel* lc, const std::string&, void*)
 
 static void command_gain(line_channel* lc, const std::string& cmd, void*)
 {
-    const std::string filename = cmd.substr(5);
+    /*const std::string filename = cmd.substr(5);
     if( !read_gainshifts(*GetCalibration(), filename) ) {
         line_sender ls(lc);
         ls << "402 error_file Problem reading gain/shift from '"<<filename<<"'.\n";
     } else {
         broadcast_gainshift();
-    }
+    }*/
 }
 
 // ########################################################################
