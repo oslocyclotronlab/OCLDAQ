@@ -195,14 +195,7 @@ void CopySettingsTab::copyBtn_push()
         cp_mask = ( copyMask[n]->isChecked() ) ? APP16_SetBit(n, cp_mask) : APP16_ClrBit(n, cp_mask);
     }
 
-    std::cout << "CP mask is " << cp_mask << " destination map is:" << std::endl;
-    for ( int i = 0 ; i < number_of_modules ; ++i) {
-        for (int j = 0 ; j < NUMBER_OF_CHANNELS ; ++j) {
-            std::cout << destinationMask[i*NUMBER_OF_CHANNELS + j] << std::endl;
-        }
-    }
-
-    
+    interface->CopyDSPParameters(cp_mask, source_module->value(), source_channel->value(), destinationMask);
 }
 
 void CopySettingsTab::clearBtn_push()
