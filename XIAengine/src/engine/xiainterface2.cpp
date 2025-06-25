@@ -222,6 +222,10 @@ void XIAInterfaceAPI2::MeasureBaseline(const unsigned short &module)
 void XIAInterfaceAPI2::CopyDSPParameters(const unsigned short& BitMap, const unsigned short& sourceModule,
                                          const unsigned short& sourceChannel, unsigned short* DestinationMask)
 {
+    std::cout << "BitMap: " << BitMap << std::endl;
+    std::cout << "SourceModule: " << sourceModule << std::endl;
+    std::cout << "SourceChannel: " << sourceChannel << std::endl;
+    std::cout << "DestinationMask: " << DestinationMask[0] << std::endl;
     auto retval = Pixie16CopyDSPParameters(BitMap, sourceModule, sourceChannel, DestinationMask);
     if (  retval < 0 ) {
         std::cerr << "*Error* (Pixie16CopyDSPParameters): Pixie16CopyDSPParameters failed, retval=" << retval << std::endl;

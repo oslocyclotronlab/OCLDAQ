@@ -177,10 +177,9 @@ void CopySettingsTab::verticalHeaderSectionDoubleClicked(int sec)
 void CopySettingsTab::copyBtn_push()
 {
     unsigned short destinationMask[NUMBER_OF_CHANNELS * PRESET_MAX_MODULES];
-    std::cout << "Number of modules " << number_of_modules << std::endl;
     for (int i = 0 ; i < number_of_modules ; ++i){
         for (int j = 0 ; j < NUMBER_OF_CHANNELS ; ++j){
-            QCheckBox *box = (QCheckBox *)table->cellWidget(i, j);
+            auto box = reinterpret_cast<QCheckBox *>(table->cellWidget(i, j));
             destinationMask[i*NUMBER_OF_CHANNELS + j] = ( box->isChecked() ) ? 1 : 0;
         }
     }
@@ -195,19 +194,20 @@ void CopySettingsTab::copyBtn_push()
         cp_mask = ( copyMask[n]->isChecked() ) ? APP16_SetBit(n, cp_mask) : APP16_ClrBit(n, cp_mask);
     }
 
-    interface->CopyDSPParameters(cp_mask, source_module->value(), source_channel->value(), destinationMask);
+    interface->CopyDSPParameters(cp_mask,
+        source_module->value(), source_channel->value(), destinationMask);
 }
 
 void CopySettingsTab::clearBtn_push()
 {
     for ( size_t i = 0 ; i < number_of_modules ; ++i ){
         for ( size_t j = 0 ; j < NUMBER_OF_CHANNELS ; ++j ){
-            QCheckBox *box = (QCheckBox *)table->cellWidget(i, j);
+            auto box = reinterpret_cast<QCheckBox *>(table->cellWidget(i, j));
             box->setChecked(false);
         }
     }
 
-    for ( size_t n = 0 ; n < 12 ; ++n ){
-        copyMask[n]->setChecked(false);
+    for (auto & n : copyMask){
+        n->setChecked(false);
     }
 }
