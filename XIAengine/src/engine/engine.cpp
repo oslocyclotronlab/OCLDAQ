@@ -54,6 +54,7 @@ static int gui_is_running;
 static int globargc;
 static char **globargv;
 command_list* commands = 0;
+XIAConfigurator *config = nullptr;
 
 #ifndef OFFLINE
 #define OFFLINE false
@@ -76,13 +77,8 @@ void keyb_int(int sig_num)
 
 int GUI_thread(int nmod)
 {
-    /*QApplication a(globargc, globargv);
-    MainWindow w(nmod);
-    w.show();
-    gui_is_running = 1;
-    int foo = a.exec();
-    gui_is_running = 0;
-    return foo;*/
+    if ( config )
+        config->show();
     return 0;
 }
 
@@ -539,13 +535,12 @@ int main_engine(int argc, char* argv[])
 // ########################################################################
 // ########################################################################
 
-int main_gui(int nmod, QApplication &app, XIAInterface &interface)
+int main_gui(int nmod, QApplication &app, XIAConfigurator &c)
 {
-    XIAConfigurator c(&interface);
     c.show();
-    /*while ( leaveprog == 'n' ){
-        global_app->processEvents();
-    }*/
+    /*while ( leaveprog == 'n' )
+        app.processEvents();
+    return 0;*/
     return app.exec();
 }
 
@@ -599,10 +594,11 @@ int main(int argc, char* argv[])
 
     auto nmod = xiacontr->GetNumMod();
     XIAInterfaceAPI2 interface(nmod);
+    XIAConfigurator configurator(&interface);
 
     // Now we are ready to start the two threads, this will launch the settings window!
     auto engine_thread = std::thread(main_engine, argc, argv);
-    auto r = main_gui(nmod, app, interface);
+    auto r = main_gui(nmod, app, configurator);
 
     if ( engine_thread.joinable() ) engine_thread.join();
 
