@@ -28,6 +28,9 @@ CFDFilter::CFDFilter(XIAInterface *_interface, QWidget *parent)
     threshold->setMinimumWidth(75);
     resetDelay->setMinimumWidth(75);
 
+    delay->setDecimals(3);
+    delay->setSingleStep(0.001);
+
     param_map = {
             {delay, "CFDDelay"},
             {scale, "CFDScale"},
