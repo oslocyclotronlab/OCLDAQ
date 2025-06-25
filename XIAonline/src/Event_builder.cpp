@@ -103,7 +103,7 @@ bool EventBuilder::UnpackOneEvent(Event &event)
 
 #else
 
-/*bool EventBuilder::UnpackOneEvent(Event &event)
+bool EventBuilder::UnpackOneEvent(Event &event)
 {
     event.Reset();
     int factor = 10;
@@ -116,7 +116,7 @@ bool EventBuilder::UnpackOneEvent(Event &event)
     word_t curr_w;
     for (size_t i = curr_pos ; i < buffer.size() ; ++i){
         curr_w = buffer[i];
-        if ( ( GetDetector(curr_w.address).type == eDet ) ||
+        if ( ( GetDetector(curr_w.address).type == deDet ) ||
              ( GetDetector(curr_w.address).type == ppac) ){
 
             // We find all events that are within MAX_TDIFF before the
@@ -147,9 +147,9 @@ bool EventBuilder::UnpackOneEvent(Event &event)
         }
     }
     return false;
-}*/
+}
 
-bool EventBuilder::UnpackOneEvent(Event &event)
+/*bool EventBuilder::UnpackOneEvent(Event &event)
 {
     event.Reset();
     int factor = 10;
@@ -191,7 +191,7 @@ bool EventBuilder::UnpackOneEvent(Event &event)
         }
     }
     return false;
-}
+}*/
 
 #endif // SINGLES
 

@@ -69,14 +69,25 @@ void Sort_Particle_Event(Event &event)
 
     int telNo = GetDetector(event.trigger.address).detectorNum;
 
+    for (int n = 0 ; n < NUM_LABR_DETECTORS ; ++n){
+        for (int m = 0 ; m < event.n_labr[n] ; ++m){
+            tdiff_c = event.w_labr[n][m].timestamp - event.trigger.timestamp;
+            tdiff_f = event.w_labr[n][m].cfdcorr - event.trigger.cfdcorr;
+            tdiff = tdiff_c + tdiff_f;
+            spec_fill(TLABRSP_ID, tdiff + 16384, n);
+            if ( n == 0 && !event.w_labr[n][m].cfdfail )
+                spec_fill(TIME_ENERGY_ID, event.w_labr[n][m].adcdata * 1/16.384, tdiff / 1 + 250);
+        }
+    }
+
     // Time-energy spectrum, x-axis energy, y-axis time
-    if ( !event.trigger.cfdfail && (event.trigger.adcdata > 6600) && (event.trigger.adcdata < 6950) ) {
-        for (int j = 0; j < event.n_labr[17]; ++j) {
-            if ( event.w_labr[17][j].cfdfail )
+    if ( !event.trigger.cfdfail ) {
+        for (int j = 0; j < event.n_labr[16]; ++j) {
+            if ( event.w_labr[16][j].cfdfail )
                 continue;
-            tdiff = double(event.w_labr[17][j].timestamp - event.trigger.timestamp) +
-                    (event.w_labr[17][j].cfdcorr - event.trigger.cfdcorr);
-            spec_fill(TIME_ENERGY_ID, event.w_labr[17][j].adcdata * double(1000) / double(16384), tdiff + 500);
+            tdiff = double(event.w_labr[16][j].timestamp - event.trigger.timestamp) +
+                    (event.w_labr[16][j].cfdcorr - event.trigger.cfdcorr);
+            //spec_fill(TIME_ENERGY_ID, event.w_labr[16][j].adcdata * double(1000) / double(16384), tdiff / 100 + 100 );
         }
     }
 
@@ -133,7 +144,7 @@ void sort_coincidence(Event &event)
     case eDet :
         Sort_Particle_Event(event);
         break;
-    case labr :
+    case deDet :
         Sort_Particle_Event(event);
         break;
     case ppac:
