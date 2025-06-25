@@ -58,21 +58,10 @@ endif()
 find_package(Threads REQUIRED)
 
 
-target_include_directories(XIAengine
-		PRIVATE
-		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	target_compile_definitions(XIAengine PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1 OFFLINE=1)
-else()
-	target_compile_definitions(XIAengine PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1)
-endif()
-set_target_properties(XIAengine PROPERTIES CXX_STANDARD 11)
-set_property(TARGET XIAengine PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-
 add_executable(XIAreadout
 		${CMAKE_CURRENT_SOURCE_DIR}/Readout.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/functions.cpp)
 target_link_libraries(XIAreadout PUBLIC Pixie16::Pixie16 inih::inih)
 target_compile_definitions(XIAreadout PRIVATE _FILE_OFFSET_BITS=64)
+set_target_properties(XIAreadout PROPERTIES CXX_STANDARD 11)
+set_property(TARGET XIAreadout PROPERTY POSITION_INDEPENDENT_CODE ON)
