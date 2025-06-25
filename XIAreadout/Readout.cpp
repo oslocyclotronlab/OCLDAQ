@@ -9,7 +9,7 @@
 
 #include <pixie16app_export.h>
 
-#include "src/engine/functions.h"
+#include "functions.h"
 
 void keyb_int(int sig_num)
 {
