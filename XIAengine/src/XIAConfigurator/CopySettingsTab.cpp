@@ -5,6 +5,9 @@
 #define PRESET_MAX_MODULES 24
 
 #include "CopySettingsTab.h"
+
+#include <iostream>
+
 #include "xiainterface.h"
 
 #include <QHBoxLayout>
@@ -53,6 +56,7 @@ const char *copyNames[] = {
 CopySettingsTab::CopySettingsTab(XIAInterface *_interface, QWidget *parent)
         : QWidget{parent}
         , interface( _interface )
+        , number_of_modules( interface->GetNumModules() )
         , source_module( new QSpinBox(this) )
         , source_channel( new QSpinBox(this) )
         , table( new QTableWidget(this) )
@@ -173,6 +177,7 @@ void CopySettingsTab::verticalHeaderSectionDoubleClicked(int sec)
 void CopySettingsTab::copyBtn_push()
 {
     unsigned short destinationMask[NUMBER_OF_CHANNELS * PRESET_MAX_MODULES];
+    std::cout << "Number of modules " << number_of_modules << std::endl;
     for (int i = 0 ; i < number_of_modules ; ++i){
         for (int j = 0 ; j < NUMBER_OF_CHANNELS ; ++j){
             QCheckBox *box = (QCheckBox *)table->cellWidget(i, j);
@@ -189,6 +194,15 @@ void CopySettingsTab::copyBtn_push()
         }
         cp_mask = ( copyMask[n]->isChecked() ) ? APP16_SetBit(n, cp_mask) : APP16_ClrBit(n, cp_mask);
     }
+
+    std::cout << "CP mask is " << cp_mask << " destination map is:" << std::endl;
+    for ( int i = 0 ; i < number_of_modules ; ++i) {
+        for (int j = 0 ; j < NUMBER_OF_CHANNELS ; ++j) {
+            std::cout << destinationMask[i*NUMBER_OF_CHANNELS + j] << std::endl;
+        }
+    }
+
+    
 }
 
 void CopySettingsTab::clearBtn_push()
