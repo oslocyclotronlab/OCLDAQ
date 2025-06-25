@@ -16,6 +16,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#ifdef __APPLE__
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <unistd.h>
+#endif // __APPLE__
+
 // ########################################################################
 
 std::string ioprintf(const char* format, ...)
@@ -52,23 +58,52 @@ bool file_exists(std::string const& filename)
  */
 int* attach_shared(key_t key, size_t size, bool create)
 {
-    int* shmptr;
+#ifdef __APPLE__
+    // POSIX SHM version
+    char name[64];
+    snprintf(name, sizeof(name), "/shm_%x", key); // POSIX shm names start with '/'
 
-    /* allocate shared memory segment */
+    int flags = create ? O_CREAT | O_RDWR : O_RDWR;
+    int fd = shm_open(name, flags, 0666);
+    if (fd == -1) {
+        perror("attach_shared (shm_open)");
+        return nullptr;
+    }
+
+    if (create) {
+        if (ftruncate(fd, size) == -1) {
+            perror("attach_shared (ftruncate)");
+            close(fd);
+            return nullptr;
+        }
+    }
+
+    void* addr = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (addr == MAP_FAILED) {
+        perror("attach_shared (mmap)");
+        close(fd);
+        return nullptr;
+    }
+
+    close(fd); // fd no longer needed after mmap
+    return static_cast<int *>(addr);
+
+#else
+    // System V SHM version
     int shmid = shmget(key, size, 0666 | (create ? IPC_CREAT : 0));
     if (shmid == -1) {
         perror("attach_shared (shmget)");
         return nullptr;
     }
 
-    /* attach shared memory segment to process */
-    shmptr = (int*)shmat(shmid, NULL, 0);
-    if( shmptr == (void*)-1 ) {
+    void* shmptr = shmat(shmid, nullptr, 0);
+    if (shmptr == (void*)-1) {
         perror("attach_shared (shmat)");
         return nullptr;
     }
 
     return shmptr;
+#endif
 }
 
 // ########################################################################

@@ -5,6 +5,7 @@
 #include "utilities.h"
 
 #include <fstream>
+#include <sys/mman.h>
 
 // ######################################################################## 
 // ######################################################################## 
@@ -105,9 +106,20 @@ bool spectra_detach_all()
     bool all_okay = true;
     for(int i=1; sort_spectra[i].specno>0; ++i) {
         sort_spectrum_t *s = &sort_spectra[i];
-        if( s->ptr && shmdt( s->ptr ) == -1 )
-            all_okay = false;
-        s->ptr = 0;
+        if ( s->ptr ) {
+#ifdef __APPLE__
+            if (munmap( s->ptr, s->size) == -1 ) {
+                perror("spectra_detach_all (munmap)");
+                all_okay = false;
+            }
+#else
+            if (shmdt(s->ptr) == -1) {
+                perror("spectra_detach_all (shmdt)");
+                all_okay = false;
+            }
+#endif // __APPLE__
+            s->ptr = nullptr;
+        }
     }
     return all_okay;
 }

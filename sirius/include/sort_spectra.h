@@ -57,6 +57,7 @@ extern sort_spectrum_t sort_spectra[];
 bool spectra_attach_all(bool online);
 bool spectra_detach_all();
 
+sort_spectrum_t* get_raw();
 sort_spectrum_t* spec_find(const char* name);
 
 void spec_fill(int specno, int x, int y, int w=1);
