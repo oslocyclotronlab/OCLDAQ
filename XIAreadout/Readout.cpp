@@ -5,7 +5,11 @@
 #include <iostream>
 #include <fstream>
 #include <map>
+#include <cstring>
+#include <csignal>
+
 #include <unistd.h>
+
 
 #include <pixie16app_export.h>
 
