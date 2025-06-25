@@ -196,3 +196,7 @@ Thumbs.db #thumbnail cache on Windows
 
 # profiling data
 .prof
+
+# Build folders
+build_*
+*_build

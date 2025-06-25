@@ -107,7 +107,9 @@ add_executable(XIAengine
 
 target_include_directories(XIAengine
 		PRIVATE
-		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
+			$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+			$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	target_compile_definitions(XIAengine PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1 OFFLINE=1)
@@ -121,8 +123,8 @@ target_link_libraries(XIAengine
 		PUBLIC
 		Pixie16::Pixie16
 		sirius::sirius
-		#Qt6::Core
-		#Qt6::Widgets
+		Qt6::Core
+		Qt6::Widgets
 		inih::inih
 		Threads::Threads
 		#XIA::XIAConfigurator
