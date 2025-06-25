@@ -219,6 +219,15 @@ void XIAInterfaceAPI2::MeasureBaseline(const unsigned short &module)
     }
 }
 
+void XIAInterfaceAPI2::CopyDSPParameters(const unsigned short& BitMap, const unsigned short& sourceModule,
+                                         const unsigned short& sourceChannel, unsigned short* DestinationMask)
+{
+    auto retval = Pixie16CopyDSPParameters(BitMap, sourceModule, sourceChannel, DestinationMask);
+    if (  retval < 0 ) {
+        std::cerr << "*Error* (Pixie16CopyDSPParameters): Pixie16CopyDSPParameters failed, retval=" << retval << std::endl;
+    }
+}
+
 bool XIAInterfaceAPI2::WriteSettings(const char *fname)
 {
     // First we need to read the entire settings file as it currently is on disk (as a backup copy)
