@@ -89,7 +89,7 @@ XIAConfigurator::XIAConfigurator(XIAInterface *_interface, QWidget *parent)
     connect(buttons->writeBtn, SIGNAL(clicked(bool)), this, SLOT(WriteButtonClick(bool)));
     connect(buttons->blcutAdjustBtn, SIGNAL(clicked(bool)), this, SLOT(MeasureBaselineCut(bool)));
     connect(buttons->blAdjustBtn, SIGNAL(clicked(bool)), this, SLOT(MeasureBaselineOffset(bool)));
-
+    connect(buttons->saveBtn, SIGNAL(clicked(bool)), this, SLOT(SaveSettingsButtonClick(bool)));
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     UpdateView(0, 0);
