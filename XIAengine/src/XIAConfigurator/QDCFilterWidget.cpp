@@ -42,6 +42,11 @@ QDCFilter::QDCFilter(XIAInterface *_interface, QWidget *parent)
             {qdcLen7, "QDCLen7"},
     };
 
+    for ( auto& qdc : param_map ) {
+        reinterpret_cast<QDoubleSpinBox *>(qdc.first)->setDecimals(3);
+        reinterpret_cast<QDoubleSpinBox *>(qdc.first)->setSingleStep(0.001);
+    }
+
     formLayout->addRow(tr("QDC sum length %1:").arg(0), qdcLen0);
     unit_layout->addWidget(new QLabel(tr("us"), this));
     formLayout->addRow(tr("QDC sum length %1:").arg(1), qdcLen1);
