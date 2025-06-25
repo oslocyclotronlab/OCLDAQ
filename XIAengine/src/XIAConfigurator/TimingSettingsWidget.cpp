@@ -45,6 +45,11 @@ TimingSettings::TimingSettings(XIAInterface *_interface, QWidget *parent)
             {chanTrigStrech, "ChanTrigStretch"}
     };
 
+    for (auto& param : param_map) {
+        reinterpret_cast<QDoubleSpinBox *>(param.first)->setDecimals(3);
+        reinterpret_cast<QDoubleSpinBox *>(param.first)->setSingleStep(0.001);
+    }
+
     QHBoxLayout *layout = new QHBoxLayout;
     QVBoxLayout *unit_layout = new QVBoxLayout;
     QFormLayout *formLayout = new QFormLayout;
