@@ -191,7 +191,12 @@ void XIAConfigurator::WriteButtonClick(bool)
 
 void XIAConfigurator::SaveSettingsButtonClick(bool)
 {
-    interface->WriteSettings("settings.set");
+    qCDebug(logger) << "Writing settings file...";
+    if ( !interface->WriteSettings("settings.set") ) {
+        qCDebug(logger) << "Failed to write settings file";
+    } else {
+        qCDebug(logger) << "Settings saved.";
+    }
 }
 
 void XIAConfigurator::MeasureBaselineCut(bool)
