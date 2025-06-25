@@ -29,6 +29,8 @@ public:
     unsigned int MeasureBLCut(const unsigned short &module, const unsigned short &channel) override;
     void MeasureBaseline(const unsigned short &module) override;
 
+    bool WriteSettings(const char *fname) override;
+
 private:
     struct ModuleInfo_t moduleInfo[PRESET_MAX_MODULES];
 };

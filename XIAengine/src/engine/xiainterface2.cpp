@@ -218,3 +218,48 @@ void XIAInterfaceAPI2::MeasureBaseline(const unsigned short &module)
         std::cerr << "*Error* (Pixie16AdjustOffsets): Pixie16AdjustOffsets failed, retval=" << retval << std::endl;
     }
 }
+
+bool XIAInterfaceAPI2::WriteSettings(const char *fname)
+{
+    // First we need to read the entire settings file as it currently is on disk (as a backup copy)
+    char filename[1024];
+    FILE *file = fopen(fname, "rb");
+    bool have_bck = true;
+    unsigned int config_raw[N_DSP_PAR * PRESET_MAX_MODULES];
+    if (fread(config_raw, sizeof(unsigned int), N_DSP_PAR*PRESET_MAX_MODULES, file) != N_DSP_PAR*PRESET_MAX_MODULES){
+        std::cout << "Warning: settings.set is not valid. All current settings may be lost if saving .set file fails." << std::endl;
+        have_bck = false;
+    }
+
+    fclose(file); // We are done with the file.
+
+    std::cout << "Trying to save settings to file '" << fname << "'" << std::endl;
+    snprintf(filename, 1024, "%s", fname);
+    int retval = Pixie16SaveDSPParametersToFile(filename);
+    if (retval == 0){
+        std::cout << "... Done" << std::endl;
+        return true;
+    } else if (retval == -1) {
+        std::cerr << "... Failed, unable to read DSP parameter value from modules. Please restart engine and check the 'Pixie16msg.txt' file." << std::endl;
+        if (!have_bck){
+            std::cerr << "Warning: Unable to restore old '" << filename << "' file" << std::endl;
+            return false;
+        }
+    } else {
+        std::cerr << "... Failed, unable to write to disk." << std::endl;
+        if (!have_bck){
+            std::cerr << "Warning: Unable to restore old '" << filename << "' file" << std::endl;
+            return false;
+        }
+    }
+
+    file = fopen(filename, "wb");
+
+    // Writing to file...
+    if (fwrite(config_raw, sizeof(unsigned int), N_DSP_PAR*PRESET_MAX_MODULES, file) != N_DSP_PAR*PRESET_MAX_MODULES){
+        std::cerr << "Warning: Unable to restore old '" << filename << "' file. This may cause an error when restarting engine." << std::endl;
+    }
+
+    fclose(file); // Done!
+    return true;
+}

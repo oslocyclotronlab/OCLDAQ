@@ -38,6 +38,8 @@ public:
 
     virtual unsigned int MeasureBLCut(const unsigned short &module, const unsigned short &channel) = 0;
     virtual void MeasureBaseline(const unsigned short &module) = 0;
+
+    virtual bool WriteSettings(const char *fname) = 0;
 };
 
 

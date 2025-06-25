@@ -189,6 +189,11 @@ void XIAConfigurator::WriteButtonClick(bool)
     UpdateView(moduleNumber, channelNumber);
 }
 
+void XIAConfigurator::SaveSettingsButtonClick(bool)
+{
+    interface->WriteSettings("settings.set");
+}
+
 void XIAConfigurator::MeasureBaselineCut(bool)
 {
     int moduleNumber = module->value();
