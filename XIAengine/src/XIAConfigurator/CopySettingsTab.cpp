@@ -2,6 +2,8 @@
 // Created by Vetle Wegner Ingeberg on 02/12/2024.
 //
 
+#define PRESET_MAX_MODULES 24
+
 #include "CopySettingsTab.h"
 #include "xiainterface.h"
 
@@ -17,6 +19,21 @@
 #include <QHeaderView>
 
 #include "helpers.h"
+
+unsigned short APP16_SetBit (
+    unsigned short bit,
+    unsigned short value )
+{
+    return(value | (unsigned short)(pow(2.0, (double)bit)));
+}
+
+unsigned short APP16_ClrBit (
+    unsigned short bit,
+    unsigned short value )
+{
+    value = APP16_SetBit(bit, value);
+    return(value ^ (unsigned short)(pow(2.0, (double)bit)));
+}
 
 const char *copyNames[] = {
         "Filter (energy/trigger) [0]",
@@ -155,7 +172,23 @@ void CopySettingsTab::verticalHeaderSectionDoubleClicked(int sec)
 
 void CopySettingsTab::copyBtn_push()
 {
+    unsigned short destinationMask[NUMBER_OF_CHANNELS * PRESET_MAX_MODULES];
+    for (int i = 0 ; i < number_of_modules ; ++i){
+        for (int j = 0 ; j < NUMBER_OF_CHANNELS ; ++j){
+            QCheckBox *box = (QCheckBox *)table->cellWidget(i, j);
+            destinationMask[i*NUMBER_OF_CHANNELS + j] = ( box->isChecked() ) ? 1 : 0;
+        }
+    }
 
+    unsigned short cp_mask = 0;
+
+    for ( int n = 0 ; n < 12 ; ++n ) {
+        if ( n == 6 ) {
+            cp_mask = APP16_ClrBit(n, cp_mask);
+            continue;
+        }
+        cp_mask = ( copyMask[n]->isChecked() ) ? APP16_SetBit(n, cp_mask) : APP16_ClrBit(n, cp_mask);
+    }
 }
 
 void CopySettingsTab::clearBtn_push()
