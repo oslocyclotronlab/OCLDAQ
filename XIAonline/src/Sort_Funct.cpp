@@ -4,9 +4,6 @@
 #include "sort_spectra.h"
 #include "experimentsetup.h"
 
-
-#include <stdlib.h>
-#include <string.h>
 #include <iostream>
 
 double gain_labr[32]  = {0.447257, 0.38751, 0.402966, 0.417111, 0.97777, 0.453272, 0.4491, 0.474902, 0.465596, 0.446111, 0.458622, 0.441359, 0.4711, 0.458244, 0.4523, 1.0, 0.443798, 0.457616, 0.536055, 0.457865, 0.448527, 0.453101, 0.458428, 0.792054, 0.450403, 0.512524, 0.787633, 0.46162, 0.514693, 0.462192, 0.782574, 1.};
@@ -58,8 +55,6 @@ void Sort_Particle_Event(Event &event)
 
     int telNo = GetDetector(event.trigger.address).telNum;
 
-    std::cout << event.tot_dEdet_trap[telNo] << std::endl;
-
     // We want to check if we have only one dE strip in this telescope.
     // If we see more than one, we don't continue.
     if (event.tot_dEdet_trap[telNo] == 1) {
@@ -106,8 +101,8 @@ void sort_coincidence(Event &event)
 
     switch (GetDetector(event.trigger.address).type) {
     case deDet :
-	Sort_Particle_Event(event);
-	break;
+	    Sort_Particle_Event(event);
+	    break;
     case eDet :
         Sort_Particle_Event(event);
         break;
