@@ -128,6 +128,12 @@ target_link_libraries(XIAengine
 		#XIA::XIAConfigurator
 )
 
+add_executable(XIAread
+		${CMAKE_CURRENT_SOURCE_DIR}/Readout.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/engine/functions.cpp)
+target_link_libraries(XIAread PUBLIC Pixie16::Pixie16 inih::inih)
+target_include_directories(XIAread PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/engine)
+
 qt_add_executable(XIAengine2 MANUAL_FINALIZATION ${GUI_PROJECT_SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/engine.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/functions.cpp
