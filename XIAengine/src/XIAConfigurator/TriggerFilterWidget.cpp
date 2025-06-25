@@ -23,9 +23,13 @@ TriggerFilter::TriggerFilter(XIAInterface *_interface, QWidget *parent)
 {
     risetime->setToolTip(tr("Risetime of the trigger filter."));
     risetime->setMinimumWidth(75);
-    flattop->setToolTip(tr("tips"));
+    risetime->setDecimals(3);
+    risetime->setSingleStep(0.001);
+    flattop->setToolTip(tr("Flat-top of the trigger filter"));
     flattop->setMinimumWidth(75);
-    threshold->setToolTip(tr("tips"));
+    flattop->setDecimals(3);
+    flattop->setSingleStep(0.001);
+    threshold->setToolTip(tr("Trigger threshold"));
     threshold->setMinimumWidth(75);
 
     param_map = {
