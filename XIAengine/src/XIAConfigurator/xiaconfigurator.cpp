@@ -194,6 +194,7 @@ void XIAConfigurator::MeasureBaselineCut(bool)
     int moduleNumber = module->value();
     int channelNumber = channel->value();
     auto cut = interface->MeasureBLCut(moduleNumber, channelNumber);
+    qCDebug(logger) << "Measured baseline cut in module " << moduleNumber << ", channel " << channelNumber << ": " << cut;
     UpdateView(moduleNumber, channelNumber);
 }
 
