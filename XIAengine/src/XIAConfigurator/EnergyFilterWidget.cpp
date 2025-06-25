@@ -29,9 +29,13 @@ EnergyFilter::EnergyFilter(XIAInterface *_interface, QWidget *parent)
     flattop->setMinimumWidth(75);
     tau->setMinimumWidth(75);
 
-    risetime->setDecimals(2);
-    flattop->setDecimals(2);
+    risetime->setDecimals(3);
+    flattop->setDecimals(3);
     tau->setDecimals(3);
+
+    risetime->setSingleStep(0.001);
+    flattop->setSingleStep(0.001);
+    tau->setSingleStep(0.001);
 
     param_map = {
             {risetime, "ENERGY_RISETIME"},
