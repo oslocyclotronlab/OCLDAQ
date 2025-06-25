@@ -28,6 +28,9 @@ BaselineFilter::BaselineFilter(XIAInterface *_interface, QWidget *parent)
     baselineAverage->setMinimumWidth(75);
     baselineCut->setMinimumWidth(75);
 
+    baselineOffset->setDecimals(3);
+    baselineOffset->setSingleStep(0.001);
+
     param_map = {
             {baselineOffset, "VOFFSET"},
             {baselinePercent, "BASELINE_PERCENT"},
