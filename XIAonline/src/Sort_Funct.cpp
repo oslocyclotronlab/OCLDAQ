@@ -3,63 +3,52 @@
 
 #include "sort_spectra.h"
 #include "experimentsetup.h"
-#include "Calib.h"
 
 
-#include <cstdlib>
-#include <cstring>
+#include <stdlib.h>
+#include <string.h>
 #include <iostream>
 
-static calibration_t calibration;
+double gain_labr[32]  = {0.447257, 0.38751, 0.402966, 0.417111, 0.97777, 0.453272, 0.4491, 0.474902, 0.465596, 0.446111, 0.458622, 0.441359, 0.4711, 0.458244, 0.4523, 1.0, 0.443798, 0.457616, 0.536055, 0.457865, 0.448527, 0.453101, 0.458428, 0.792054, 0.450403, 0.512524, 0.787633, 0.46162, 0.514693, 0.462192, 0.782574, 1.};
+double shift_labr[32] = {-7.70566, -7.31413, -16.8309, -8.30385, -10.4673, -15.3047, -9.63392, -14.0837, -3.06104, -9.62424, -10.5742, -2.39071, -14.1402, -9.46778, -8.34307, 0., -7.99261, -12.6626, -5.76052, -6.06729, -2.98997, -5.28193, -6.33776, -6.46689, -7.67381, -8.00651, -6.8694, -5.96678, -3.89928, -7.6264, -10.7879, 0.};
 
-calibration_t *GetCalibration(){ return &calibration; }
-
-void sort_singles(const std::vector<word_t> &buffer)
+void sort_singles(const std::vector<word_t>& buffer)
 {
-    DetectorInfo_t dinfo, dinfo2;
-    double tdiff_c, tdiff_f, tdiff;
-    for (auto &entry : buffer){
 
-        dinfo = GetDetector(entry.address);
+    DetectorInfo_t dinfo;
+    for (size_t i = 0 ; i < buffer.size() ; ++i){
+
+        dinfo = GetDetector(buffer[i].address);
 
         switch (dinfo.type) {
         case labr:
-            spec_fill(LABRSP_ID, entry.adcdata, dinfo.detectorNum);
-            spec_fill(LABRCSP_ID,
-                      calibration.gain_labr[dinfo.detectorNum]*(entry.adcdata + drand48() - 0.5) + calibration.shift_labr[dinfo.detectorNum],
-                      dinfo.detectorNum);
-            if ( entry.cfdfail )
-                spec_fill(LABRCFD_ID, entry.adcdata, dinfo.detectorNum);
+            spec_fill(LABRSP_ID, buffer[i].adcdata, dinfo.detectorNum);
+            spec_fill(LABRCSP_ID, gain_labr[dinfo.detectorNum]*buffer[i].adcdata + shift_labr[dinfo.detectorNum], dinfo.detectorNum);
+            if ( buffer[i].cfdfail )
+                spec_fill(LABRCFD_ID, buffer[i].adcdata, dinfo.detectorNum);
             break;
         case deDet:
-            spec_fill(DESP_ID, entry.adcdata, dinfo.detectorNum + 8*dinfo.telNum);
-            if ( entry.cfdfail )
-                spec_fill(DECFD_ID, entry.adcdata, dinfo.detectorNum + 8*dinfo.telNum);
+            spec_fill(DESP_ID, buffer[i].adcdata, dinfo.detectorNum + 8*dinfo.telNum);
+            if ( buffer[i].cfdfail )
+                spec_fill(DECFD_ID, buffer[i].adcdata, dinfo.detectorNum + 8*dinfo.telNum);
             break;
         case eDet:
-            spec_fill(ESP_ID, entry.adcdata, dinfo.detectorNum);
-            if ( entry.cfdfail )
-                spec_fill(ECFD_ID, entry.adcdata, dinfo.detectorNum);
+            spec_fill(ESP_ID, buffer[i].adcdata, dinfo.detectorNum);
+            if ( buffer[i].cfdfail )
+                spec_fill(ECFD_ID, buffer[i].adcdata, dinfo.detectorNum);
             break;
         case eGuard:
-            spec_fill(GUARD_ID, entry.adcdata, dinfo.detectorNum);
+            spec_fill(GUARD_ID, buffer[i].adcdata, dinfo.detectorNum);
             break;
         case ppac:
-            spec_fill(PPAC_ID, entry.adcdata, dinfo.detectorNum);
-            for ( auto &gamma : buffer ){
-                dinfo2 = GetDetector(gamma.address);
-                if ( dinfo2.type == labr ){
-                    tdiff_c = entry.timestamp - gamma.timestamp;
-                    tdiff_f = entry.cfdcorr - gamma.cfdcorr;
-                    tdiff = tdiff_c + tdiff_f;
-                    spec_fill(TPPAC_ID, tdiff + 16384, dinfo2.detectorNum);
-                }
-            }
+            spec_fill(PPAC_ID, buffer[i].adcdata, dinfo.detectorNum);
             break;
         default:
             break;
         }
     }
+
+    return;
 }
 
 void Sort_Particle_Event(Event &event)
@@ -67,29 +56,7 @@ void Sort_Particle_Event(Event &event)
     int64_t tdiff_c;
     double tdiff_f, tdiff;
 
-    int telNo = GetDetector(event.trigger.address).detectorNum;
-
-    for (int n = 0 ; n < NUM_LABR_DETECTORS ; ++n){
-        for (int m = 0 ; m < event.n_labr[n] ; ++m){
-            tdiff_c = event.w_labr[n][m].timestamp - event.trigger.timestamp;
-            tdiff_f = event.w_labr[n][m].cfdcorr - event.trigger.cfdcorr;
-            tdiff = tdiff_c + tdiff_f;
-            spec_fill(TLABRSP_ID, tdiff + 16384, n);
-            if ( n == 0 && !event.w_labr[n][m].cfdfail )
-                spec_fill(TIME_ENERGY_ID, event.w_labr[n][m].adcdata * 1/16.384, tdiff / 1 + 250);
-        }
-    }
-
-    // Time-energy spectrum, x-axis energy, y-axis time
-    if ( !event.trigger.cfdfail ) {
-        for (int j = 0; j < event.n_labr[16]; ++j) {
-            if ( event.w_labr[16][j].cfdfail )
-                continue;
-            tdiff = double(event.w_labr[16][j].timestamp - event.trigger.timestamp) +
-                    (event.w_labr[16][j].cfdcorr - event.trigger.cfdcorr);
-            //spec_fill(TIME_ENERGY_ID, event.w_labr[16][j].adcdata * double(1000) / double(16384), tdiff / 100 + 100 );
-        }
-    }
+    int telNo = GetDetector(event.trigger.address).telNum;
 
     // We want to check if we have only one dE strip in this telescope.
     // If we see more than one, we don't continue.
@@ -98,13 +65,8 @@ void Sort_Particle_Event(Event &event)
             for (int j = 0 ; j < event.n_dEdet[telNo][i] ; ++j){
                 spec_fill(EDESP_ID, event.trigger.adcdata / 8, event.w_dEdet[telNo][i][j].adcdata / 8);
 
-                spec_fill(EDECC_ID,
-                          calibration.gain_e[telNo]*(event.trigger.adcdata + drand48() - 0.5) + calibration.shift_e[telNo],
-                          calibration.gain_de[i]*(event.w_dEdet[telNo][i][j].adcdata + drand48() - 0.5) + calibration.shift_de[i]);
-
-
                 // We want a spectra for dE strip 3 with E 4... Choosen at random :p
-                if (telNo == 4 && i == 3)
+                if (telNo == 0 && i == 2)
                     spec_fill(EDESS_ID, event.trigger.adcdata / 8, event.w_dEdet[telNo][i][j].adcdata / 8);
 
                 // We want to make time spectra.
@@ -141,10 +103,10 @@ void sort_coincidence(Event &event)
 {
 
     switch (GetDetector(event.trigger.address).type) {
-    case eDet :
-        Sort_Particle_Event(event);
-        break;
     case deDet :
+	Sort_Particle_Event(event);
+	break;
+    case eDet :
         Sort_Particle_Event(event);
         break;
     case ppac:

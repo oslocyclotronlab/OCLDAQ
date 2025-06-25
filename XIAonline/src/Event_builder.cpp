@@ -116,8 +116,7 @@ bool EventBuilder::UnpackOneEvent(Event &event)
     word_t curr_w;
     for (size_t i = curr_pos ; i < buffer.size() ; ++i){
         curr_w = buffer[i];
-        if ( ( GetDetector(curr_w.address).type == deDet ) ||
-             ( GetDetector(curr_w.address).type == ppac) ){
+        if ( ( GetDetector(curr_w.address).type == eDet ) ){
 
             // We find all events that are within MAX_TDIFF before the
             // E event.
@@ -126,7 +125,7 @@ bool EventBuilder::UnpackOneEvent(Event &event)
                 timediff = buffer[j-1].timestamp - curr_w.timestamp;
 
 
-                if (std::abs(timediff) > MAX_TDIFF){
+                if (std::abs(timediff) > 0/*MAX_TDIFF*/){
                     start = j;
                     break;
                 }
@@ -148,50 +147,6 @@ bool EventBuilder::UnpackOneEvent(Event &event)
     }
     return false;
 }
-
-/*bool EventBuilder::UnpackOneEvent(Event &event)
-{
-    event.Reset();
-    int factor = 10;
-    if ( curr_pos >= buffer.size() )
-        return false;
-
-    int64_t timediff;
-    int start = curr_pos;
-    int stop = curr_pos + 1;
-    word_t curr_w;
-    for (size_t i = curr_pos ; i < buffer.size() ; ++i){
-        curr_w = buffer[i];
-        if ( ( GetDetector(curr_w.address).type == labr ) &&
-             ( GetDetector(curr_w.address).detectorNum == 16) ){
-
-            // We find all events that are within MAX_TDIFF before the
-            // E event.
-            for (int j = curr_pos-1 ; j > 0 ; --j){
-
-                timediff = buffer[j].timestamp - curr_w.timestamp;
-                if (std::abs(timediff) > MAX_TDIFF){
-                    start = j+1;
-                    break;
-                }
-            }
-
-            // We find all events that are withn MAX_TDIFF after the
-            // E event
-            for (int j = curr_pos+1 ; j < buffer.size() - 1 ; ++j){
-                timediff = buffer[j].timestamp - curr_w.timestamp;
-                if (std::abs(timediff) > MAX_TDIFF){
-                    stop = j;
-                    break;
-                }
-            }
-            curr_pos = i+1;
-            event.trigger = curr_w;
-            return PackEvent(event, start, stop);
-        }
-    }
-    return false;
-}*/
 
 #endif // SINGLES
 
