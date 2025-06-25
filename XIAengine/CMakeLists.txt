@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 # ---- Project ----
 project(
 	XIAengine
-	VERSION 2.0.1
+	VERSION 2.1.0
 	LANGUAGES CXX C)
 
 # --- Import tools ----
@@ -93,44 +93,7 @@ set(GUI_PROJECT_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/enumerate.h
 )
 
-
-
-add_executable(XIAengine
-		${CMAKE_CURRENT_SOURCE_DIR}/src/engine/engine.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/engine/functions.cpp
-		#${CMAKE_CURRENT_SOURCE_DIR}/src/engine/mainwindow.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/engine/WriteTerminal.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/engine/XIAControl.cpp
-		#${CMAKE_CURRENT_SOURCE_DIR}/src/engine/mainwindow.ui
-		${CMAKE_CURRENT_SOURCE_DIR}/src/engine/xiainterface2.cpp
-)
-
-target_include_directories(XIAengine
-		PRIVATE
-			$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-			$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-)
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	target_compile_definitions(XIAengine PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1 OFFLINE=1)
-else()
-	target_compile_definitions(XIAengine PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1)
-endif()
-set_target_properties(XIAengine PROPERTIES CXX_STANDARD 11)
-set_property(TARGET XIAengine PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-target_link_libraries(XIAengine
-		PUBLIC
-		Pixie16::Pixie16
-		sirius::sirius
-		Qt6::Core
-		Qt6::Widgets
-		inih::inih
-		Threads::Threads
-		#XIA::XIAConfigurator
-)
-
-qt_add_executable(XIAengine2 MANUAL_FINALIZATION ${GUI_PROJECT_SOURCES}
+qt_add_executable(XIAengine MANUAL_FINALIZATION ${GUI_PROJECT_SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/engine.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/functions.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/WriteTerminal.cpp
@@ -138,7 +101,7 @@ qt_add_executable(XIAengine2 MANUAL_FINALIZATION ${GUI_PROJECT_SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/xiainterface2.cpp
 )
 
-target_include_directories(XIAengine2
+target_include_directories(XIAengine
 	PRIVATE
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/engine/src>
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/XIAConfigurator>
@@ -146,11 +109,11 @@ target_include_directories(XIAengine2
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/XIAConfigurator>
 )
 
-set_target_properties(XIAengine2 PROPERTIES CXX_STANDARD 20)
-set_property(TARGET XIAengine2 PROPERTY POSITION_INDEPENDENT_CODE ON)
-target_compile_definitions(XIAengine2 PRIVATE NUMBER_OF_CHANNELS=16)
+set_target_properties(XIAengine PROPERTIES CXX_STANDARD 20)
+set_property(TARGET XIAengine PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_compile_definitions(XIAengine PRIVATE NUMBER_OF_CHANNELS=16)
 
-target_link_libraries(XIAengine2
+target_link_libraries(XIAengine
 	PUBLIC
 		Pixie16::Pixie16
 		sirius::sirius
@@ -161,15 +124,14 @@ target_link_libraries(XIAengine2
 )
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	target_compile_definitions(XIAengine2 PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1 OFFLINE=1)
+	target_compile_definitions(XIAengine PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1 OFFLINE=1)
 else()
-	target_compile_definitions(XIAengine2 PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1)
+	target_compile_definitions(XIAengine PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1)
 endif()
 
 add_custom_command(
 		TARGET XIAengine POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy
-		#${firmware_BINARY_DIR}/XIA_Firmware.txt
 		${CMAKE_CURRENT_LIST_DIR}/../template/XIA_Firmware.txt
 		${CMAKE_CURRENT_BINARY_DIR}/XIA_Firmware.txt
 )
@@ -190,7 +152,6 @@ add_custom_command(
 
 if(QT_VERSION_MAJOR EQUAL 6)
 	qt_finalize_executable(XIAengine)
-	qt_finalize_executable(XIAengine2)
 endif()
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
