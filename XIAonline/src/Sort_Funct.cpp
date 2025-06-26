@@ -120,6 +120,9 @@ void sort_coincidence(Event &event)
 {
 
     switch (GetDetector(event.trigger.address).type) {
+    case deDet :
+        Sort_Particle_Event(event);
+        break;
     case eDet :
         Sort_Particle_Event(event);
         break;

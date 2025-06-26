@@ -50,7 +50,7 @@ public:
 	//! Set the buffer from which the events shall be extracted.
 	/*! This also resets all counters.
 	 */
-    void SetBuffer(std::vector<word_t> buffr /*!< The buffer to extract from. */);
+    void SetBuffer(std::vector<word_t>& buffr /*!< The buffer to extract from. */);
 
 	//! Unpack the next event.
 	/*! \return the status after unpacking.

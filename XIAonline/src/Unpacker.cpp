@@ -139,6 +139,7 @@ word_t Extract_word(const volatile uint32_t *buf, const int &size, bool &error)
             result.timestamp *= 10;
             break;
         default:
+            result.cfdcorr = 0;
             result.timestamp *= 10;
             break;
     }
