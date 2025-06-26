@@ -20,8 +20,10 @@
 #include <QPushButton>
 #include <QGroupBox>
 #include <QHeaderView>
+#include <QLoggingCategory>
 
 #include "helpers.h"
+#include "xiaconfigurator.h"
 
 unsigned short APP16_SetBit (
     unsigned short bit,
@@ -194,8 +196,12 @@ void CopySettingsTab::copyBtn_push()
         cp_mask = ( copyMask[n]->isChecked() ) ? APP16_SetBit(n, cp_mask) : APP16_ClrBit(n, cp_mask);
     }
 
-    interface->CopyDSPParameters(cp_mask,
+    auto retval = interface->CopyDSPParameters(cp_mask,
         source_module->value(), source_channel->value(), destinationMask);
+    if ( retval < 0 ) {
+        qCCritical(logger) << "Unable to copy DSP parameters, got retval=" << retval;
+    }
+    emit UpdateView();
 }
 
 void CopySettingsTab::clearBtn_push()

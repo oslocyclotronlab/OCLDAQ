@@ -24,6 +24,9 @@ private:
 public:
     CopySettingsTab(XIAInterface *interface, QWidget *parent = nullptr);
 
+signals:
+    void UpdateView();
+
 private slots:
             void horizontalHeaderSectionDoubleClicked(int sec);
     void verticalHeaderSectionDoubleClicked(int sec);
