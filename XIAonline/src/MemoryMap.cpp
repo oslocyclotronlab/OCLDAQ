@@ -8,6 +8,7 @@
 #include <cerrno>
 #include <iostream>
 #include <string>
+#include <cstring>
 
 using namespace IO;
 
