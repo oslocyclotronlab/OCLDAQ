@@ -81,18 +81,19 @@ add_executable(XIAonline
 		${CMAKE_CURRENT_SOURCE_DIR}/src/Event_builder.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/experimentsetup.c
 		${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/publisher.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/Sort_Funct.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/spectrum_rw.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/Unpacker.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/XIA_CFD.cpp)
+		${CMAKE_CURRENT_SOURCE_DIR}/src/XIA_CFD.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/MemoryMap.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/offline_filereader.cpp)
 
 target_include_directories(XIAonline
 	PRIVATE
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
 
 target_compile_definitions(XIAonline PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1)
-set_target_properties(XIAonline PROPERTIES CXX_STANDARD 11)
+set_target_properties(XIAonline PROPERTIES CXX_STANDARD 20)
 set_property(TARGET XIAonline PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(XIAonline PUBLIC sirius::sirius cppzmq readerwriterqueue CLI11::CLI11 cereal Threads::Threads)

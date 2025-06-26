@@ -20,7 +20,7 @@
 #include "Event_builder.h"
 #include "spectrum_rw.h"
 #include "Sort_Funct.h"
-#include "publisher.h"
+#include "offline_filereader.h"
 
 #include <CLI/CLI.hpp>
 
@@ -32,6 +32,7 @@ static line_server *ls_sort = 0;
 static Unpacker *unpacker;
 static EventBuilder *evtbldr;
 
+extern sort_spectrum_t sort_spectra[];
 
 void keyb_int(int sig_num)
 {
@@ -173,10 +174,10 @@ static void cb_disconnected(line_channel*, void*)
 
 static void broadcast_gainshift(line_channel* lc=0)
 {
-    std::ostringstream o;
+    /*std::ostringstream o;
     o << "201 status_gain " << format_gainshift(*GetCalibration()) << '\n';
 
-    send_1_or_all(o.str(), lc);
+    send_1_or_all(o.str(), lc);*/
 }
 
 // ########################################################################
@@ -190,48 +191,19 @@ static void command_status_gain(line_channel* lc, const std::string&, void*)
 
 static void command_gain(line_channel* lc, const std::string& cmd, void*)
 {
-    const std::string filename = cmd.substr(5);
+    /*const std::string filename = cmd.substr(5);
     if( !read_gainshifts(*GetCalibration(), filename) ) {
         line_sender ls(lc);
         ls << "402 error_file Problem reading gain/shift from '"<<filename<<"'.\n";
     } else {
         broadcast_gainshift();
-    }
+    }*/
 }
 
 // ########################################################################
 
-
-
-int main (int argc, char* argv[])
+int main_online()
 {
-    /*if( argc != 1 ) {
-        std::cerr << "acq_sort runs without parameters" << std::endl;
-        exit(EXIT_FAILURE);
-    }*/
-
-    CLI::App app{"XIAonline - Online sort of XIA data at OCL."};
-
-    bool publish_data = false;
-    app.add_flag("-o", publish_data,
-                 "Indicate if parsed events should be published on the network.");
-
-    std::string address;
-    app.add_option("-a", address,
-                   "Bind address. Default is 'tcp://*'")->default_val("tcp://*");
-
-    uint32_t port;
-    app.add_option("-p", port,
-                   "Port to publish data on. Default port is 6000")->default_val(6000);
-
-    CLI11_PARSE(app, argc, argv)
-
-    publisher *pub = nullptr;
-
-    signal(SIGINT, keyb_int); // set up interrupt handler (Ctrl-C)
-    signal(SIGPIPE, SIG_IGN);
-
-
     io_select ioc;
     struct command_cb::command sort_commands[] = {
         {"quit",        0,  command_quit,       0},
@@ -266,13 +238,6 @@ int main (int argc, char* argv[])
     const volatile unsigned int  datalen = engine_shm[ENGINE_DATA_SIZE];
     const volatile unsigned int* first_header = (unsigned int*)&engine_shm[ENGINE_FIRST_HEADER];
 
-
-
-    if ( publish_data ) {
-        address += ":" + std::to_string(port);
-        pub = new publisher(address);
-    }
-
     // Declare the sorting routine
     unpacker = new Unpacker;
     evtbldr = new EventBuilder;
@@ -298,7 +263,6 @@ int main (int argc, char* argv[])
 
                 data_p = unpacker->ParseBuffer(data+(*first_header), datalen-(*first_header), error);
                 sort_singles(data_p);
-                if ( pub ) pub->AddBuffer(data_p);
                 ++buffer_count;
                 evtbldr->SetBuffer(data_p);
                 if ( error )
@@ -327,7 +291,82 @@ int main (int argc, char* argv[])
     // detach shared memory
     engine_shm_detach();
     spectra_detach_all();
-    delete pub;
     delete unpacker;
     delete evtbldr;
+
+    return 0;
+}
+
+int main_offline(const char *fname)
+{
+    // Attach shared memory
+    if ( !spectra_attach_all(true) ){
+        std::cerr << "Failed to attach shm spectra." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    // Declare the sorting routine
+    unpacker = new Unpacker;
+    evtbldr = new EventBuilder;
+
+    EventBuilder::Status evt_status;
+    bool error = false;
+    Event event;
+    std::vector<word_t> data_p;
+
+    // Read file
+    OfflineFileReader fr(fname);
+
+    while ( true ) {
+        auto raw = fr.read();
+        if ( raw.size() == 0 )
+            break;
+        data_p = unpacker->ParseBuffer(raw.data(), raw.size(), error);
+        sort_singles(data_p);
+        evtbldr->SetBuffer(data_p);
+        if ( error )
+            continue;
+
+        while (true) {
+            evt_status = evtbldr->Next(event);
+            if (evt_status == EventBuilder::ERROR){
+                ++bad_buffer_count;
+                break;
+            }
+            sort_coincidence(event);
+            if (evt_status == EventBuilder::END)
+                break;
+        }
+    }
+    size_t specno = 1;
+    while ( true ) {
+        auto spec = sort_spectra[specno++];
+        if ( spec.specno == 0 )
+            break;
+        dump_spectrum(&spec, nullptr, spec.name);
+    }
+
+    spectra_detach_all();
+    delete unpacker;
+    delete evtbldr;
+
+    return 0;
+}
+
+
+int main (int argc, char* argv[])
+{
+
+    signal(SIGINT, keyb_int); // set up interrupt handler (Ctrl-C)
+    signal(SIGPIPE, SIG_IGN);
+
+    if( argc == 1 ) {
+        return main_online();
+    } else if ( argc == 2 ) {
+        return main_offline(argv[1]);
+    } else {
+        std::cerr << "acq_sort runs without parameters" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
 }
