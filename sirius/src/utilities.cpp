@@ -102,7 +102,7 @@ int* attach_shared(key_t key, size_t size, bool create)
         return nullptr;
     }
 
-    return shmptr;
+    return static_cast<int*>(shmptr);
 #endif
 }
 
