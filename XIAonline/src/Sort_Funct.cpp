@@ -75,8 +75,8 @@ void Sort_Particle_Event(Event &event)
     // If we see more than one, we don't continue.
     if (event.tot_dEdet_trap[telNo] == 1) {
         for (int i = 0 ; i < NUM_SI_DE_TEL ; ++i){
-            std::cout << event.n_dEdet[telNo][i] << std::endl;
             for (int j = 0 ; j < event.n_dEdet[telNo][i] ; ++j){
+                std::cout << "Filling EDESP" << std::endl;
                 spec_fill(EDESP_ID, event.trigger.adcdata / 8, event.w_dEdet[telNo][i][j].adcdata / 8);
 
                 spec_fill(EDECC_ID,
