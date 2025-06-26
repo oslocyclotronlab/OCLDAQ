@@ -70,12 +70,12 @@ void Sort_Particle_Event(Event &event)
 
     int telNo = GetDetector(event.trigger.address).detectorNum;
 
-    std::cout << event.tot_dEdet_trap[telNo] << std::endl;
 
     // We want to check if we have only one dE strip in this telescope.
     // If we see more than one, we don't continue.
     if (event.tot_dEdet_trap[telNo] == 1) {
         for (int i = 0 ; i < NUM_SI_DE_TEL ; ++i){
+            std::cout << event.n_dEdet[telNo][i] << std::endl;
             for (int j = 0 ; j < event.n_dEdet[telNo][i] ; ++j){
                 spec_fill(EDESP_ID, event.trigger.adcdata / 8, event.w_dEdet[telNo][i][j].adcdata / 8);
 
