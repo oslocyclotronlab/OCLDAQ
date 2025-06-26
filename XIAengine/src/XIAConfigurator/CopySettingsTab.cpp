@@ -189,7 +189,7 @@ void CopySettingsTab::copyBtn_push()
     unsigned short cp_mask = 0;
 
     for ( int n = 0 ; n < 12 ; ++n ) {
-        if ( n == 6 ) {
+        if ( n == 7 ) {
             cp_mask = APP16_ClrBit(n, cp_mask);
             continue;
         }
