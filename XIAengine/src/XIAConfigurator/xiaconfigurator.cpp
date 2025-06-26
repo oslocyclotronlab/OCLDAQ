@@ -15,6 +15,7 @@
 #include <QHeaderView>
 #include <QPushButton>
 #include <QLoggingCategory>
+#include <QFileDialog>
 
 #ifndef NUMBER_OF_CHANNELS
 #define NUMBER_OF_CHANNELS 16
@@ -90,6 +91,10 @@ XIAConfigurator::XIAConfigurator(XIAInterface *_interface, QWidget *parent)
     connect(buttons->blcutAdjustBtn, SIGNAL(clicked(bool)), this, SLOT(MeasureBaselineCut(bool)));
     connect(buttons->blAdjustBtn, SIGNAL(clicked(bool)), this, SLOT(MeasureBaselineOffset(bool)));
     connect(buttons->saveBtn, SIGNAL(clicked(bool)), this, SLOT(SaveSettingsButtonClick(bool)));
+    connect(buttons->saveAsBtn, SIGNAL(clicked(bool)), this, SLOT(SaveAsSettingsButtonClick(bool)));
+
+    // Signals from other widgets
+    connect(copySettingsTab, SIGNAL(CopySettingsTab::UpdateView), this, SLOT(DoUpdate()));
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     UpdateView(0, 0);
@@ -191,13 +196,30 @@ void XIAConfigurator::WriteButtonClick(bool)
 
 void XIAConfigurator::SaveSettingsButtonClick(bool)
 {
-    qCDebug(logger) << "Writing settings file...";
+    qCInfo(logger) << "Writing settings file to settings.set";
     if ( !interface->WriteSettings("settings.set") ) {
-        qCDebug(logger) << "Failed to write settings file";
+        qCWarning(logger) << "Failed to write settings file";
     } else {
-        qCDebug(logger) << "Settings saved.";
+        qCInfo(logger) << "Settings saved to file 'settings.set'";
     }
 }
+
+void XIAConfigurator::SaveAsSettingsButtonClick(bool)
+{
+    auto fname = QFileDialog::getSaveFileName(this,
+        tr("Save Settings As"), "",
+        tr("Settings Files (*.set);;All files (*)"));
+    if ( fname.isEmpty() ) {
+        qCWarning(logger) << "No saved settings file selected.";
+        return;
+    }
+    qCInfo(logger) << "Writing settings to file '" << fname << "'";
+    if ( !interface->WriteSettings(fname.toStdString().c_str()) ) {
+        qCWarning(logger) << "Failed to write settings to file '" << fname << "'";
+    }
+    qCInfo(logger) << "Settings saved to file '" << fname << "'";
+}
+
 
 void XIAConfigurator::MeasureBaselineCut(bool)
 {
@@ -213,5 +235,11 @@ void XIAConfigurator::MeasureBaselineOffset(bool)
     int moduleNumber = module->value();
     int channelNumber = channel->value();
     interface->MeasureBaseline(moduleNumber);
+    UpdateView(moduleNumber, channelNumber);
+}
+
+void XIAConfigurator::DoUpdate() {
+    int moduleNumber = module->value();
+    int channelNumber = channel->value();
     UpdateView(moduleNumber, channelNumber);
 }

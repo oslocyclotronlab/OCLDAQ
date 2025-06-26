@@ -53,6 +53,8 @@ private slots:
     void MeasureBaselineCut(bool);
     void MeasureBaselineOffset(bool);
     void SaveSettingsButtonClick(bool);
+    void SaveAsSettingsButtonClick(bool);
+    void DoUpdate();
 
 private:
     XIAInterface *interface;
