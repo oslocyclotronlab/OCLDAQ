@@ -29,8 +29,8 @@ public:
     unsigned int MeasureBLCut(const unsigned short &module, const unsigned short &channel) override;
     void MeasureBaseline(const unsigned short &module) override;
 
-    void CopyDSPParameters(const unsigned short& BitMap, const unsigned short& sourceModule,
-                                   const unsigned short& sourceChannel, unsigned short* DestinationMask) override;
+    int CopyDSPParameters(const unsigned short& BitMap, const unsigned short& sourceModule,
+                          const unsigned short& sourceChannel, unsigned short* DestinationMask) override;
 
     bool WriteSettings(const char *fname) override;
 
