@@ -234,7 +234,13 @@ void XIAConfigurator::MeasureBaselineOffset(bool)
 {
     int moduleNumber = module->value();
     int channelNumber = channel->value();
-    interface->MeasureBaseline(moduleNumber);
+    if ( buttons->all_chan->isChecked() ) {
+        for ( int i = 0 ; i < interface->GetNumModules() ; ++i ) {
+            interface->MeasureBaseline(i);
+        }
+    } else {
+        interface->MeasureBaseline(moduleNumber);
+    }
     UpdateView(moduleNumber, channelNumber);
 }
 
