@@ -232,24 +232,6 @@ bool XIAControl::XIA_start_run()
         return true;
     }
 
-    // Check if the modules are initialized.
-    if (!is_initialized){
-        is_initialized = InitializeXIA();
-    }
-
-    // Check again. If we got false, then we return false.
-    if (!is_initialized)
-        return false;
-
-    // Check if modules are booted. If not, boot them
-    if (!is_booted){
-        is_booted = BootXIA();
-    }
-
-    // Check that the module was in fact booted
-    if (!is_booted)
-        return false;
-
     for (int i = 0 ; i < num_modules ; ++i){
         most_recent_t[i] = 0;
     }
