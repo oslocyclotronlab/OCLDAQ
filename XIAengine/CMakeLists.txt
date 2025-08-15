@@ -46,16 +46,62 @@ if (NOT sirius_ADDED )
 CPMAddPackage(NAME sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sirius)
 endif()
 
-if (NOT Pixie16_ADDED)
-	CPMAddPackage(NAME Pixie16 SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../Pixie16)
-endif()
-
-if (NOT firmware_ADDED)
-	CPMAddPackage(NAME firmware SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../firmware)
-endif()
-
-
 find_package(Threads REQUIRED)
+
+add_library(plx STATIC
+		${CMAKE_CURRENT_SOURCE_DIR}/src/plx/Aardvark.c
+		${CMAKE_CURRENT_SOURCE_DIR}/src/plx/Eep_8000.c
+		${CMAKE_CURRENT_SOURCE_DIR}/src/plx/I2cAaUsb.c
+		${CMAKE_CURRENT_SOURCE_DIR}/src/plx/MdioSpliceUsb.c
+		${CMAKE_CURRENT_SOURCE_DIR}/src/plx/PlxApi.c
+		${CMAKE_CURRENT_SOURCE_DIR}/src/plx/PlxApiDirect.c
+		${CMAKE_CURRENT_SOURCE_DIR}/src/plx/SdbComPort.c
+		${CMAKE_CURRENT_SOURCE_DIR}/src/plx/SpiFlash.c
+)
+
+target_compile_definitions(plx PUBLIC PLX_LITTLE_ENDIAN PLX_64BIT GCC PCI_CODE PLX_LINUX)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	target_link_libraries(plx PUBLIC dl m)
+else()
+	target_link_libraries(plx PUBLIC dl rt m)
+endif()
+
+
+set_property(TARGET plx PROPERTY POSITION_INDEPENDENT_CODE ON)
+add_library(plx::plx ALIAS plx)
+target_include_directories(plx
+		PUBLIC
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/plx>
+		$<INSTALL_INTERFACE:include/plx>
+		PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/src/plx)
+
+add_library(Pixie16 STATIC
+		${CMAKE_CURRENT_SOURCE_DIR}/src/Pixie16/communication.c
+		${CMAKE_CURRENT_SOURCE_DIR}/src/Pixie16/i2cm24c64.c
+		${CMAKE_CURRENT_SOURCE_DIR}/src/Pixie16/pixie16app.c
+		${CMAKE_CURRENT_SOURCE_DIR}/src/Pixie16/pixie16app_globals.c
+		${CMAKE_CURRENT_SOURCE_DIR}/src/Pixie16/pixie16sys.c
+		${CMAKE_CURRENT_SOURCE_DIR}/src/Pixie16/pixie16sys_globals.c
+		${CMAKE_CURRENT_SOURCE_DIR}/src/Pixie16/tools.c
+		${CMAKE_CURRENT_SOURCE_DIR}/src/Pixie16/utilities.c
+)
+
+target_include_directories(Pixie16
+		PUBLIC
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/Pixie16>
+		$<INSTALL_INTERFACE:include/Pixie16>
+		PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/src/Pixie16)
+
+target_compile_definitions(Pixie16 PUBLIC PLX_LITTLE_ENDIAN PLX_64BIT GCC PCI_CODE PLX_LINUX)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	target_link_libraries(Pixie16 PUBLIC dl m plx::plx)
+else()
+	target_link_libraries(Pixie16 PUBLIC dl rt m plx::plx)
+endif()
+add_library(XIA::Pixie16 ALIAS Pixie16)
+set_property(TARGET Pixie16 PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # To find Qt5: -DQt5_DIR=/opt/homebrew/opt/qt@5/lib/cmake/Qt5
 find_package(Qt6 COMPONENTS Widgets REQUIRED)
@@ -115,7 +161,7 @@ target_compile_definitions(XIAengine PRIVATE NUMBER_OF_CHANNELS=16)
 
 target_link_libraries(XIAengine
 	PUBLIC
-		Pixie16::Pixie16
+		XIA::Pixie16
 		sirius::sirius
 		Qt6::Core
 		Qt6::Widgets
