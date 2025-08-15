@@ -550,7 +550,7 @@ int main_gui(int nmod, QApplication &app, XIAConfigurator &c)
 
 int main(int argc, char* argv[])
 {
-
+    QApplication app(argc, argv);
     /*QLoggingCategory::setFilterRules(QStringLiteral("XIAGUI.debug=true"));
     std::cout << "I'm debugging!" << std::endl;*/
     unsigned short PXIMapping[PRESET_MAX_MODULES];
@@ -606,7 +606,7 @@ int main(int argc, char* argv[])
     // Now we are ready to start the two threads, this will launch the settings window!
     auto engine_thread = std::thread(main_engine, argc, argv);
 
-    QApplication app(argc, argv);
+
     auto r = main_gui(nmod, app, configurator);
 
     if ( engine_thread.joinable() ) engine_thread.join();
