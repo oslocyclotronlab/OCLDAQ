@@ -115,9 +115,10 @@ set(GUI_PROJECT_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/enumerate.h
 )
 
-qt_add_executable(XIAengine MANUAL_FINALIZATION ${GUI_PROJECT_SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/engine.cpp
-)
+#qt_add_executable(XIAengine MANUAL_FINALIZATION ${GUI_PROJECT_SOURCES}
+#	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/engine.cpp
+#)
+add_executable(XIAengine ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/engine.cpp)
 
 target_include_directories(XIAengine
 	PRIVATE
@@ -135,8 +136,8 @@ target_link_libraries(XIAengine
 	PUBLIC
 		Pixie16::Pixie16
 		sirius::sirius
-		Qt6::Core
-		Qt6::Widgets
+#		Qt6::Core
+#		Qt6::Widgets
 		inih::inih
 		Threads::Threads
 		engine_func
@@ -169,9 +170,9 @@ add_custom_command(
 		${CMAKE_CURRENT_BINARY_DIR}/settings.set
 )
 
-if(QT_VERSION_MAJOR EQUAL 6)
-	qt_finalize_executable(XIAengine)
-endif()
+#if(QT_VERSION_MAJOR EQUAL 6)
+#	qt_finalize_executable(XIAengine)
+#endif()
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 install(TARGETS engine_func DESTINATION lib)
