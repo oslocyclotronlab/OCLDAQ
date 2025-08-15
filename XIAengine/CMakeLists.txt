@@ -63,28 +63,6 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-add_library(engine_func STATIC
-	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/functions.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/WriteTerminal.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/XIAControl.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/xiainterface2.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/xiainterface.cpp
-)
-
-target_include_directories(engine_func
-		PRIVATE
-		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/engine/src>
-		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/XIAConfigurator>
-		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/XIAConfigurator>
-)
-
-target_link_libraries(engine_func
-	PUBLIC
-		Pixie16::Pixie16
-		sirius::sirius
-		inih::inih
-)
 
 set(GUI_PROJECT_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/BaselineFilterWidget.cpp
@@ -109,7 +87,7 @@ set(GUI_PROJECT_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/TriggerFilterWidget.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/xiaconfigurator.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/xiaconfigurator.h
-	#${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/xiainterface.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/xiainterface.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/helpers.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/helpers.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/enumerate.h
@@ -117,6 +95,10 @@ set(GUI_PROJECT_SOURCES
 
 qt_add_executable(XIAengine MANUAL_FINALIZATION ${GUI_PROJECT_SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/engine.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/functions.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/WriteTerminal.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/XIAControl.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/xiainterface2.cpp
 )
 
 target_include_directories(XIAengine
@@ -139,7 +121,6 @@ target_link_libraries(XIAengine
 		Qt6::Widgets
 		inih::inih
 		Threads::Threads
-		engine_func
 )
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -174,4 +155,3 @@ if(QT_VERSION_MAJOR EQUAL 6)
 endif()
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
-#install(TARGETS engine_func DESTINATION lib)
