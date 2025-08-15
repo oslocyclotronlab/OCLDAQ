@@ -87,7 +87,8 @@ private:
     // 500 MHz -> 10 ns
     int timestamp_factor[PRESET_MAX_MODULES];
 
-    std::string firmware_config;
+    // Mapping of XIA firmware data.
+    std::map<std::string, std::string> firmwares;
 
     // Temporary buffer for strings
     char errmsg[1024];
@@ -105,8 +106,7 @@ public:
     XIAControl(WriteTerminal *writeTerm,
                const unsigned short PXImap[PRESET_MAX_MODULES], /*!< PXI mapping                */
                const std::string &FWname="XIA_Firmware.txt",    /*!< Path to firmware settings  */
-               const std::string &SETname="settings.set",       /*!< Path to settings file      */
-               const bool& bootmode = 0);
+               const std::string &SETname="settings.set"        /*!< Path to settings file      */);
 
 
     // Destructor. Quite important for this
@@ -126,7 +126,7 @@ public:
     bool XIA_fetch_buffer(uint32_t *buffer, int bufsize, unsigned int *first_header);
 
     // Ask the class to boot the XIA modules.
-    bool boot();
+    bool XIA_boot_all(const bool &offline = false);
 
     // Ask the class to start the run in the XIA modules.
     bool XIA_start_run();
@@ -151,8 +151,21 @@ private:
 
     // Some private functions that are needed.
 
+    // Function for reading and parsing Firmware file.
+    // Needs attention!!! Currently does not work :(
+    bool ReadConfigFile(const char *config);
+
     // Function to initialize the XIA modules.
     bool InitializeXIA(const bool &offline = false);
+
+    // Helper function to decide which firmware files to use
+    bool GetFirmwareFile(const unsigned short &revision,    /*!< Module revision                                    */
+                         const unsigned short &ADCbits,     /*!< Bit depth of the ADC                               */
+                         const unsigned short &ADCMSPS,     /*!< Number of MSPS of the ADC                          */
+                         char *ComFPGA,                     /*!< String to fill with path to comFPGA firmware file  */
+                         char *SPFPGA,                      /*!< String to fill with path to SPFPGA firmware file   */
+                         char *DSPcode,                     /*!< String to fill with path to DSPcode file           */
+                         char *DSPVar                       /*!< String to fill with path to DSPvar file            */);
 
     // Function to boot the XIA modules.
     bool BootXIA();

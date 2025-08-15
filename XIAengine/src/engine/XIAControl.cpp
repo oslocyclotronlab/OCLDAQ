@@ -22,13 +22,6 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
-struct HW_Info_t {
-    unsigned short revision;
-    unsigned short bitdepth;
-    unsigned short adcmhz;
-    unsigned int serial_number;
-};
-
 
 // Define some addresses...
 #define LIVETIMEA_ADDRESS 0x0004a37f
@@ -40,21 +33,39 @@ struct HW_Info_t {
 #define CHANEVENTSA_ADDRESS 0x0004a41f
 #define CHANEVENTSB_ADDRESS 0x0004a42f
 
+bool next_line(std::istream &in, std::string &line)
+{
+    line = "";
+
+    std::string tmp;
+    while ( std::getline(in, tmp) ){
+        size_t ls = tmp.size();
+        if ( ls == 0 ){
+            break;
+        } else if ( tmp[ls-1] != '\\' ){
+            line += tmp;
+            break;
+        } else {
+            line += tmp.substr(0, ls-1);
+        }
+    }
+    return in || !line.empty();
+}
+
 
 
 XIAControl::XIAControl(WriteTerminal *writeTerm,
                        const unsigned short PXImap[PRESET_MAX_MODULES],
                        const std::string &FWname,
-                       const std::string &SETname,
-                       const bool& bootmode)
+                       const std::string &SETname)
     : termWrite( writeTerm )
     , data_avalible( 0 )
     , is_initialized( false )
     , is_booted( false )
     , is_running( false )
     , settings_file( SETname )
-    , firmware_config( FWname )
 {
+    ReadConfigFile(FWname.c_str());
     num_modules = 0;
     for (int i = 0 ; i < PRESET_MAX_MODULES ; ++i){
         if (PXImap[i] > 0)
@@ -62,96 +73,12 @@ XIAControl::XIAControl(WriteTerminal *writeTerm,
     }
 
     lmdata = (unsigned int *)malloc(sizeof(unsigned int) * EXTERNAL_FIFO_LENGTH);
-
-    // Initialize the system
-    unsigned short boot_flag = bootmode ? 1 : 0;
-    auto retval = Pixie16InitSystem(num_modules, PXISlotMap, boot_flag);
-    if ( retval < 0 ){
-        std::cerr << "*ERROR* Pixie16InitSystem failed, retval = " << retval << "." << std::endl;
-    }
-
 }
 
 XIAControl::~XIAControl()
 {
     free(lmdata);
     ExitXIA();
-}
-
-bool XIAControl::boot()
-{
-    if (is_booted) {
-        return true;
-    }
-
-    if ( !BootXIA() ) {
-        return false;
-    }
-
-    // Now we need to adjust the baseline.
-    AdjustBaseline();
-
-    // Done booting :D
-    return true;
-}
-
-bool XIAControl::BootXIA()
-{
-    auto fw = ParseFWconfigFile("XIA_Firmware.txt");
-
-    int retval = 0;
-    char comFPGA[2048], SPFPGA[2048], DSPCode[2048], DSPVar[2048];
-    char trigFPGA[] = "trig";
-    char DSPSet[2048];
-    strcpy(DSPSet, settings_file.c_str());
-    HW_Info_t hardware[PRESET_MAX_MODULES];
-
-
-    for ( size_t i = 0 ; i < num_modules ; ++i ){
-        retval = Pixie16ReadModuleInfo(i, &hardware[i].revision, &hardware[i].serial_number,
-                                       &hardware[i].bitdepth, &hardware[i].adcmhz);
-        if ( retval < 0 ){
-            std::cerr << "*ERROR* Pixie16ReadModuleInfo failed, retval = " << retval << std::endl;
-            return false;
-        }
-    }
-    for ( size_t i = 0 ; i < num_modules ; ++i ){
-        if ( !GetFirmwareFile(fw, hardware[i].revision, hardware[i].bitdepth, hardware[i].adcmhz,
-                              comFPGA, SPFPGA, DSPCode, DSPVar) ){
-            std::cerr << "Module " << i << ": Unknown module" << std::endl;
-            return false;
-                              }
-        timestamp_factor[i] = ( hardware[i].adcmhz == 250 ) ? 8 : 10;
-
-        std::cout << "----------Booting Pixie-16 module #" << i << "----------" << std::endl;
-        std::cout << "Revision:\t" << hardware[i].revision << std::endl;
-        std::cout << "Serial number:\t" << hardware[i].serial_number << std::endl;
-        std::cout << "ADC Bits:\t" << hardware[i].bitdepth << std::endl;
-        std::cout << "ADC MSPS:\t" << hardware[i].adcmhz << std::endl;
-        std::cout << "ComFPGAConfigFile:\t" << comFPGA << std::endl;
-        std::cout << "SPFPGAConfigFile:\t" << SPFPGA << std::endl;
-        std::cout << "DSPCodeFile:\t" << DSPCode << std::endl;
-        std::cout << "DSPVarFile:\t" << DSPVar << std::endl;
-        std::cout << "DSPSetFile:\t" << DSPSet << std::endl;
-        retval = Pixie16BootModule(comFPGA, SPFPGA, trigFPGA,
-                                   DSPCode, DSPSet, DSPVar, i, 0x7F);
-        if ( retval < 0 ){
-            std::cerr << "*ERROR* Pixie16BootModule failed, retval = " << retval << std::endl;
-            return false;
-        }
-        /*std::cout << "Adjusting baseline..." << std::flush;
-        retval = Pixie16AdjustOffsets(i);
-        if ( retval < 0 ){
-            std::cerr << "*ERROR* Pixie16AdjustOffsets failed, retval = " << retval << std::endl;
-            return retval;
-        }
-        std::cout << " Done." << std::endl;*/
-
-    }
-    std::cout << "All modules booted." << std::endl;
-    std::cout << "----------------------------------------------" << std::endl;
-    is_booted = true;
-    return true;
 }
 
 
@@ -222,7 +149,33 @@ bool XIAControl::XIA_fetch_buffer(uint32_t *buffer, int bufsize, unsigned int *f
     return true;
 }
 
+bool XIAControl::XIA_boot_all(const bool &offline)
+{
+    if (is_running)
+        return true;
 
+    // Check if initialized, if not, initialize.
+    if (!is_initialized)
+        is_initialized = InitializeXIA(offline);
+
+    // Check that we successfully initialized.
+    if ( !is_initialized )
+        return is_initialized; // We failed :'(
+
+    // Check if the module is booted.
+    if ( !is_booted )
+        is_booted = BootXIA();
+
+    // Check that we successfully booted.
+    if ( !is_booted )
+        return is_booted;
+
+    // Now we need to adjust the baseline.
+    AdjustBaseline();
+
+    // Done booting :D
+    return true;
+}
 
 bool XIAControl::XIA_start_run()
 {
@@ -231,6 +184,24 @@ bool XIAControl::XIA_start_run()
     if (is_running){
         return true;
     }
+
+    // Check if the modules are initialized.
+    if (!is_initialized){
+        is_initialized = InitializeXIA();
+    }
+
+    // Check again. If we got false, then we return false.
+    if (!is_initialized)
+        return false;
+
+    // Check if modules are booted. If not, boot them
+    if (!is_booted){
+        is_booted = BootXIA();
+    }
+
+    // Check that the module was in fact booted
+    if (!is_booted)
+        return false;
 
     for (int i = 0 ; i < num_modules ; ++i){
         most_recent_t[i] = 0;
@@ -342,6 +313,61 @@ bool XIAControl::XIA_reload()
     return !is_initialized;
 }
 
+
+bool XIAControl::ReadConfigFile(const char *config)
+{
+    // We expect the file to have the following setup.
+    /*
+     * # - Indicates a comment
+     * \\ - Indicates that the input continues on the next line
+     * "comFPGAConfigFile_Rev<R>_<S>MHz_<B>Bit = /path/to/com/syspixie16_xx.bin" - R: Revision, S: ADC freqency and B: ADC bits
+     * "SPFPGAConfigFile_Rev<R>_<S>MHz_<B>Bit = /path/to/SPFPGA/fippixie16_xx.bin" - R: Revision, S: ADC freqency and B: ADC bits
+     * "DSPCodeFile_Rev<R>_<S>MHz_<B>Bit = /path/to/DSPCode/Pixie16DSP_xx.ldr" - R: Revision, S: ADC freqency and B: ADC bits
+     * "DSPVarFile_Rev<R>_<S>MHz_<B>Bit = /path/to/DSPVar/Pixie16DSP_xx.var" - R: Revision, S: ADC freqency and B: ADC bits
+     */
+
+    std::ifstream input(config);
+    std::string line;
+
+    std::map<std::string, std::string> fw;
+    termWrite->Write("Reading firmware file... \n");
+
+    if ( !input.is_open() ){
+        termWrite->WriteError("Error: Couldn't read firmware config. file\n");
+        return false;
+    }
+
+    while ( next_line(input, line) ){
+        if ( line.empty() || line[0] == '#' )
+            continue; // Ignore empty lines or comments.
+
+        // Search for "=" sign on the line.
+        std::string::size_type pos_eq = line.find('=');
+
+        // If not found, write a warning and continue to next line.
+        if ( pos_eq == std::string::npos ){
+            snprintf(errmsg, sizeof(errmsg), "Could not understand line '%s', continuing...\n", line.c_str());
+            termWrite->WriteError(errmsg);
+            continue;
+        }
+
+        std::string key = strip(line.substr(0, pos_eq));
+        std::string val = strip(line.substr(pos_eq+1));
+
+        // If the key have already been entered.
+        if ( fw.find(key) != fw.end() ){
+            snprintf(errmsg, sizeof(errmsg), "Mutiple definitions of '%s'\n", key.c_str());
+            termWrite->WriteError(errmsg);
+            return false;
+        }
+
+        fw[key] = val;
+    }
+    termWrite->Write("Done reading firmware files\n");
+    firmwares.swap(fw);
+    return true;
+}
+
 bool XIAControl::InitializeXIA(const bool &offline)
 {
     int retval = Pixie16InitSystem(num_modules, PXISlotMap, offline ? 1 : 0);
@@ -352,6 +378,144 @@ bool XIAControl::InitializeXIA(const bool &offline)
         Pixie_Print_MSG(errmsg);
         return false;
     }
+    return true;
+}
+
+bool XIAControl::GetFirmwareFile(const unsigned short &revision, const unsigned short &ADCbits, const unsigned short &ADCMSPS,
+                                 char *ComFPGA, char *SPFPGA, char *DSPcode, char *DSPVar)
+{
+    std::string key_Com, key_SPFPGA, key_DSPcode, key_DSPVar;
+
+    // First, if Rev 11, 12 or 13.
+    if ( (revision == 11 || revision == 12 || revision == 13) ){
+
+        // We set the keys.
+        key_Com = "comFPGAConfigFile_RevBCD";
+        key_SPFPGA = "SPFPGAConfigFile_RevBCD";
+        key_DSPcode = "DSPCodeFile_RevBCD";
+        key_DSPVar = "DSPVarFile_RevBCD";
+
+    } else if ( revision == 15 ){
+
+        key_Com = "comFPGAConfigFile_RevF_" + std::to_string(ADCMSPS) + "MHz_" + std::to_string(ADCbits) + "Bit";
+        key_SPFPGA = "SPFPGAConfigFile_RevF_" + std::to_string(ADCMSPS) + "MHz_" + std::to_string(ADCbits) + "Bit";
+        key_DSPcode = "DSPCodeFile_RevF_" + std::to_string(ADCMSPS) + "MHz_" + std::to_string(ADCbits) + "Bit";
+        key_DSPVar = "DSPVarFile_RevF_" + std::to_string(ADCMSPS) + "MHz_" + std::to_string(ADCbits) + "Bit";
+
+    } else {
+        snprintf(errmsg, sizeof(errmsg), "Unknown Pixie-16 revision, rev=%d\n", revision);
+        termWrite->WriteError(errmsg);
+        return false;
+    }
+
+    // Search our map for the firmware files.
+    if ( firmwares.find(key_Com) == firmwares.end() ){
+        snprintf(errmsg, sizeof(errmsg), "Missing firmware file '%s'\n", key_Com.c_str());
+        termWrite->WriteError(errmsg);
+        return false;
+    }
+
+    if ( firmwares.find(key_SPFPGA) == firmwares.end() ){
+        snprintf(errmsg, sizeof(errmsg), "Missing firmware file '%s'\n", key_SPFPGA.c_str());
+        termWrite->WriteError(errmsg);
+        return false;
+    }
+
+    if ( firmwares.find(key_DSPcode) == firmwares.end() ){
+        snprintf(errmsg, sizeof(errmsg), "Missing firmware file '%s'\n", key_DSPcode.c_str());
+        termWrite->WriteError(errmsg);
+        return false;
+    }
+
+    if ( firmwares.find(key_DSPVar) == firmwares.end() ){
+        snprintf(errmsg, sizeof(errmsg), "Missing firmware file '%s'\n", key_DSPVar.c_str());
+        termWrite->WriteError(errmsg);
+        return false;
+    }
+
+    // If we reach this point, we know that we have all the firmwares!
+    strcpy(ComFPGA, firmwares[key_Com].c_str());
+    strcpy(SPFPGA, firmwares[key_SPFPGA].c_str());
+    strcpy(DSPcode, firmwares[key_DSPcode].c_str());
+    strcpy(DSPVar, firmwares[key_DSPVar].c_str());
+
+    return true;
+}
+
+bool XIAControl::BootXIA()
+{
+    int retval;
+    char ComFPGA[2048], SPFPGA[2048], DSPCode[2048], DSPVar[2048];
+    char TrigFPGA[] = "trig";
+    char DSPSet[2048];
+    strcpy(DSPSet, settings_file.c_str());
+
+    unsigned short rev[PRESET_MAX_MODULES], bit[PRESET_MAX_MODULES], MHz[PRESET_MAX_MODULES];
+    unsigned int sn[PRESET_MAX_MODULES];
+
+
+    termWrite->Write("Reading hardware information\n");
+    for (int i = 0 ; i < num_modules ; ++i){
+        retval = Pixie16ReadModuleInfo(i, &rev[i], &sn[i], &bit[i], &MHz[i]);
+        if (retval < 0){
+            snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16ReadModuleInfo failed, retval = %d\n", retval);
+            termWrite->WriteError(errmsg);
+            Pixie_Print_MSG(errmsg);
+            return false;
+        }
+    }
+
+    for (int i = 0 ; i < num_modules ; ++i){
+        if (!GetFirmwareFile(rev[i], bit[i], MHz[i],
+                             ComFPGA, SPFPGA,
+                             DSPCode, DSPVar)) {
+            snprintf(errmsg, sizeof(errmsg), "Module %d: Unknown module\n", i);
+            termWrite->Write(errmsg);
+            return false;
+        }
+
+        switch (MHz[i]) {
+        case 100:
+            timestamp_factor[i] = 10;
+            break;
+        case 250:
+            timestamp_factor[i] = 8;
+            break;
+        case 500:
+            timestamp_factor[i] = 10;
+            break;
+        default:
+            timestamp_factor[i] = 10;
+            break;
+        }
+
+
+        snprintf(errmsg, sizeof(errmsg), "Booting Pixie-16 module #%d, Rev=%d, S/N=%d, Bits=%d, MSPS=%d\n", i, rev[i], sn[i], bit[i], MHz[i]);
+        termWrite->Write(errmsg);
+        termWrite->Write("ComFPGAConfigFile:\t");
+        termWrite->Write(ComFPGA);
+        termWrite->Write("\nSPFPGAConfigFile:\t");
+        termWrite->Write(SPFPGA);
+        termWrite->Write("\nDSPCodeFile:\t");
+        termWrite->Write(DSPCode);
+        termWrite->Write("\nDSPVarFile:\t\t");
+        termWrite->Write(DSPVar);
+        termWrite->Write("\n");
+        retval = Pixie16BootModule(ComFPGA, SPFPGA, TrigFPGA, DSPCode, DSPSet, DSPVar, i, 0x7F);
+        termWrite->Write("\n----------------------------------------\n\n");
+
+        if (retval < 0){
+            snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16BootModule failed, retval = %d\n", retval);
+            termWrite->WriteError(errmsg);
+            Pixie_Print_MSG(errmsg);
+            return false;
+        }
+    }
+
+    termWrite->Write("All modules booted.\n");
+    termWrite->Write("DSPParFile:\t");
+    termWrite->Write(DSPSet);
+    termWrite->Write("\n");
     return true;
 }
 
