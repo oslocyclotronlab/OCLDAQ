@@ -11,8 +11,8 @@
 //#include "mainwindow.h"
 #include "xiainterface.h"
 #include "xiainterface2.h"
-//#include <QApplication>
-//#include <xiaconfigurator.h>
+#include <QApplication>
+#include <xiaconfigurator.h>
 
 #include <algorithm>
 #include <iostream>
@@ -27,6 +27,7 @@
 #include <cstdio>
 #include <sys/time.h>
 #include <unistd.h>
+
 
 
 #if _FILE_OFFSET_BITS != 64
@@ -54,7 +55,7 @@ static int gui_is_running;
 static int globargc;
 static char **globargv;
 command_list* commands = 0;
-//XIAConfigurator *config = nullptr;
+XIAConfigurator *config = nullptr;
 
 #ifndef OFFLINE
 #define OFFLINE false
@@ -75,12 +76,12 @@ void keyb_int(int sig_num)
 // ########################################################################
 
 
-/*int GUI_thread(int nmod)
+int GUI_thread(int nmod)
 {
     if ( config )
         config->show();
     return 0;
-}*/
+}
 
 
 
@@ -324,7 +325,7 @@ static void command_launch_GUI(line_channel* lc, const std::string&, void*)
     }
 
     // If we reach this point we can safely launch the gui :D
-    //gui_thread = std::thread(GUI_thread, xiacontr->GetNumMod());
+    gui_thread = std::thread(GUI_thread, xiacontr->GetNumMod());
 
 }
 
@@ -535,11 +536,14 @@ int main_engine(int argc, char* argv[])
 // ########################################################################
 // ########################################################################
 
-/*int main_gui(int nmod, QApplication &app, XIAConfigurator &c)
+int main_gui(int nmod, QApplication &app, XIAConfigurator &c)
 {
     c.show();
+    /*while ( leaveprog == 'n' )
+        app.processEvents();
+    return 0;*/
     return app.exec();
-}*/
+}
 
 // ########################################################################
 // ########################################################################
@@ -595,21 +599,19 @@ int main(int argc, char* argv[])
     if ( !xiacontr->boot() )
         leaveprog = 'y';
 
-    return main_engine(argc, argv);
-
     auto nmod = xiacontr->GetNumMod();
     XIAInterfaceAPI2 interface(nmod);
-    //XIAConfigurator configurator(&interface);
+    XIAConfigurator configurator(&interface);
 
     // Now we are ready to start the two threads, this will launch the settings window!
     auto engine_thread = std::thread(main_engine, argc, argv);
 
-    //QApplication app(argc, argv);
-    //auto r = main_gui(nmod, app, configurator);
+    QApplication app(argc, argv);
+    auto r = main_gui(nmod, app, configurator);
 
     if ( engine_thread.joinable() ) engine_thread.join();
 
-    return 0;//r;
+    return r;
 }
 
 // ########################################################################
