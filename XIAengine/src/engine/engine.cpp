@@ -589,7 +589,7 @@ int main(int argc, char* argv[])
     xiacontr = new XIAControl(&termWrite, PXIMapping);
 
     // We will now boot before anything else will happend.
-    if ( !xiacontr->XIA_boot_all(OFFLINE) )
+    if ( !xiacontr->boot() )
         leaveprog = 'y';
 
     auto nmod = xiacontr->GetNumMod();
