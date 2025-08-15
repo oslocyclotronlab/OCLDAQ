@@ -63,6 +63,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+
 set(GUI_PROJECT_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/BaselineFilterWidget.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/BaselineFilterWidget.h
