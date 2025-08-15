@@ -593,7 +593,7 @@ int main(int argc, char* argv[])
     usleep(1000);
     std::cout << "Starting boot" << std::endl;
 
-    
+
     // We will now boot before anything else will happend.
     if ( !xiacontr->boot() )
         leaveprog = 'y';

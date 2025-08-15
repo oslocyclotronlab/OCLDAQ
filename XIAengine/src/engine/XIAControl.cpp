@@ -64,7 +64,8 @@ XIAControl::XIAControl(WriteTerminal *writeTerm,
     lmdata = (unsigned int *)malloc(sizeof(unsigned int) * EXTERNAL_FIFO_LENGTH);
 
     // Initialize the system
-    auto retval = Pixie16InitSystem(num_modules, PXISlotMap, bootmode);
+    unsigned short boot_flag = bootmode ? 1 : 0;
+    auto retval = Pixie16InitSystem(num_modules, PXISlotMap, boot_flag);
     if ( retval < 0 ){
         std::cerr << "*ERROR* Pixie16InitSystem failed, retval = " << retval << "." << std::endl;
     }
