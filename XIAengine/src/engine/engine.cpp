@@ -12,7 +12,6 @@
 #include "xiainterface.h"
 #include "xiainterface2.h"
 #include <QApplication>
-#include <xiaconfigurator.h>
 
 #include <algorithm>
 #include <iostream>
@@ -28,7 +27,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-
+#include <xiaconfigurator.h>
 
 #if _FILE_OFFSET_BITS != 64
 #error must compile with _FILE_OFFSET_BITS == 64
@@ -62,7 +61,7 @@ XIAConfigurator *config = nullptr;
 #endif // OFFLINE
 
 // ########################################################################
-// ######################################################################## 
+// ########################################################################
 
 void keyb_int(int sig_num)
 {
@@ -138,7 +137,7 @@ static void do_stop()
     std::cout << "sleeping 1s to avoid confusing bobcat... " << std::flush;
     sleep(1);
     std::cout << "done" << std::endl;
-} 
+}
 
 // ########################################################################
 
@@ -208,7 +207,7 @@ static bool change_output_file()
         //std::cerr << "file '" << new_filename << "'exists" << std::endl;
         return false;
     }
-    
+
     return do_change_output_file(new_filename);
 }
 
@@ -354,7 +353,7 @@ static void command_output_none(line_channel* lc, const std::string&, void*)
         lc->send("404 error_cmd 'none' output already selected.\n");
         return;
     }
-    
+
     close_file();
     output_filename = "";
 
@@ -589,14 +588,8 @@ int main(int argc, char* argv[])
 
     xiacontr = new XIAControl(&termWrite, PXIMapping);
 
-    // We will add a small sleep from initialization to boot
-    std::cout << "Sleeping for 1 second" << std::endl;
-    usleep(3000000);
-    std::cout << "Starting boot" << std::endl;
-
-
     // We will now boot before anything else will happend.
-    if ( !xiacontr->boot() )
+    if ( !xiacontr->XIA_boot_all(OFFLINE) )
         leaveprog = 'y';
 
     auto nmod = xiacontr->GetNumMod();
@@ -605,8 +598,6 @@ int main(int argc, char* argv[])
 
     // Now we are ready to start the two threads, this will launch the settings window!
     auto engine_thread = std::thread(main_engine, argc, argv);
-
-
     auto r = main_gui(nmod, app, configurator);
 
     if ( engine_thread.joinable() ) engine_thread.join();
