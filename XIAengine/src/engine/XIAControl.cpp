@@ -97,7 +97,6 @@ bool XIAControl::boot()
 
 bool XIAControl::BootXIA()
 {
-    std::cout << "Reading firmware mapping from file 'XIA_Firmware.txt" << std::endl;
     auto fw = ParseFWconfigFile("XIA_Firmware.txt");
 
     int retval = 0;

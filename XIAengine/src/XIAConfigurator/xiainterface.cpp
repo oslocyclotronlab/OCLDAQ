@@ -14,11 +14,11 @@ XIAInterface::ModuleInfo_t XIAInterfaceMock::modInfo[] = {
 };
 
 
-XIAInterface::~XIAInterface()
-{
-}
+//XIAInterface::~XIAInterface()
+//{
+//}
 
-size_t XIAInterface::GetNumModules() const { return number_of_modules; }
+//size_t XIAInterface::GetNumModules() const { return number_of_modules; }
 
 
 XIAInterfaceMock::XIAInterfaceMock(const size_t &num_modules)
