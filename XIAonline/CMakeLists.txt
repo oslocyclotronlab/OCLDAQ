@@ -30,46 +30,7 @@ CPMAddPackage(
 		VERSION 1.4
 )
 
-CPMAddPackage(
-		NAME cppzmq
-		GITHUB_REPOSITORY zeromq/cppzmq
-		VERSION 4.7.1
-		OPTIONS "CPPZMQ_BUILD_TESTS OFF"
-)
-
-CPMAddPackage(
-		NAME readerwriterqueue
-		GITHUB_REPOSITORY cameron314/readerwriterqueue
-		VERSION 1.0.3)
-
-CPMAddPackage(
-		NAME CLI11
-		GITHUB_REPOSITORY CLIUtils/CLI11
-		VERSION 1.9.1
-		OPTIONS 
-		  "CLI11_BUILD_DOCS OFF"
-		  "CLI11_BUILD_TESTS OFF"
-		  "CLI11_BUILD_EXAMPLES OFF"
-		  "CLI11_BUILD_EXAMPLES_JSON OFF"
-		  "CLI11_SINGLE_FILE_TESTS OFF"
-		)
-
-CPMAddPackage(
-  NAME cereal
-  VERSION 1.3.0
-  GITHUB_REPOSITORY USCiLab/cereal
-  OPTIONS
-    "SKIP_PORTABILITY_TEST ON"
-    "JUST_INSTALL_CEREAL ON"
-)
-
 FIND_PACKAGE(Threads REQUIRED)
-
-if ( readerwriterqueue_ADDED )
-  add_library(readerwriterqueue::readerwriterqueue ALIAS readerwriterqueue)
-  target_include_directories(readerwriterqueue INTERFACE
-          $<BUILD_INTERFACE:${readerwriterqueue_SOURCE_DIR}>)
-endif()
 
 if (NOT sirius_ADDED )
 	CPMAddPackage(NAME sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sirius)
@@ -81,7 +42,6 @@ add_executable(XIAonline
 		${CMAKE_CURRENT_SOURCE_DIR}/src/Event_builder.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/experimentsetup.c
 		${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/publisher.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/Sort_Funct.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/spectrum_rw.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/Unpacker.cpp
@@ -95,7 +55,7 @@ target_compile_definitions(XIAonline PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 RE
 set_target_properties(XIAonline PROPERTIES CXX_STANDARD 11)
 set_property(TARGET XIAonline PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-target_link_libraries(XIAonline PUBLIC sirius::sirius cppzmq readerwriterqueue CLI11::CLI11 cereal Threads::Threads)
+target_link_libraries(XIAonline PUBLIC sirius::sirius Threads::Threads)
 
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)

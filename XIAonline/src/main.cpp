@@ -20,9 +20,6 @@
 #include "Event_builder.h"
 #include "spectrum_rw.h"
 #include "Sort_Funct.h"
-#include "publisher.h"
-
-#include <CLI/CLI.hpp>
 
 char leaveprog='n';
 static int buffer_count=0,bad_buffer_count=0;
@@ -205,28 +202,10 @@ static void command_gain(line_channel* lc, const std::string& cmd, void*)
 
 int main (int argc, char* argv[])
 {
-    /*if( argc != 1 ) {
+    if( argc != 1 ) {
         std::cerr << "acq_sort runs without parameters" << std::endl;
         exit(EXIT_FAILURE);
-    }*/
-
-    CLI::App app{"XIAonline - Online sort of XIA data at OCL."};
-
-    bool publish_data = false;
-    app.add_flag("-o", publish_data,
-                 "Indicate if parsed events should be published on the network.");
-
-    std::string address;
-    app.add_option("-a", address,
-                   "Bind address. Default is 'tcp://*'")->default_val("tcp://*");
-
-    uint32_t port;
-    app.add_option("-p", port,
-                   "Port to publish data on. Default port is 6000")->default_val(6000);
-
-    CLI11_PARSE(app, argc, argv)
-
-    publisher *pub = nullptr;
+    }
 
     signal(SIGINT, keyb_int); // set up interrupt handler (Ctrl-C)
     signal(SIGPIPE, SIG_IGN);
@@ -266,13 +245,6 @@ int main (int argc, char* argv[])
     const volatile unsigned int  datalen = engine_shm[ENGINE_DATA_SIZE];
     const volatile unsigned int* first_header = (unsigned int*)&engine_shm[ENGINE_FIRST_HEADER];
 
-
-
-    if ( publish_data ) {
-        address += ":" + std::to_string(port);
-        pub = new publisher(address);
-    }
-
     // Declare the sorting routine
     unpacker = new Unpacker;
     evtbldr = new EventBuilder;
@@ -298,7 +270,6 @@ int main (int argc, char* argv[])
 
                 data_p = unpacker->ParseBuffer(data+(*first_header), datalen-(*first_header), error);
                 sort_singles(data_p);
-                if ( pub ) pub->AddBuffer(data_p);
                 ++buffer_count;
                 evtbldr->SetBuffer(data_p);
                 if ( error )
@@ -327,7 +298,6 @@ int main (int argc, char* argv[])
     // detach shared memory
     engine_shm_detach();
     spectra_detach_all();
-    delete pub;
     delete unpacker;
     delete evtbldr;
 }
