@@ -2,6 +2,8 @@
 #define XIAINTERFACE_H
 
 #include <variant>
+#include <cstddef>
+#include <utility>
 
 class XIAInterface
 {
