@@ -590,7 +590,7 @@ int main(int argc, char* argv[])
 
     // We will add a small sleep from initialization to boot
     std::cout << "Sleeping for 1 second" << std::endl;
-    usleep(1000000);
+    usleep(3000000);
     std::cout << "Starting boot" << std::endl;
 
 
