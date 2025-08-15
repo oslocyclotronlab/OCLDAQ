@@ -16,7 +16,7 @@
 #define  ECFD_KEY               1512     /* E CFD fail spectra (1-8)    (32768x8)   */
 #define  GUARD_KEY              1513	 /* E guard ring spectra (1-8)  (32768x8)   */
 
-#define  LABRSP_XSIZE           32768   /* LaBr energy spectra		*/
+#define  LABRSP_XSIZE           65536   /* LaBr energy spectra		*/
 #define  DESP_XSIZE             32768   /* E-counter spectra        */
 #define  ESP_XSIZE              32768   /* DE-counter spectra       */
 #define  EDESP_XSIZE            2048    /* DE-E-counter spectra     */
@@ -25,23 +25,23 @@
 #define  PPAC_XSIZE             32768   /* PPAC spectra             */
 #define  TPPAC_XSIZE			32768	/* PPAC time spectra		*/
 #define  EDESS_XSIZE			2048	/* DE-E-counter spectra		*/
-#define  LABRCSP_XSIZE			32768	/* LaBr energy spectra		*/
-#define  LABRCFD_XSIZE          32768   /* LaBr CFD fail spectra    */
+#define  LABRCSP_XSIZE			65536	/* LaBr energy spectra		*/
+#define  LABRCFD_XSIZE          65536   /* LaBr CFD fail spectra    */
 #define  DECFD_XSIZE            32768   /* DE CFD fail spectra      */
 #define  ECFD_XSIZE             32768   /* E CFD fail spectra       */
 #define  GUARD_XSIZE            32768   /* Guard ring spectra       */
 
-#define  LABRSP_YSIZE           32      /* LaBr time spectra	 	*/
+#define  LABRSP_YSIZE           12      /* LaBr time spectra	 	*/
 #define  DESP_YSIZE             64      /* E-counter spectra        */
 #define  ESP_YSIZE              8       /* DE-counter spectra       */
 #define  EDESP_YSIZE            2048    /* DE-E-counter spectra     */
 #define  EDECC_YSIZE            2048    /* DE-E-counter spectra     */
-#define  TLABRSP_YSIZE          32      /* Thickness spectra        */
+#define  TLABRSP_YSIZE          12      /* Thickness spectra        */
 #define  PPAC_YSIZE             4       /* PPAC spectra             */
 #define  TPPAC_YSIZE			32		/* PPAC time spectra		*/
 #define  EDESS_YSIZE			2048	/* DE-E-counter spectra		*/
-#define  LABRCSP_YSIZE			32		/* LaBr energy spectra		*/
-#define  LABRCFD_YSIZE          32      /* LaBr CFD fail spectra    */
+#define  LABRCSP_YSIZE			12		/* LaBr energy spectra		*/
+#define  LABRCFD_YSIZE          12      /* LaBr CFD fail spectra    */
 #define  DECFD_YSIZE            64      /* DE CFD fail spectra      */
 #define  ECFD_YSIZE             8       /* E CFD fail spectra       */
 #define  GUARD_YSIZE            8       /* Guard ring spectra       */
