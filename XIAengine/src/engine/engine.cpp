@@ -589,8 +589,11 @@ int main(int argc, char* argv[])
     xiacontr = new XIAControl(&termWrite, PXIMapping);
 
     // We will add a small sleep from initialization to boot
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::cout << "Sleeping for 1 second" << std::endl;
+    usleep(1000);
+    std::cout << "Starting boot" << std::endl;
 
+    
     // We will now boot before anything else will happend.
     if ( !xiacontr->boot() )
         leaveprog = 'y';
