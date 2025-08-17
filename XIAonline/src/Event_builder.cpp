@@ -106,47 +106,23 @@ bool EventBuilder::UnpackOneEvent(Event &event)
 bool EventBuilder::UnpackOneEvent(Event &event)
 {
     event.Reset();
-    int factor = 10;
     if ( curr_pos >= buffer.size() )
         return false;
 
     int64_t timediff;
     int start = curr_pos;
-    int stop = curr_pos + 1;
+    int stop = curr_pos;
     word_t curr_w;
-    for (size_t i = curr_pos ; i < buffer.size() ; ++i){
-        curr_w = buffer[i];
-        if ( ( GetDetector(curr_w.address).type == eDet ) ||
-             ( GetDetector(curr_w.address).type == ppac) ){
-
-            // We find all events that are within MAX_TDIFF before the
-            // E event.
-            for (int j = curr_pos ; j > 0 ; --j){
-
-                timediff = buffer[j-1].timestamp - curr_w.timestamp;
-
-
-                if (std::abs(timediff) > 0/*MAX_TDIFF*/){
-                    start = j;
-                    break;
-                }
-            }
-
-            // We find all events that are withn MAX_TDIFF after the
-            // E event
-            for (int j = curr_pos ; j < buffer.size() - 1 ; ++j){
-                timediff = buffer[j+1].timestamp - curr_w.timestamp;
-                if (std::abs(timediff) > MAX_TDIFF){
-                    stop = j+1;
-                    break;
-                }
-            }
-            curr_pos = i+1;
-            event.trigger = curr_w;
-            return PackEvent(event, start, stop);
-        }
+    for ( size_t i = curr_pos+1 ; i < buffer.size() ; ++i ) {
+        timediff = buffer[i-1].timestamp - buffer[i].timestamp;
+        stop = static_cast<int>(i);
+        if ( std::abs(timediff) > 500 )
+            break;
     }
-    return false;
+    curr_pos = stop;
+    if ( start == stop )
+        return false;
+    return PackEvent(event, start, stop);
 }
 
 #endif // SINGLES
