@@ -209,7 +209,7 @@ MyMainFrame::MyMainFrame(int maxupdate)
 
     // ============================================================
     // select first spectrum to display (NASP)
-    cmb_spectra->Select(8);
+    cmb_spectra->Select(0);
 
     timer_reconnect = new TTimer();
     timer_reconnect->Connect("Timeout()","MyMainFrame",this,"OnReconnectTimeout()");
