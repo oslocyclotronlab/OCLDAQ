@@ -61,7 +61,7 @@ template<typename B, typename T>
 void set_widget_numeric_value(const size_t &module, const size_t &channel, T *widget, XIAInterface *interface, std::map<QWidget *, const char *> par_map)
 {
     auto value = static_cast<B>(interface->GetChnParam(module, channel, par_map[widget]));
-    qCDebug(logger) << "Module " << module << " channel " << channel << ", setting parameter '" << par_map[widget] << "' from API, got " << value;
+    qCDebug(logger) << "Module " << module << " channel " << channel << ", getting parameter '" << par_map[widget] << "' from API, got " << value;
     widget->setValue(value);
 }
 

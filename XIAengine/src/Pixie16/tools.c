@@ -73,7 +73,7 @@
 *		nanoseconds is the the number of nanoseconds to sleep.
 *
 ****************************************************************/
-
+__attribute__((noinline, optimize("O0")))
 static void USleep(double nanoseconds)
 {
 	// determine if we need to sleep for seconds
@@ -111,7 +111,7 @@ static void USleep(double nanoseconds)
 *			-3 - Minimum timer resolution is greater than 1 ms
 *
 ****************************************************************/
-
+__attribute__((noinline, optimize("O0")))
 int get_ns_per_cycle(double *ns_per_cycle)
 {
 #if PIXIE16_SYSAPI_VER == PIXIE16_WINDOWS_SYSAPI
@@ -124,7 +124,7 @@ int get_ns_per_cycle(double *ns_per_cycle)
 	struct timeval start_time, end_time;
 	double start_count, end_count, duration;
 	unsigned int NumCycles;
-	volatile int count;
+	int count;
 #endif
 	
 #if PIXIE16_SYSAPI_VER == PIXIE16_WINDOWS_SYSAPI
