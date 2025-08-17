@@ -42,5 +42,5 @@ void sort_singles(const std::vector<word_t> &buffer)
 
 void sort_coincidence(Event &event)
 {
-
+    // For now, we have nothing we will do...
 }

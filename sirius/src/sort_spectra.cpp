@@ -31,19 +31,9 @@ sort_spectrum_t sort_spectra[] = {
 sort_spectrum_t sort_spectra[] = {
     {  0, 0, 0, 0, 0, 0, 0, 0 },
     { LABRSP_ID,  LABRSP_KEY,   LABRSP_SIZE,    0,  LABRSP_XSIZE,   LABRSP_YSIZE,   "LABRSP",   "LaBr-energy" },
-    { DESP_ID,    DESP_KEY,     DESP_SIZE,      0,  DESP_XSIZE,     DESP_YSIZE,     "DESP",     "DE"},
-    { ESP_ID,     ESP_KEY,      ESP_SIZE,       0,  ESP_XSIZE,      ESP_YSIZE,      "ESP",      "E"},
-    { PPAC_ID,    PPAC_KEY,     PPAC_SIZE,      0,  PPAC_XSIZE,     PPAC_YSIZE,     "PPACSP",   "PPAC spec"},
-    { EDESP_ID,   EDESP_KEY,    EDESP_SIZE,     0,  EDESP_XSIZE,    EDESP_YSIZE,    "EDESP",    "E-DE"},
-    { EDECC_ID,   EDECC_KEY,    EDECC_SIZE,     0,  EDECC_XSIZE,    EDECC_YSIZE,    "EDECC",    "E-DE calibrated"},
-    { EDESS_ID,   EDESS_KEY,    EDESS_SIZE,     0,  EDESS_XSIZE,    EDESS_YSIZE,    "EDESS",    "E-DE single strip"},
     { TLABRSP_ID, TLABRSP_KEY,  TLABRSP_SIZE,   0,  TLABRSP_XSIZE,  TLABRSP_YSIZE,  "TLABRSP",  "LaBr-time"},
-    { TPPAC_ID,   TPPAC_KEY,    TPPAC_SIZE,     0,  TPPAC_XSIZE,    TPPAC_YSIZE,    "TPPACS",   "t(LaBr) - t(PPAC)"},
     { LABRCSP_ID, LABRCSP_KEY,  LABRCSP_SIZE,   0,  LABRCSP_XSIZE,  LABRCSP_YSIZE,  "LABRCSP",  "LaBr-energy, calibrated"},
     { LABRCFD_ID, LABRCFD_KEY,  LABRCFD_SIZE,   0,  LABRCFD_XSIZE,  LABRCFD_YSIZE,  "LABRCFD",  "LaBr-energy (CFD fail)"},
-    { DECFD_ID,   DECFD_KEY,    DECFD_SIZE,     0,  DECFD_XSIZE,    DECFD_YSIZE,    "DECFD",    "DE spectra (CFD fail)"},
-    { ECFD_ID,    ECFD_KEY,     ECFD_SIZE,      0,  ECFD_XSIZE,     ECFD_YSIZE,     "ECFD",     "E spectra (CFD fail)"},
-    { GUARD_ID,   GUARD_KEY,    GUARD_SIZE,     0,  GUARD_XSIZE,    GUARD_YSIZE,    "GUARD",    "E guard rings"},
     {  0, 0, 0, 0, 0, 0, 0, 0 }
 };
 #endif // XIA

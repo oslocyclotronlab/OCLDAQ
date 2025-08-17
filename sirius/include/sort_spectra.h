@@ -25,20 +25,9 @@ enum {
 #else
 enum {
     LABRSP_ID   =   1,
-    DESP_ID     =   2,
-    ESP_ID      =   3,
-    PPAC_ID     =   4,
-    EDESP_ID    =   5,
-    EDECC_ID    =   6,
-    EDESS_ID    =   7,
-    TLABRSP_ID  =   8,
-    TPPAC_ID    =   9,
-    LABRCSP_ID  =  10,
-    LABRCFD_ID  =  11,
-    DECFD_ID    =  12,
-    ECFD_ID     =  13,
-    GUARD_ID    =  14,
-    TIME_ENERGY_ID = 15
+    TLABRSP_ID  =   2,
+    LABRCSP_ID  =   3,
+    LABRCFD_ID  =   4,
 };
 #endif // XIA
 
