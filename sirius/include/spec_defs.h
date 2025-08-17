@@ -7,7 +7,7 @@
 #define  LABRCFD_KEY			1503	 /* LaBr spectra(CFD fail)(1-32)(32768x32)  */
 
 #define  LABRSP_XSIZE           65536   /* LaBr energy spectra		*/
-#define  TLABRSP_XSIZE          32768   /* LaBr time spectra        */
+#define  TLABRSP_XSIZE          65536   /* LaBr time spectra        */
 #define  LABRCSP_XSIZE			65536	/* LaBr energy spectra		*/
 #define  LABRCFD_XSIZE          65536   /* LaBr CFD fail spectra    */
 
