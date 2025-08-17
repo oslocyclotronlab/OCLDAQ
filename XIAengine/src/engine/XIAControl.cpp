@@ -64,7 +64,6 @@ XIAControl::XIAControl(WriteTerminal *writeTerm,
     , is_booted( false )
     , is_running( false )
     , settings_file( SETname )
-    , fname(  )
 {
     ReadConfigFile(FWname.c_str());
     num_modules = 0;
@@ -708,6 +707,13 @@ bool XIAControl::WriteScalers()
     double ICR[PRESET_MAX_MODULES][16], OCR[PRESET_MAX_MODULES][16];
     unsigned int stats[448];
     int retval;
+    FILE* stat_file = nullptr;
+
+    if ( !filename.empty() ) {
+        std::string outname = std::string(filename) + ".stats";
+        stat_file = fopen(outname.c_str(), "w");
+    }
+
     {
         for (int i = 0 ; i < num_modules ; ++i){
             retval = Pixie16ReadStatisticsFromModule(stats, i);
@@ -715,6 +721,13 @@ bool XIAControl::WriteScalers()
                 snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16ReadStatisticsFromModule failed, retval = %d\n", retval);
                 termWrite->WriteError(errmsg);
                 Pixie_Print_MSG(errmsg);
+            }
+            if ( stat_file ) {
+                fprintf(stat_file, "mod %d: %u", i, stats[0]);
+                for ( int k = 1 ; k < 448 ; ++k ){
+                    fprintf(stat_file, ", %u", stats[k]);
+                }
+                fprintf(stat_file, "\n");
             }
 
             for (int j = 0 ; j < 16 ; ++j){
@@ -774,7 +787,7 @@ bool XIAControl::WriteScalers()
             }
         }
     }
-
+    if ( stat_file ) fclose(stat_file);
     FILE *scaler_file_in = fopen(SCALER_FILE_NAME_IN, "w");
     FILE *scaler_file_out = fopen(SCALER_FILE_NAME_OUT, "w");
 
