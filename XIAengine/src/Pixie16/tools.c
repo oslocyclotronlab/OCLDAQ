@@ -223,7 +223,7 @@ int get_ns_per_cycle(double *ns_per_cycle)
 *		A shot wait (the time for each cycle = ns_per_cycle).
 *
 ****************************************************************/
-
+__attribute__((noinline, optimize("O0")))
 void wait_for_a_short_time(int cycles)
 {
 
