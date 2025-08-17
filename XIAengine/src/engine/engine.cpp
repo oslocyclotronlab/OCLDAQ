@@ -356,6 +356,8 @@ static void command_output_none(line_channel* lc, const std::string&, void*)
 
     close_file();
     output_filename = "";
+    if ( xiacontr )
+        xiacontr->setFile(output_filename.c_str());
 
     ls_engine->send_all("204 output_none\n");
 }
@@ -369,6 +371,9 @@ static void command_output_file(line_channel* lc, const std::string& line, void*
         line_sender ls(lc);
         ls << "405 error_file Cannot select file '" << escape(fname) << "'.\n";
     }
+    // If we get here the filename was set.
+    if ( xiacontr )
+        xiacontr->setFile(output_filename.c_str());
 }
 
 // ########################################################################

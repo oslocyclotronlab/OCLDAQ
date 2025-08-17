@@ -101,6 +101,9 @@ private:
     // raw memory used during readout of list mode.
     unsigned int *lmdata;
 
+    // Simple string to store the current active file, if any.
+    std::string fname;
+
 public:
 
     XIAControl(WriteTerminal *writeTerm,
@@ -146,6 +149,9 @@ public:
 
     // Get number of XIA modules.
     inline int GetNumMod() const { return num_modules; }
+
+    // Set the current filename
+    void setFile(const char *fn){ fname = fn; }
 
 private:
 

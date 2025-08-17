@@ -64,6 +64,7 @@ XIAControl::XIAControl(WriteTerminal *writeTerm,
     , is_booted( false )
     , is_running( false )
     , settings_file( SETname )
+    , fname(  )
 {
     ReadConfigFile(FWname.c_str());
     num_modules = 0;
