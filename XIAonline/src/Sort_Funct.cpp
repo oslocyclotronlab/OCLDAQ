@@ -39,8 +39,27 @@ void sort_singles(const std::vector<word_t> &buffer)
 
 }
 
+struct labr_evt_t {
+    int n_evt;
+    word_t* events[1024]{};
+
+    labr_evt_t() : n_evt( 0 ){ for (auto & event : events) event = nullptr; }
+};
 
 void sort_coincidence(Event &event)
 {
     // For now, we have nothing we will do...
+    word_t* ref = nullptr;
+
+    if ( event.n_labr[0] == 1 )
+        ref = &event.w_labr[0][0];
+
+    for ( size_t i = 0 ; i < NUM_LABR_DETECTORS ; ++i) {
+        for ( size_t j = 0 ; j < event.n_labr[i] ; ++j) {
+            auto timediff = double(event.w_labr[i][j].timestamp - ref->timestamp);
+            timediff += double(event.w_labr[i][j].cfdcorr - ref->cfdcorr);
+            spec_fill(TLABRSP_ID, timediff, i);
+        }
+    }
+
 }
