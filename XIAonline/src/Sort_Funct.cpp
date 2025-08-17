@@ -56,13 +56,15 @@ void sort_coincidence(Event &event)
 
     for ( size_t i = 0 ; i < NUM_LABR_DETECTORS ; ++i) {
         for ( size_t j = 0 ; j < event.n_labr[i] ; ++j) {
-            auto timediff = double(event.w_labr[i][j].timestamp - ref->timestamp);
-            timediff += double(event.w_labr[i][j].cfdcorr - ref->cfdcorr);
+            if ( ref ) {
+                auto timediff = double(event.w_labr[i][j].timestamp - ref->timestamp);
+                timediff += double(event.w_labr[i][j].cfdcorr - ref->cfdcorr);
 
-            timediff *= 10; // This is in 0.1 ns
-            timediff += 32768; // Move 0 to the middle of the spectrum.
+                timediff *= 10; // This is in 0.1 ns
+                timediff += 32768; // Move 0 to the middle of the spectrum.
 
-            spec_fill(TLABRSP_ID, timediff, i);
+                spec_fill(TLABRSP_ID, timediff, i);
+            }
         }
     }
 
