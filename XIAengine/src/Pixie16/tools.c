@@ -119,7 +119,7 @@ int get_ns_per_cycle(double *ns_per_cycle)
 	DWORD start, finish, duration;
 	char ErrMSG[MAX_ERRMSG_LENGTH];
 	unsigned int NumCycles;
-	int count;
+	volatile int count;
 #elif PIXIE16_SYSAPI_VER == PIXIE16_LINUX_SYSAPI && (!defined (USE_USLEEP))
 	struct timeval start_time, end_time;
 	double start_count, end_count, duration;
@@ -224,7 +224,7 @@ int get_ns_per_cycle(double *ns_per_cycle)
 *
 ****************************************************************/
 
-void wait_for_a_short_time(int cycles)
+void wait_for_a_short_time(volatile int cycles)
 {
 
 #if PIXIE16_SYSAPI_VER == PIXIE16_WINDOWS_SYSAPI
