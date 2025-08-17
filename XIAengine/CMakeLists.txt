@@ -200,4 +200,8 @@ if(QT_VERSION_MAJOR EQUAL 6)
 	qt_finalize_executable(XIAengine)
 endif()
 
+add_executable(RawXIAReadout raw_readout.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/functions.cpp)
+target_include_directories(RawXIAReadout PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/engine)
+target_link_libraries(RawXIAReadout PUBLIC XIA::Pixie16 inih::inih)
+
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
