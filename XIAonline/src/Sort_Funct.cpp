@@ -32,6 +32,8 @@ void sort_singles(const std::vector<word_t> &buffer)
             if ( entry.cfdfail )
                 spec_fill(LABRCFD_ID, entry.adcdata, dinfo.detectorNum);
             break;
+        default:
+            break;
         }
     }
 
