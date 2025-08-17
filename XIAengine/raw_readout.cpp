@@ -294,6 +294,7 @@ int main(int argc, char *argv[]) {
     auto* lmdata = (unsigned int *)malloc(sizeof(unsigned int) * EXTERNAL_FIFO_LENGTH);
     unsigned int numFIFOwords;
     // Next we can start the run
+    std::cout << "List mode started reading out data" << std::endl;
     while ( leaveprog == 'n' ) {
         for ( int i = 0 ; i < num_modules ; ++i ) {
             retval = Pixie16CheckExternalFIFOStatus(&numFIFOwords, i);
@@ -316,7 +317,6 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-
     retval = Pixie16EndRun(num_modules);
     if ( retval != 0 ) {
         std::cerr << "Error ending run, got code " << retval << std::endl;
@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
         return retval;
     }
     usleep(1000000); // Wait a second
-
+    std::cout << "Run ended, reading final set of data" << std::endl;
     for ( int i = 0 ; i < num_modules ; ++i ) {
         retval = Pixie16CheckExternalFIFOStatus(&numFIFOwords, i);
         if ( retval != 0 ) {
@@ -341,6 +341,7 @@ int main(int argc, char *argv[]) {
             return retval;
         }
         fwrite(lmdata, sizeof(unsigned int), numFIFOwords, files[i]);
+        fclose(files[i]);
     }
     retval = Pixie16ExitSystem(num_modules);
     if (  retval != 0 ) {
