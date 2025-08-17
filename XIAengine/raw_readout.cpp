@@ -14,6 +14,9 @@
 #include <iostream>
 #include <fstream>
 
+#include <csignal>
+#include <cstring>
+
 #include "functions.h"
 #include "XIAControl.h"
 char leaveprog = 'n';
@@ -271,7 +274,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Error synchronizing modules, retval = " << retval << std::endl;
         retval = Pixie16ExitSystem(num_modules);
         return retval;
-    } 
+    }
 
     // Start run
     retval = Pixie16StartListModeRun(num_modules, LIST_MODE_RUN, NEW_RUN);
