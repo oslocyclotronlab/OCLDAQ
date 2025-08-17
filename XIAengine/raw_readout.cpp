@@ -236,6 +236,9 @@ bool boot(int num_modules) {
 }
 
 int main(int argc, char *argv[]) {
+    signal(SIGINT, keyb_int); // set up interrupt handler (Ctrl-C)
+    signal(SIGPIPE, SIG_IGN);
+
     int retval = 0;
     std::string output_file_name[PRESET_MAX_MODULES];
     FILE* files[PRESET_MAX_MODULES];
