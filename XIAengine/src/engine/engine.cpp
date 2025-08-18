@@ -24,7 +24,6 @@
 #include <csignal>
 #include <cstdlib>
 #include <cstdio>
-#include <QLoggingCategory>
 #include <sys/time.h>
 #include <unistd.h>
 
@@ -556,7 +555,6 @@ int main_gui(int nmod, QApplication &app, XIAConfigurator &c)
 int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
-    QLoggingCategory::setFilterRules(QStringLiteral("XIAGUI.debug=false"));
     unsigned short PXIMapping[PRESET_MAX_MODULES];
     for (unsigned short & mapping : PXIMapping)
         mapping = 0;
