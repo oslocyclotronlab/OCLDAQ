@@ -8,8 +8,8 @@ static const int PERMS_WRITE = 0666; // read for all, write for all
 static const int PERMS_READ  = 0444; // read for all, write for none
 
 enum {
-    BUFFER_OFF   = 128,
-    BUFFER_SIZE  = 32768
+    BUFFER_OFF   = 128, // 124
+    BUFFER_SIZE  = 32768 // 32772
 };
 
 static unsigned int *shared_mem = 0;
