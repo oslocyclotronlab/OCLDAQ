@@ -333,15 +333,17 @@ int main(int argc, char *argv[]) {
             free(lmdata);
             return retval;
         }
-        retval = Pixie16ReadDataFromExternalFIFO(lmdata, numFIFOwords, i);
-        if ( retval != 0 ) {
-            std::cerr << "Pixie16ReadDataFromExternalFIFO gave " << retval << std::endl;
-            retval = Pixie16ExitSystem(num_modules);
-            free(lmdata);
-            return retval;
+        if ( numFIFOwords >= EXTFIFO_READ_THRESH ) {
+            retval = Pixie16ReadDataFromExternalFIFO(lmdata, numFIFOwords, i);
+            if ( retval != 0 ) {
+                std::cerr << "Pixie16ReadDataFromExternalFIFO gave " << retval << std::endl;
+                retval = Pixie16ExitSystem(num_modules);
+                free(lmdata);
+                return retval;
+            }
+            fwrite(lmdata, sizeof(unsigned int), numFIFOwords, files[i]);
+            fclose(files[i]);
         }
-        fwrite(lmdata, sizeof(unsigned int), numFIFOwords, files[i]);
-        fclose(files[i]);
     }
     retval = Pixie16ExitSystem(num_modules);
     if (  retval != 0 ) {
