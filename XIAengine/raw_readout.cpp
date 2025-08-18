@@ -306,11 +306,14 @@ int main(int argc, char *argv[]) {
                 return retval;
             }
 
-            if ( count % 500 == 0 ) {
-                std::cout << "Readout of module " << i << ", numFIFO is: " << numFIFOwords << std::endl;
-            }
 
-            if ( numFIFOwords > EXTFIFO_READ_THRESH ) {
+
+            if ( numFIFOwords >= EXTFIFO_READ_THRESH ) {
+
+                if ( count % 500 == 0 ) {
+                    std::cout << "Readout of module " << i << ", numFIFO is: " << numFIFOwords << std::endl;
+                }
+
                 retval = Pixie16ReadDataFromExternalFIFO(lmdata, numFIFOwords, i);
                 if ( retval != 0 ) {
                     std::cerr << "Pixie16ReadDataFromExternalFIFO gave " << retval << std::endl;
