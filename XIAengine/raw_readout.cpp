@@ -295,6 +295,7 @@ int main(int argc, char *argv[]) {
     unsigned int numFIFOwords;
     // Next we can start the run
     std::cout << "List mode started reading out data" << std::endl;
+    long long count = 0;
     while ( leaveprog == 'n' ) {
         for ( int i = 0 ; i < num_modules ; ++i ) {
             retval = Pixie16CheckExternalFIFOStatus(&numFIFOwords, i);
@@ -305,7 +306,11 @@ int main(int argc, char *argv[]) {
                 return retval;
             }
 
-            if ( numFIFOwords > 2048 ) {
+            if ( count % 500 == 0 ) {
+                std::cout << "Readout of module " << i << ", numFIFO is: " << numFIFOwords << std::endl;
+            }
+
+            if ( numFIFOwords > EXTFIFO_READ_THRESH ) {
                 retval = Pixie16ReadDataFromExternalFIFO(lmdata, numFIFOwords, i);
                 if ( retval != 0 ) {
                     std::cerr << "Pixie16ReadDataFromExternalFIFO gave " << retval << std::endl;
@@ -313,8 +318,13 @@ int main(int argc, char *argv[]) {
                     free(lmdata);
                     return retval;
                 }
+                if ( count % 500 == 0 ) {
+                    std::cout << "Reading out of module " << i << std::endl;
+                }
+
                 fwrite(lmdata, sizeof(unsigned int), numFIFOwords, files[i]);
             }
+            ++count;
         }
     }
     retval = Pixie16EndRun(num_modules);
@@ -325,6 +335,7 @@ int main(int argc, char *argv[]) {
     }
     usleep(1000000); // Wait a second
     std::cout << "Run ended, reading final set of data" << std::endl;
+
     for ( int i = 0 ; i < num_modules ; ++i ) {
         retval = Pixie16CheckExternalFIFOStatus(&numFIFOwords, i);
         if ( retval != 0 ) {
@@ -333,6 +344,7 @@ int main(int argc, char *argv[]) {
             free(lmdata);
             return retval;
         }
+
         if ( numFIFOwords >= EXTFIFO_READ_THRESH ) {
             retval = Pixie16ReadDataFromExternalFIFO(lmdata, numFIFOwords, i);
             if ( retval != 0 ) {
