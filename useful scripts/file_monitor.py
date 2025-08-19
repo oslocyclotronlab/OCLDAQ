@@ -139,7 +139,7 @@ def monitor(folder, interval=1, current_range=2):
             print(f"{'Disk usage':45s} {render_usage_bar(used_space, free_space)}")
 
             try:
-                print(f"{'Beam rate:45s'} {read_beam_rate()*current_range/1000.} uA")
+                print(f"{'Beam rate':45s} {read_beam_rate()*current_range/1000.} uA")
             except:
                 pass
 
