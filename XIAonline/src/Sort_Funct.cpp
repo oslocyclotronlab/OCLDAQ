@@ -14,9 +14,14 @@ static calibration_t calibration;
 
 calibration_t *GetCalibration(){ return &calibration; }
 
+constexpr double quad[] = {4.00289e-07, 1.29459e-05, 3.06429e-06, 3.86188e-06, 9.18136e-07, 7.95006e-06, 5.14033e-06, 2.35207e-06, 1.44163e-06, 5.61474e-06, 4.18093e-06, -1.93542e-07};
+constexpr double gain[] = {0.622018, 0.738189, 0.597014, 0.760821, 0.694717, 0.79484, 0.711484, 0.704746, 0.667042, 0.683395, 0.696762, 0.737378};
+constexpr double shift[] = {14.3494, 44.3913, 19.3134, 40.8409, 50.3031, 36.7511, 51.5865, 51.1231, 67.1972, 66.605, 40.4937, 37.883};
 
-static const double gain[] = {0.6288783494986332, 0.7956641719979691, 0.6172571366371751, 0.7971825061525968, 0.7245546862887766, 0.8381771858019077, 0.7594280747947241, 0.7378786582895114, 0.7121254009010106, 0.7402751489689681, 0.7323357300447191, 0.7575549130191689};
-static const double shift[] = {4.016291343391087, -7.147747249360786, -5.601328532813391, 0.2708355023382007, 9.737559271633943, -3.9778044743941923, -3.874662043011627, 9.683988148425646, 4.717137462443582, -1.556264450278487, -1.137287956866454, 9.992029322586438};
+inline double calibrate(const int& dnum, const int& adcdata) {
+    double ch = adcdata + drand48() - 0.5;
+    return quad[dnum] * ch*ch  + gain[dnum] * ch + shift[dnum];
+}
 
 void sort_singles(const std::vector<word_t> &buffer)
 {
@@ -30,10 +35,7 @@ void sort_singles(const std::vector<word_t> &buffer)
         switch (dinfo.type) {
         case labr:
             spec_fill(LABRSP_ID, entry.adcdata, dinfo.detectorNum);
-            spec_fill(LABRCSP_ID,
-                      gain[dinfo.detectorNum]*(entry.adcdata + drand48() - 0.5) + shift[dinfo.detectorNum],
-                      //calibration.gain_labr[dinfo.detectorNum]*(entry.adcdata + drand48() - 0.5) + calibration.shift_labr[dinfo.detectorNum],
-                      dinfo.detectorNum);
+            spec_fill(LABRCSP_ID,calibrate(dinfo.detectorNum, entry.adcdata),dinfo.detectorNum);
             if ( entry.cfdfail )
                 spec_fill(LABRCFD_ID, entry.adcdata, dinfo.detectorNum);
             break;
