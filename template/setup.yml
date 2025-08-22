@@ -1,0 +1,69 @@
+calibration:
+  labr:
+    quad:  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    gain:  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    shift: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    time_shift: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+
+setup:
+  detectors:
+    labr: 12
+    deDet: 0
+    eDet: 0
+    eGuard: 0
+    ppac: 0
+  crates:
+    - crate: 0
+      slots:
+        - slot: 2
+          channels: 16
+          speed: 250
+          bits: 16
+          detectors:
+            - channel: 0
+              type: labr
+              detectorID: 0
+            - channel: 4
+              type: labr
+              detectorID: 1
+            - channel: 8
+              type: labr
+              detectorID: 2
+            - channel: 12
+              type: labr
+              detectorID: 3
+        - slot: 3
+          channels: 16
+          speed: 250
+          bits: 16
+          detectors:
+            - channel: 1
+              type: labr
+              detectorID: 4
+            - channel: 4
+              type: labr
+              detectorID: 5
+            - channel: 8
+              type: labr
+              detectorID: 6
+            - channel: 12
+              type: labr
+              detectorID: 7
+        - slot: 4
+          channels: 16
+          speed: 250
+          bits: 16
+          detectors:
+            - channel: 0
+              type: labr
+              detectorID: 8
+            - channel: 4
+              type: labr
+              detectorID: 9
+            - channel: 8
+              type: labr
+              detectorID: 10
+            - channel: 12
+              type: labr
+              detectorID: 11
