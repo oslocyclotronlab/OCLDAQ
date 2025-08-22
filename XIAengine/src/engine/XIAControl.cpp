@@ -234,72 +234,6 @@ bool XIAControl::XIA_check_status()
     return is_running;
 }
 
-bool XIAControl::XIA_end_run(FILE *output_file, const char *fname)
-{
-
-    // Check if run is ongoing. If not, return true.
-    if (!is_running)
-        return true;
-
-    // Now we will end the list mode run.
-    is_running = !StopRun();
-
-    // We will wait for 0.5 seconds to make sure that all data
-    // has been processed by the XIA DSP/FPGA.
-    termWrite->Write("Sleeping for 0.5 seconds...");
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    termWrite->Write("... Awake again.\n");
-
-    // Then we will run a readout of the FIFO.
-    if ( !ReadFIFO() ) // We had an error. I'm not sure how this will be fixed, if fixed...
-        return true;
-
-    // Allocate memory where we will dump the FIFO contents.
-    unsigned int current_pos = 0;
-    unsigned int size = overflow_queue.size() + data_avalible;
-    auto *buf = new uint32_t[size];
-    for (auto &i : overflow_queue)
-        buf[current_pos++] = overflow_queue[i];
-    overflow_queue.clear();
-    Event_t evt;
-    while (current_pos < size){
-        evt = sorted_events.top();
-        for (int i = 0 ; i < evt.size_raw ; ++i){
-            buf[current_pos++] = evt.raw_data[i];
-        }
-        data_avalible = data_avalible - evt.size_raw;
-        sorted_events.pop();
-    }
-
-    // Write to disk
-    if ( output_file ){
-        if ( fwrite(buf, sizeof(uint32_t), size, output_file) != size ){
-            termWrite->WriteError("Error while writing to file...\n");
-        }
-
-        // Lastly we will save run statistics from each module
-        unsigned int run_statistics[448];
-        std::string outname = std::string(fname) + ".stats";
-        auto stat_file = fopen(outname.c_str(), "w");
-        for ( int mod = 0 ; mod < num_modules ; ++mod ){
-            auto retval = Pixie16ReadStatisticsFromModule(run_statistics, mod);
-            if ( retval < 0 ){
-                std::cerr << "*Error* (Pixie16SaveHistogramToFile): Pixie16ReadHistogramFromFile failed, retval=";
-                std::cerr << retval << std::endl;
-            }
-            fprintf(stat_file, "mod %d: %u", mod, run_statistics[0]);
-            for ( int i = 1 ; i < 448 ; ++i ){
-                fprintf(stat_file, ", %u", run_statistics[i]);
-            }
-            fprintf(stat_file, "\n");
-        }
-        fclose(stat_file);
-    }
-    delete[] buf;
-
-    return true;
-}
-
 bool XIAControl::XIA_reload()
 {
     // Check if run is active.
@@ -641,6 +575,72 @@ bool XIAControl::StartLMR()
     return true;
 }
 
+bool XIAControl::XIA_end_run(FILE *output_file, const char *fname)
+{
+
+    // Check if run is ongoing. If not, return true.
+    if (!is_running)
+        return true;
+
+    // Now we will end the list mode run.
+    is_running = !StopRun();
+
+    // We will wait for 0.5 seconds to make sure that all data
+    // has been processed by the XIA DSP/FPGA.
+    termWrite->Write("Sleeping for 0.5 seconds...");
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    termWrite->Write("... Awake again.\n");
+
+    // Then we will run a readout of the FIFO.
+    if ( !ReadFIFO() ) // We had an error. I'm not sure how this will be fixed, if fixed...
+        return true;
+
+    // Allocate memory where we will dump the FIFO contents.
+    unsigned int current_pos = 0;
+    unsigned int size = overflow_queue.size() + data_avalible;
+    auto *buf = new uint32_t[size];
+    for (auto &i : overflow_queue)
+        buf[current_pos++] = overflow_queue[i];
+    overflow_queue.clear();
+    Event_t evt;
+    while (current_pos < size){
+        evt = sorted_events.top();
+        for (int i = 0 ; i < evt.size_raw ; ++i){
+            buf[current_pos++] = evt.raw_data[i];
+        }
+        data_avalible = data_avalible - evt.size_raw;
+        sorted_events.pop();
+    }
+
+    // Write to disk
+    if ( output_file ){
+        if ( fwrite(buf, sizeof(uint32_t), size, output_file) != size ){
+            termWrite->WriteError("Error while writing to file...\n");
+        }
+
+        // Lastly we will save run statistics from each module
+        unsigned int run_statistics[448];
+        std::string outname = std::string(fname) + ".stats";
+        auto stat_file = fopen(outname.c_str(), "w");
+        for ( int mod = 0 ; mod < num_modules ; ++mod ){
+            auto retval = Pixie16ReadStatisticsFromModule(run_statistics, mod);
+            if ( retval < 0 ){
+                std::cerr << "*Error* (Pixie16SaveHistogramToFile): Pixie16ReadHistogramFromFile failed, retval=";
+                std::cerr << retval << std::endl;
+            }
+            fprintf(stat_file, "mod %d: %u", mod, run_statistics[0]);
+            for ( int i = 1 ; i < 448 ; ++i ){
+                fprintf(stat_file, ", %u", run_statistics[i]);
+            }
+            fprintf(stat_file, "\n");
+        }
+        fclose(stat_file);
+    }
+    delete[] buf;
+
+    return true;
+}
+
 bool XIAControl::CheckIsRunning()
 {
     bool am_I_running = true;
@@ -708,8 +708,9 @@ bool XIAControl::WriteScalers()
     unsigned int stats[448];
     int retval;
     FILE* stat_file = nullptr;
-
-    if ( !filename.empty() ) {
+    if ( filename.empty() )
+        stat_file = fopen("/dev/null", "w");
+    else {
         std::string outname = std::string(filename) + ".stats";
         stat_file = fopen(outname.c_str(), "w");
     }
@@ -722,13 +723,11 @@ bool XIAControl::WriteScalers()
                 termWrite->WriteError(errmsg);
                 Pixie_Print_MSG(errmsg);
             }
-            if ( stat_file ) {
-                fprintf(stat_file, "mod %d: %u", i, stats[0]);
-                for ( int k = 1 ; k < 448 ; ++k ){
-                    fprintf(stat_file, ", %u", stats[k]);
-                }
-                fprintf(stat_file, "\n");
+            fprintf(stat_file, "mod %d: %u", i, stats[0]);
+            for ( int k = 1 ; k < 448 ; ++k ){
+                fprintf(stat_file, ", %u", stats[k]);
             }
+            fprintf(stat_file, "\n");
 
             for (int j = 0 ; j < 16 ; ++j){
                 
@@ -787,7 +786,8 @@ bool XIAControl::WriteScalers()
             }
         }
     }
-    if ( stat_file ) fclose(stat_file);
+
+    fclose(stat_file);
     FILE *scaler_file_in = fopen(SCALER_FILE_NAME_IN, "w");
     FILE *scaler_file_out = fopen(SCALER_FILE_NAME_OUT, "w");
 
