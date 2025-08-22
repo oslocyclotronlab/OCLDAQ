@@ -92,21 +92,21 @@ def build_detector_map(setup):
 def main():
     parser = argparse.ArgumentParser(description="DAQ Rate Monitor")
     parser.add_argument("--setup", default="setup.yml", required=True, help="Path to setup.yaml file")
-    parser.add_argument("--rate", default="rates.csv", required=True, help="Path to DAQ CSV file")
+    parser.add_argument("--rate", default="scalers.csv", required=True, help="Path to DAQ CSV file")
     parser.add_argument("--history", type=int, default=2, help="History length in minutes")
     parser.add_argument("--column", choices=["input", "output"], default="input",
                         help="Which column to use for count rate (input/output)")
     args = parser.parse_args()
 
     # Load YAML
-    with open(args.yaml, "r") as f:
+    with open(args.setup, "r") as f:
         setup = yaml.safe_load(f)
 
     detector_map = build_detector_map(setup)
     history = {det_id: deque() for det_id in detector_map.values()}
 
     # Setup watchdog
-    event_handler = CSVHandler(args.csv, detector_map, history, args.history, args.column)
+    event_handler = CSVHandler(args.rate, detector_map, history, args.history, args.column)
     observer = Observer()
     observer.schedule(event_handler, path=os.path.dirname(os.path.abspath(args.csv)) or ".", recursive=False)
     observer.start()
