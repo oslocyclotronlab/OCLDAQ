@@ -84,7 +84,7 @@ def scan_files(folder, ts_str):
             continue
     return sizes
 
-def monitor(folder, interval=1):
+def monitor(folder, interval=1, current_range=2):
     prev_sizes = defaultdict(int)
     prev_time = time.time()
     current_ts = None
@@ -151,6 +151,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Monitor sirius data files (latest timestamp) and report size + growth rate + disk usage.")
     parser.add_argument("folder", help="Folder to monitor")
     parser.add_argument("--interval", type=int, default=1, help="Update interval in seconds (default: 1)")
+    parser.add_argument("--current_range", type=float, default=2, help="Current integrator range in uA")
     args = parser.parse_args()
 
-    monitor(args.folder, args.interval)
+    monitor(args.folder, args.interval, args.current_range)
