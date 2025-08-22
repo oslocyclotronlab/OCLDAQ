@@ -75,8 +75,8 @@ class CSVHandler(FileSystemEventHandler):
         sys.stdout.flush()
 
         table = []
-        headers = ["Detector", "Type", "Input", f"Avg Input ({self.history_minutes}m)",
-                   "Output", f"Avg Output ({self.history_minutes}m)"]
+        headers = ["Detector", "Type", "Input [Hz]", f"Avg Input [Hz] ({self.history_minutes}m)",
+                   "Output [Hz]", f"Avg Output [Hz] ({self.history_minutes}m)"]
 
         for (mod, ch), (det_type, det_id) in sorted(self.detector_map.items(), key=lambda x: x[1]):
             cur_in = rates_in.get((mod, ch), 0.0)
