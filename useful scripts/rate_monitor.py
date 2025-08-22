@@ -47,12 +47,15 @@ class CSVHandler(FileSystemEventHandler):
                 rates_in[(mod, ch)] = inp
                 rates_out[(mod, ch)] = outp
 
+        expected_channels = set(self.detector_map.keys())
+        if not expected_channels.issubset(rates_in.keys()) or not expected_channels.issubset(rates_out.keys()):
+            print(f"[{ts.strftime('%H:%M:%S')}] Incomplete CSV update detected, skipping...")
+            return  # skip this update entirely
+
         # Update history
         for (mod, ch), (det_type, det_id) in self.detector_map.items():
-            if (mod, ch) in rates_in:
-                self.history[(det_type, det_id)]["input"].append((ts, rates_in[(mod, ch)]))
-            if (mod, ch) in rates_out:
-                self.history[(det_type, det_id)]["output"].append((ts, rates_out[(mod, ch)]))
+            self.history[(det_type, det_id)]["input"].append((ts, rates_in[(mod, ch)]))
+            self.history[(det_type, det_id)]["output"].append((ts, rates_out[(mod, ch)]))
 
         # Prune old entries
         cutoff = ts - timedelta(minutes=self.history_minutes)
