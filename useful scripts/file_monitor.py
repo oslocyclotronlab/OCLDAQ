@@ -4,8 +4,10 @@ import time
 import glob
 import re
 import shutil
+import csv
 from datetime import datetime
 from collections import defaultdict
+
 
 # ANSI color codes
 RED = "\033[91m"
@@ -49,6 +51,13 @@ def render_usage_bar(used, free, bar_length=40):
     bar = f"{'█'*used_len}{'░'*free_len}"
     return f"{bar}  {used_pct:.1f}% used / {free_pct:.1f}% free"
 
+def read_beam_rate(csv_filename="scalers.csv"):
+    with open(csv_filename) as csvfile:
+        ratesreader = csv.reader(csvfile, delimiter=",")
+        for row in ratesreader:
+            if row[0] == '2' and row[1] == '15':
+                return int(row[2])
+            
 def find_latest_timestamp(folder):
     """Find the most recent yyyymmdd-HHMMSS timestamp from sirius-*.data files."""
     files = glob.glob(os.path.join(folder, "sirius-*.data")) + \
@@ -128,6 +137,11 @@ def monitor(folder, interval=1):
             print(f"{'Disk free':45s} {human_readable_size(free_space):>10}")
             print(f"{'Disk total':45s} {human_readable_size(total_disk):>10}")
             print(f"{'Disk usage':45s} {render_usage_bar(used_space, free_space)}")
+
+            try:
+                print(f"{'Beam rate':45s} {read_beam_rate()*current_range/1000.} uA")
+            except:
+                pass
 
         prev_time = now
         time.sleep(interval)
