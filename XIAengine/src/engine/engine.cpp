@@ -157,6 +157,9 @@ static bool do_change_output_file(const std::string& fname)
     out << "203 output_file " << escape(output_filename) << '\n';
     ls_engine->send_all(out.str());
 
+    if ( xiacontr )
+        xiacontr->setFile(output_filename.c_str());
+
     // if started, try to open the new file, and stop if that fails
     if( !stopped ) {
         if( !open_file() ) {
@@ -371,9 +374,6 @@ static void command_output_file(line_channel* lc, const std::string& line, void*
         line_sender ls(lc);
         ls << "405 error_file Cannot select file '" << escape(fname) << "'.\n";
     }
-    // If we get here the filename was set.
-    if ( xiacontr )
-        xiacontr->setFile(output_filename.c_str());
 }
 
 // ########################################################################
