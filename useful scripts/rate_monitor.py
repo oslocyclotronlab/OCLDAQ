@@ -50,24 +50,24 @@ class CSVHandler(FileSystemEventHandler):
         # Update history
         for (mod, ch), (det_type, det_id) in self.detector_map.items():
             if (mod, ch) in rates_in:
-                self.history[det_id]["input"].append((ts, rates_in[(mod, ch)]))
+                self.history[(det_type, det_id)]["input"].append((ts, rates_in[(mod, ch)]))
             if (mod, ch) in rates_out:
-                self.history[det_id]["output"].append((ts, rates_out[(mod, ch)]))
+                self.history[(det_type, det_id)]["output"].append((ts, rates_out[(mod, ch)]))
 
         # Prune old entries
         cutoff = ts - timedelta(minutes=self.history_minutes)
-        for det_id in self.history:
+        for (det_type, det_id) in self.history:
             for col in ("input", "output"):
-                while self.history[det_id][col] and self.history[det_id][col][0][0] < cutoff:
-                    self.history[det_id][col].popleft()
+                while self.history[(det_type, det_id)][col] and self.history[(det_type, det_id)][col][0][0] < cutoff:
+                    self.history[(det_type, det_id)][col].popleft()
 
         # Display
         self.display(rates_in, rates_out, ts)
 
-    def compute_avg(self, det_id, col):
-        if not self.history[det_id][col]:
+    def compute_avg(self, det_type, det_id, col):
+        if not self.history[(det_type, det_id)][col]:
             return 0.0
-        return sum(v for _, v in self.history[det_id][col]) / len(self.history[det_id][col])
+        return sum(v for _, v in self.history[(det_type, det_id)][col]) / len(self.history[(det_type, det_id)][col])
 
     def display(self, rates_in, rates_out, ts):
         # Clear screen
@@ -80,9 +80,9 @@ class CSVHandler(FileSystemEventHandler):
 
         for (mod, ch), (det_type, det_id) in sorted(self.detector_map.items(), key=lambda x: x[1]):
             cur_in = rates_in.get((mod, ch), 0.0)
-            avg_in = self.compute_avg(det_id, "input")
+            avg_in = self.compute_avg(det_type, det_id, "input")
             cur_out = rates_out.get((mod, ch), 0.0)
-            avg_out = self.compute_avg(det_id, "output")
+            avg_out = self.compute_avg(det_type, det_id, "output")
             table.append([det_id, det_type, f"{cur_in:.1f}", f"{avg_in:.1f}",
                           f"{cur_out:.1f}", f"{avg_out:.1f}"])
 
@@ -119,7 +119,7 @@ def main():
     detector_map = build_detector_map(setup)
 
     # History holds separate deques for input/output per detector
-    history = {det_id: {"input": deque(), "output": deque()} for _, det_id in detector_map.values()}
+    history = {(det_type, det_id): {"input": deque(), "output": deque()} for det_type, det_id in detector_map.values()}
 
     # Setup watchdog
     event_handler = CSVHandler(args.rate, detector_map, history, args.history)
