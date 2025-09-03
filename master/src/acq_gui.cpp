@@ -447,8 +447,8 @@ static void stop_pushed(Widget, XtPointer, XtPointer)
 {
     if( m_engine_is_started() ) {
         acq_stop();
-        const char* filename = m_engine_get_output();
-        acq_storage( ( filename ) ? true : false );
+        //const char* filename = m_engine_get_output();
+        //acq_storage( ( filename ) ? true : false );
     } else
         log_message(LOG_ERR, "engine not started !\n");
 }
