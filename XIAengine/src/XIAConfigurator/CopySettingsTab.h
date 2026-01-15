@@ -28,7 +28,7 @@ signals:
     void UpdateView();
 
 private slots:
-            void horizontalHeaderSectionDoubleClicked(int sec);
+    void horizontalHeaderSectionDoubleClicked(int sec);
     void verticalHeaderSectionDoubleClicked(int sec);
 
     void copyBtn_push();
@@ -39,7 +39,7 @@ private:
     QSpinBox *source_module;
     QSpinBox *source_channel;
     QTableWidget *table;
-    QCheckBox *copyMask[12];
+    QCheckBox *copyMask[13];
     QPushButton *copyBtn;
     QPushButton *clearBtn;
 };

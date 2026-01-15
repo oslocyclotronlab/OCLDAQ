@@ -47,7 +47,8 @@ const char *copyNames[] = {
         "Decay time [3]",
         "PSA (trace len/delay) [4]",
         "Baseline control [5]",
-        "Channel register (CSRA) [6]",
+        "Module register [6]",
+        "Channel register (CSRA) [7]",
         "CFD settings [8]",
         "Trigger strech length [9]",
         "FIFO delay [10]",
@@ -111,8 +112,13 @@ CopySettingsTab::CopySettingsTab(XIAInterface *_interface, QWidget *parent)
     QHBoxLayout *cp_layout = new QHBoxLayout;
     auto *cp_lhs = new QVBoxLayout;
     auto *cp_rhs = new QVBoxLayout;
-    for ( size_t n = 0 ; n < 12 ; ++n ){
+    for ( size_t n = 0 ; n < 13 ; ++n ){
         copyMask[n] = new QCheckBox(copyNames[n]);
+        copyMask[n]->setChecked(false);
+        // If n == 6, we skip because we do not want to add the widget.
+        if ( n == 6 ) {
+            continue;
+        }
         if ( n / 6 == 0 )
             cp_lhs->addWidget(copyMask[n]);
         else
@@ -188,13 +194,28 @@ void CopySettingsTab::copyBtn_push()
 
     unsigned short cp_mask = 0;
 
-    for ( int n = 0 ; n < 12 ; ++n ) {
+
+    cp_mask = (copyMask[0]->isChecked() ) ? APP16_SetBit(0, cp_mask) : APP16_ClrBit(0, cp_mask);
+    cp_mask = (copyMask[1]->isChecked() ) ? APP16_SetBit(1, cp_mask) : APP16_ClrBit(1, cp_mask);
+    cp_mask = (copyMask[2]->isChecked() ) ? APP16_SetBit(2, cp_mask) : APP16_ClrBit(2, cp_mask);
+    cp_mask = (copyMask[3]->isChecked() ) ? APP16_SetBit(3, cp_mask) : APP16_ClrBit(3, cp_mask);
+    cp_mask = (copyMask[4]->isChecked() ) ? APP16_SetBit(4, cp_mask) : APP16_ClrBit(4, cp_mask);
+    cp_mask = (copyMask[5]->isChecked() ) ? APP16_SetBit(5, cp_mask) : APP16_ClrBit(5, cp_mask);
+    cp_mask = APP16_ClrBit(6, cp_mask); // We NEVER copy module settings!!
+    cp_mask = (copyMask[7]->isChecked() ) ? APP16_SetBit(7, cp_mask) : APP16_ClrBit(7, cp_mask);
+    cp_mask = (copyMask[8]->isChecked() ) ? APP16_SetBit(8, cp_mask) : APP16_ClrBit(8, cp_mask);
+    cp_mask = (copyMask[9]->isChecked() ) ? APP16_SetBit(9, cp_mask) : APP16_ClrBit(9, cp_mask);
+    cp_mask = (copyMask[10]->isChecked() ) ? APP16_SetBit(10, cp_mask) : APP16_ClrBit(10, cp_mask);
+    cp_mask = (copyMask[11]->isChecked() ) ? APP16_SetBit(11, cp_mask) : APP16_ClrBit(11, cp_mask);
+    cp_mask = (copyMask[12]->isChecked() ) ? APP16_SetBit(12, cp_mask) : APP16_ClrBit(12, cp_mask);
+
+    /*for ( int n = 0 ; n < 12 ; ++n ) {
         if ( n == 7 ) {
             cp_mask = APP16_ClrBit(n, cp_mask);
             continue;
         }
         cp_mask = ( copyMask[n]->isChecked() ) ? APP16_SetBit(n, cp_mask) : APP16_ClrBit(n, cp_mask);
-    }
+    }*/
 
     auto retval = interface->CopyDSPParameters(cp_mask,
         source_module->value(), source_channel->value(), destinationMask);
