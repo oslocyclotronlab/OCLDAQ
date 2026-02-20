@@ -222,6 +222,7 @@ void CopySettingsTab::copyBtn_push()
     if ( retval < 0 ) {
         qCCritical(logger) << "Unable to copy DSP parameters, got retval=" << retval;
     }
+    clearBtn_push();
     emit UpdateView();
 }
 
@@ -237,4 +238,5 @@ void CopySettingsTab::clearBtn_push()
     for (auto & n : copyMask){
         n->setChecked(false);
     }
+    emit UpdateView();
 }
