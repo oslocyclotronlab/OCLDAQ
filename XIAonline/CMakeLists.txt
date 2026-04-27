@@ -30,12 +30,44 @@ CPMAddPackage(
 		VERSION 1.4
 )
 
+CPMAddPackage(
+		NAME yaml-cpp
+		GITHUB_REPOSITORY jbeder/yaml-cpp
+		GIT_TAG 56e3bb550c91fd7005566f19c079cb7a503223cf
+)
+
+CPMAddPackage(
+		NAME magic_enum
+		GITHUB_REPOSITORY Neargye/magic_enum
+		VERSION 0.9.6
+)
+
+
 FIND_PACKAGE(Threads REQUIRED)
 
 if (NOT sirius_ADDED )
 	CPMAddPackage(NAME sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sirius)
 endif()
 
+add_library(XIAReader
+	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/ConfigManager.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/event.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/XIA_CFD.cpp
+)
+
+target_include_directories(XIAReader
+	PUBLIC
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+	PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/include/XIAReader
+)
+
+set_target_properties(XIAReader PROPERTIES CXX_STANDARD 20)
+set_property(TARGET XIAReader PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(XIAReader PUBLIC
+		yaml-cpp::yaml-cpp
+		magic_enum::magic_enum
+)
 
 add_executable(XIAonline
 		${CMAKE_CURRENT_SOURCE_DIR}/src/Calib.cpp
@@ -44,8 +76,7 @@ add_executable(XIAonline
 		${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/Sort_Funct.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/spectrum_rw.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/Unpacker.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/XIA_CFD.cpp)
+)
 
 target_include_directories(XIAonline
 	PRIVATE

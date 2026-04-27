@@ -27,9 +27,9 @@
  * \copyright GNU Public License v. 3
  */
 
-#include "Unpacker.h"
+#include "../include/XIAReader/Unpacker.h"
 #include "experimentsetup.h"
-#include "XIA_CFD.h"
+#include "../include/XIAReader/XIA_CFD.h"
 
 #include <algorithm>
 #include <iostream>

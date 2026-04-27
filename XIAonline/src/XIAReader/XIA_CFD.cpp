@@ -1,4 +1,4 @@
-#include "XIA_CFD.h"
+#include "../include/XIAReader/XIA_CFD.h"
 
 #include <stdexcept>
 
