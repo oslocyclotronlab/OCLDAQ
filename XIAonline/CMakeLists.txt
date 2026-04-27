@@ -42,6 +42,8 @@ CPMAddPackage(
 		VERSION 0.9.6
 )
 
+CPMAddPackage("gh:jgaa/logfault@0.8.5")
+
 
 FIND_PACKAGE(Threads REQUIRED)
 
@@ -50,16 +52,31 @@ if (NOT sirius_ADDED )
 endif()
 
 add_library(XIAReader
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/ConfigManager.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/event.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/XIA_CFD.cpp
+
+		${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/Configuration/ConfigManager.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/Configuration/UserConfiguration.cpp
+
+		${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/Format/event.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/Format/XIA_CFD.cpp
+
+		${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/Tasks/Buffer.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/Tasks/Sort.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/Tasks/Splitter.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/Tasks/Trigger.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/Tasks/Unpacker.cpp
 )
 
 target_include_directories(XIAReader
 	PUBLIC
-		${CMAKE_CURRENT_SOURCE_DIR}/include
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/XIAReader>
 	PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include/XIAReader
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/XIAReader/Configuration>
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/XIAReader/Format>
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/XIAReader/Tasks>
+
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/XIAReader>
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/XIAReader/Tools>
 )
 
 set_target_properties(XIAReader PROPERTIES CXX_STANDARD 20)
@@ -67,15 +84,14 @@ set_property(TARGET XIAReader PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(XIAReader PUBLIC
 		yaml-cpp::yaml-cpp
 		magic_enum::magic_enum
+		logfault::logfault
 )
 
 add_executable(XIAonline
-		${CMAKE_CURRENT_SOURCE_DIR}/src/Calib.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/Event_builder.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/experimentsetup.c
+		#${CMAKE_CURRENT_SOURCE_DIR}/src/Calib.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/Sort_Funct.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/spectrum_rw.cpp
+		#${CMAKE_CURRENT_SOURCE_DIR}/src/Sort_Funct.cpp
+		#${CMAKE_CURRENT_SOURCE_DIR}/src/spectrum_rw.cpp
 )
 
 target_include_directories(XIAonline
@@ -83,10 +99,10 @@ target_include_directories(XIAonline
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
 
 target_compile_definitions(XIAonline PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1)
-set_target_properties(XIAonline PROPERTIES CXX_STANDARD 11)
+set_target_properties(XIAonline PROPERTIES CXX_STANDARD 20)
 set_property(TARGET XIAonline PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-target_link_libraries(XIAonline PUBLIC sirius::sirius Threads::Threads)
+target_link_libraries(XIAonline PUBLIC XIAReader sirius::sirius Threads::Threads logfault::logfault)
 
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)

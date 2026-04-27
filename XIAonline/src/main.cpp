@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <fstream>
 
 #include <csignal>
 #include <unistd.h>
@@ -10,24 +11,25 @@
 
 #include "engine_shm.h"
 #include "net_control.h"
-#include "sort_spectra.h"
 #include "utilities.h"
 
+#include <logfault/logfault.h>
 
-#include "Calib.h"
-#include "Event.h"
-#include "Unpacker.h"
-#include "Event_builder.h"
+
+#include <XIAReader/Tasks/Unpacker.h>
+#include <XIAReader/Tasks/Buffer.h>
+#include <XIAReader/Tasks/Splitter.h>
+#include <XIAReader/Tasks/Trigger.h>
+#include <XIAReader/Tasks/Sort.h>
+#include <XIAReader/Tasks/ThreadPool.hpp>
+
 #include "spectrum_rw.h"
-#include "Sort_Funct.h"
+#include <Configuration/UserConfiguration.h>
 
 char leaveprog='n';
 static int buffer_count=0,bad_buffer_count=0;
 
 static line_server *ls_sort = 0;
-
-static Unpacker *unpacker;
-static EventBuilder *evtbldr;
 
 
 void keyb_int(int sig_num)
@@ -145,8 +147,8 @@ static void command_dump(line_channel* lc, const std::string&, void*)
 static void broadcast_bufcount(line_channel* lc=nullptr)
 {
     std::ostringstream o;
-    o << "101 bufs " << buffer_count <<' '<< bad_buffer_count
-      <<' '<< evtbldr->GetAverageLength() <<'\n';
+    o << "101 bufs " << buffer_count <<' '<< bad_buffer_count;
+      //<<' '<< evtbldr->GetAverageLength() <<'\n';
     send_1_or_all(o.str(), lc);
 }
 
@@ -171,7 +173,7 @@ static void cb_disconnected(line_channel*, void*)
 static void broadcast_gainshift(line_channel* lc=0)
 {
     std::ostringstream o;
-    o << "201 status_gain " << format_gainshift(*GetCalibration()) << '\n';
+    //o << "201 status_gain " << format_gainshift(*GetCalibration()) << '\n';
 
     send_1_or_all(o.str(), lc);
 }
@@ -187,25 +189,44 @@ static void command_status_gain(line_channel* lc, const std::string&, void*)
 
 static void command_gain(line_channel* lc, const std::string& cmd, void*)
 {
-    const std::string filename = cmd.substr(5);
+    /*const std::string filename = cmd.substr(5);
     if( !read_gainshifts(*GetCalibration(), filename) ) {
         line_sender ls(lc);
         ls << "402 error_file Problem reading gain/shift from '"<<filename<<"'.\n";
     } else {
         broadcast_gainshift();
-    }
+    }*/
 }
 
 // ########################################################################
 
+double avr_event_length(const std::vector<std::vector<Entry_t>>& events) {
+    size_t tot_event_length = 0;
+    size_t num_events = events.size();
+    for ( auto& event : events ) {
+        tot_event_length += event.size();
+    }
+    return static_cast<double>(tot_event_length)/static_cast<double>(num_events);
+}
 
+// ########################################################################
 
 int main (int argc, char* argv[])
 {
-    if( argc != 1 ) {
-        std::cerr << "acq_sort runs without parameters" << std::endl;
+    std::ifstream config_file;
+    if ( argc == 1 ) {
+        config_file.open("config.yml");
+    } else if ( argc == 2 ) {
+        config_file.open(argv[1]);
+    } else {
+        std::cerr << "acq_sort runs with no or one parameter" << std::endl;
         exit(EXIT_FAILURE);
     }
+
+    // Set up a log-handler to stdout
+    logfault::LogManager::Instance().AddHandler(std::make_unique<logfault::StreamHandler>(std::clog, logfault::LogLevel::INFO));
+
+    UserConfiguration config = UserConfiguration::FromFile(config_file);
 
     signal(SIGINT, keyb_int); // set up interrupt handler (Ctrl-C)
     signal(SIGPIPE, SIG_IGN);
@@ -245,14 +266,18 @@ int main (int argc, char* argv[])
     const volatile unsigned int  datalen = engine_shm[ENGINE_DATA_SIZE];
     const volatile unsigned int* first_header = (unsigned int*)&engine_shm[ENGINE_FIRST_HEADER];
 
+    // Tasks
+    Task::InputQueue_t input_queue;
+    Task::Unpacker unpacker(input_queue, config.GetConfigManager());
+    Task::Buffer buffer(unpacker.GetQueue());
+    Task::Splitter splitter(buffer.GetQueue(), config.GetSplitTime());
+    Task::Trigger trigger(splitter.GetQueue(), config);
+    Task::Sorter sorter(trigger.GetQueue(), config);
+
     // Declare the sorting routine
-    unpacker = new Unpacker;
-    evtbldr = new EventBuilder;
+    ThreadPool<std::thread> pool;
 
-    EventBuilder::Status evt_status;
 
-    Event event;
-    std::vector<word_t> data_p;
 
     bool error = false;
     int last_tus=0;
@@ -267,15 +292,16 @@ int main (int argc, char* argv[])
             if (ts > last_t || (ts == last_t && tus > last_tus)){
                 last_t = ts;
                 last_tus = tus;
+                input_queue.push(std::vector(data+(*first_header), data+datalen-(*first_header)));
 
-                data_p = unpacker->ParseBuffer(data+(*first_header), datalen-(*first_header), error);
-                sort_singles(data_p);
+                //data_p = unpacker->ParseBuffer(data+(*first_header), datalen-(*first_header), error);
+                //sort_singles(data_p);
                 ++buffer_count;
-                evtbldr->SetBuffer(data_p);
+                //evtbldr->SetBuffer(data_p);
                 if ( error )
                     continue; // We just skip if there was a problem!
 
-                while (true){
+                /*while (true){
                     evt_status = evtbldr->Next(event);
                     if (evt_status == EventBuilder::ERROR){
                         ++bad_buffer_count;
@@ -284,7 +310,7 @@ int main (int argc, char* argv[])
                     sort_coincidence(event);
                     if (evt_status == EventBuilder::END)
                         break;
-                }
+                } */
 
                 broadcast_bufcount(0);
             }
@@ -298,6 +324,4 @@ int main (int argc, char* argv[])
     // detach shared memory
     engine_shm_detach();
     spectra_detach_all();
-    delete unpacker;
-    delete evtbldr;
 }
