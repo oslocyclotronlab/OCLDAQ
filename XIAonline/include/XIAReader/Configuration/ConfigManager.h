@@ -8,8 +8,8 @@
 #include <vector>
 #include <iosfwd>
 
-#include "DetectorTypes.h"
-#include "XIA_CFD.h"
+#include <Configuration/DetectorTypes.h>
+#include <Format/XIA_CFD.h>
 
 namespace YAML {
     class Node;

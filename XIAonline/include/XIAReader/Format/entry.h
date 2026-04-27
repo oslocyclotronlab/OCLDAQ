@@ -5,7 +5,7 @@
 #ifndef ENTRY_H
 #define ENTRY_H
 
-#include "DetectorTypes.h"
+#include "../Configuration/DetectorTypes.h"
 
 #include <cstdint>
 #include <vector>

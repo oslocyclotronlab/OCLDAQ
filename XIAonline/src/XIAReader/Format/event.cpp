@@ -2,7 +2,7 @@
 // Created by Vetle Wegner Ingeberg on 24/06/2022.
 //
 
-#include "event.h"
+#include "../../../include/XIAReader/Format/event.h"
 
 #include <algorithm>
 

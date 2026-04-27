@@ -1,6 +1,8 @@
-#include "../include/XIAReader/XIA_CFD.h"
+#include "../../include/XIAReader/Format/XIA_CFD.h"
 
 #include <stdexcept>
+
+#include <logfault/logfault.h>
 
 using namespace XIA;
 
@@ -10,14 +12,13 @@ struct XIA_CFD_base_t {
 };
 
 struct XIA_CFD_100MHz_t {
-  unsigned short timecfd : 15;
-  bool fail : 1;
+    unsigned short timecfd : 15;
+    bool fail : 1;
 
-  inline explicit operator bool() const noexcept { return fail; }
-  inline explicit operator double() const noexcept { return (fail) ? 0 : 10 * double(timecfd) / 32768.0; }
-
-  inline double get_time() const noexcept { return ( fail ) ? 0 : 10 * double(timecfd) / 32768.0; }
-  inline bool get_fail() const noexcept { return fail; }
+    explicit operator bool() const noexcept { return fail; }
+    explicit operator double() const noexcept { return (fail) ? 0 : 10 * double(timecfd) / 32768.0; }
+    double get_time() const noexcept { return ( fail ) ? 0 : 10 * double(timecfd) / 32768.0; }
+    bool get_fail() const noexcept { return fail; }
 };
 
 struct XIA_CFD_250MHz_t {
@@ -25,11 +26,11 @@ struct XIA_CFD_250MHz_t {
     unsigned short trigsource : 1;
     bool fail : 1;
 
-    inline explicit operator bool() const noexcept { return fail; }
-    inline explicit operator double() const { return (fail) ? 0 : 4 * (double(timecfd) / 16384.0 - trigsource); }
+    explicit operator bool() const noexcept { return fail; }
+    explicit operator double() const { return (fail) ? 0 : 4 * (double(timecfd) / 16384.0 - trigsource); }
 
-    inline double get_time() const noexcept { return (fail) ? 0 : 4 * (double(timecfd) / 16384.0 - trigsource); }
-    inline bool get_fail() const noexcept { return fail; }
+    double get_time() const noexcept { return (fail) ? 0 : 4 * (double(timecfd) / 16384.0 - trigsource); }
+    bool get_fail() const noexcept { return fail; }
 };
 
 struct XIA_CFD_500MHz_t {
@@ -41,8 +42,8 @@ struct XIA_CFD_500MHz_t {
         return (trigsource >= 7) ? 0 : 2 * ( timecfd/8192.0 + trigsource - 1.);
     }
 
-    inline double get_time() const noexcept { return (trigsource >= 7) ? 0 : 2 * (double(timecfd) / 8192.0 + trigsource - 1.); }
-    inline bool get_fail() const noexcept { return (trigsource >= 7); }
+    double get_time() const noexcept { return (trigsource >= 7) ? 0 : 2 * (double(timecfd) / 8192.0 + trigsource - 1.); }
+    bool get_fail() const noexcept { return (trigsource >= 7); }
 };
 
 double XIA::XIA_CFD_Fraction_100MHz(const uint16_t &CFDvalue, bool &fail) {
@@ -66,28 +67,22 @@ double XIA::XIA_CFD_Fraction_500MHz(const uint16_t &CFDvalue, bool &fail) {
   return double(*cfd);
 }
 
-XIA::XIA_CFD_t XIA::XIA_CFD_Decode(const ADCSamplingFreq &frequency, const uint16_t &CFDvalue)
+XIA::XIA_CFD_t XIA::XIA_CFD_Decode(const ADCSamplingFreq& frequency, const uint16_t& CFDvalue)
 {
     switch ( frequency ) {
-
-        default :
-            break;
-
-        [[unlikely]] case f100MHz : {
+        case ADCSamplingFreq::f100MHz : {
             auto *cfd = reinterpret_cast<const XIA_CFD_100MHz_t *>(&CFDvalue);
             return std::make_pair(cfd->get_time(), cfd->get_fail());
         }
-
-        [[likely]] case f250MHz : {
+        case ADCSamplingFreq::f250MHz : {
             auto *cfd = reinterpret_cast<const XIA_CFD_250MHz_t *>(&CFDvalue);
             return std::make_pair(cfd->get_time(), cfd->get_fail());
         }
-
-        [[likely]] case f500MHz :
+        case ADCSamplingFreq::f500MHz : {
             auto *cfd = reinterpret_cast<const XIA_CFD_500MHz_t *>(&CFDvalue);
             return std::make_pair(cfd->get_time(), cfd->get_fail());
+        }
+        default :
+            throw std::invalid_argument("Unknown frequency");
     }
-    //throw std::invalid_argument("Unknown frequency");
-    auto *cfd = reinterpret_cast<const XIA_CFD_100MHz_t *>(&CFDvalue);
-    return std::make_pair(cfd->get_time(), cfd->get_fail());
 }

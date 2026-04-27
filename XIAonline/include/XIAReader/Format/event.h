@@ -13,7 +13,7 @@
 #include <cstddef>
 
 #include "entry.h"
-#include "DetectorTypes.h"
+#include "../Configuration/DetectorTypes.h"
 
 struct Entry_t;
 
