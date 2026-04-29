@@ -20,7 +20,7 @@
 #include <XIAReader/Tasks/Buffer.h>
 #include <XIAReader/Tasks/Splitter.h>
 #include <XIAReader/Tasks/Trigger.h>
-#include <XIAReader/Tasks/Sort.h>
+#include <XIAReader/Tasks/SortCoincidence.h>
 #include <XIAReader/Tasks/ThreadPool.hpp>
 
 #include "spectrum_rw.h"
@@ -226,6 +226,7 @@ int main (int argc, char* argv[])
     // Set up a log-handler to stdout
     logfault::LogManager::Instance().AddHandler(std::make_unique<logfault::StreamHandler>(std::clog, logfault::LogLevel::INFO));
 
+    // Set up logger instance
     UserConfiguration config = UserConfiguration::FromFile(config_file);
 
     signal(SIGINT, keyb_int); // set up interrupt handler (Ctrl-C)
@@ -272,12 +273,16 @@ int main (int argc, char* argv[])
     Task::Buffer buffer(unpacker.GetQueue());
     Task::Splitter splitter(buffer.GetQueue(), config.GetSplitTime());
     Task::Trigger trigger(splitter.GetQueue(), config);
-    Task::Sorter sorter(trigger.GetQueue(), config);
+    Task::Coincidence::Sorter sorter(trigger.GetQueue(), config);
 
     // Declare the sorting routine
     ThreadPool<std::thread> pool;
 
-
+    pool.AddTask(&unpacker);
+    pool.AddTask(&buffer);
+    pool.AddTask(&splitter);
+    pool.AddTask(&trigger);
+    pool.AddTask(&sorter);
 
     bool error = false;
     int last_tus=0;

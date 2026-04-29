@@ -60,3 +60,12 @@ UserConfiguration::UserConfiguration(const YAML::Node &setup)
     }
 
 }
+
+const size_t UserConfiguration::GetNumDetectors(const DetectorType &type) const {
+    try {
+        return userConfig["setup"]["detectors"][std::string(magic_enum::enum_name(type))].as<size_t>();
+    } catch (const std::exception &e) {
+        LFLOG_WARN << e.what();
+        return 0;
+    }
+}

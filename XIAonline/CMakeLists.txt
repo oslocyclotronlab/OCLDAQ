@@ -43,6 +43,7 @@ CPMAddPackage(
 )
 
 CPMAddPackage("gh:jgaa/logfault@0.8.5")
+CPMAddPackage("gh:vetlewi/Histogram@2.2.0")
 
 
 FIND_PACKAGE(Threads REQUIRED)
@@ -60,7 +61,8 @@ add_library(XIAReader
 		${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/Format/XIA_CFD.cpp
 
 		${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/Tasks/Buffer.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/Tasks/Sort.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/Tasks/SortSingles.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/Tasks/SortCoincidence.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/Tasks/Splitter.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/Tasks/Trigger.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/XIAReader/Tasks/Unpacker.cpp
@@ -85,6 +87,7 @@ target_link_libraries(XIAReader PUBLIC
 		yaml-cpp::yaml-cpp
 		magic_enum::magic_enum
 		logfault::logfault
+		OCL::Histogram
 )
 
 add_executable(XIAonline

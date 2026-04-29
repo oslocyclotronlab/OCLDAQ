@@ -10,8 +10,8 @@
 #include <Format/event.h>
 #include <Format/xiaformat.h>
 
-#include "SPSCQueue.h"
-#include "SPMCQueue.h"
+#include <Tasks/SPSCQueue.h>
+#include <Tasks/SPMCQueue.h>
 
 
 #define SIZE 16384
