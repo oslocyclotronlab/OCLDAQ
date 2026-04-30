@@ -6,6 +6,7 @@
 #define DETECTORTYPES_H
 
 #define NUM_SI_DE_DET 64
+#define NUM_SI_E_DET 8
 #define NUM_SI_DE_TEL 8
 
 enum DetectorType {

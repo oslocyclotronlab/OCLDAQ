@@ -34,6 +34,18 @@ namespace Task {
 
         };
 
+        class Particle_telescope_t
+        {
+        public:
+            Particle_telescope_t(SharedHistograms &hist, const size_t &num);
+            void Fill(const subvector<Entry_t> &deltaE, const subvector<Entry_t> &E);
+            void Fill(const std::vector<Entry_t> &deltaE, const std::vector<Entry_t> &E);
+
+        private:
+            SharedHistogram2Dp ede_spectra[NUM_SI_DE_TEL];
+            SharedHistogram2Dp ede_spectra_raw[NUM_SI_DE_TEL];
+        };
+
         class HistManager {
         private:
             const UserConfiguration configuration;
@@ -44,6 +56,8 @@ namespace Task {
             Detector_Histograms_t oscar_F;
             Detector_Histograms_t oscar_B;
             Detector_Histograms_t ppacs;
+
+            Particle_telescope_t particle_coincidence[NUM_SI_E_DET];
 
             Detector_Histograms_t *GetSpec(const DetectorType &type);
 

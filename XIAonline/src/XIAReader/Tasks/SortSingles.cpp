@@ -10,7 +10,7 @@ using namespace Task::Singles;
 
 Detector_Histograms_t::Detector_Histograms_t(SharedHistograms &hm, const std::string &name, const size_t &num)
     : energy( hm.Create2D(std::string("energy_"+name), std::string("Energy spectra "+name), 65536, 0, 65536, "Energy [ch]", num, 0, num, std::string(name+" ID")) )
-    , energy_CFDfail( hm.Create2D(std::string("energy_"+name), std::string("Energy spectra "+name +" CFD fail"), 65536, 0, 65536, "Energy [ch]", num, 0, num, std::string(name+" ID")) )
+    , energy_CFDfail( hm.Create2D(std::string("energy_CFDfail_"+name), std::string("Energy spectra "+name +" CFD fail"), 65536, 0, 65536, "Energy [ch]", num, 0, num, std::string(name+" ID")) )
     , energy_cal( hm.Create2D(std::string("energy_cal_"+name), std::string("energy spectra "+name+" (cal)"), 16384, 0, 16384, "Energy [keV]", num, 0, num, std::string(name+" ID")) )
     , mult( hm.Create1D(std::string("mult_"+name), std::string("Multiplicity " + name), 128, 0, 128, "Multiplicity") )
 {}
@@ -90,6 +90,7 @@ void Sorter::Run() {
         }
         Triggered_event event(entries);
         analyzer.AddEntry(event);
+        output_queue.push(entries);
         ++entries_processed;
     }
 }

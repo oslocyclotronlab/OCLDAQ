@@ -13,24 +13,26 @@
 #include "net_control.h"
 #include "utilities.h"
 
+#include <histogram/SharedHistograms.h>
+#include <histogram/RootWriter.h>
 #include <logfault/logfault.h>
-
 
 #include <XIAReader/Tasks/Unpacker.h>
 #include <XIAReader/Tasks/Buffer.h>
 #include <XIAReader/Tasks/Splitter.h>
 #include <XIAReader/Tasks/Trigger.h>
+#include <XIAReader/Tasks/SortSingles.h>
 #include <XIAReader/Tasks/SortCoincidence.h>
 #include <XIAReader/Tasks/ThreadPool.hpp>
 
-#include "spectrum_rw.h"
 #include <Configuration/UserConfiguration.h>
+#include <sys/mman.h>
 
 char leaveprog='n';
 static int buffer_count=0,bad_buffer_count=0;
 
-static line_server *ls_sort = 0;
-
+static line_server *ls_sort = nullptr;
+static SharedHistograms *histograms = nullptr;
 
 void keyb_int(int sig_num)
 {
@@ -93,12 +95,14 @@ static void command_change_cwd(line_channel* lc, const std::string& line, void*)
 
 // ########################################################################
 
-static void command_clear(line_channel*, const std::string&, void*)
+static void command_clear(line_channel*, const std::string&, void* hists)
 {
-    for(int i=1; sort_spectra[i].name; ++i) {
-        const sort_spectrum_t* s = &sort_spectra[i];
-        bzero(s->ptr, s->ydim*s->xdim*sizeof(*s->ptr));
+    if ( !hists ) {
+        LFLOG_ERROR << "User data 'hists' was not provided";
     }
+
+    SharedHistograms *histograms = reinterpret_cast<SharedHistograms *>(hists);
+    histograms->ResetAll();
     buffer_count = bad_buffer_count = 0;
 
     time_t now = time(0);
@@ -109,37 +113,22 @@ static void command_clear(line_channel*, const std::string&, void*)
 
 // ########################################################################
 
-static void command_dump(line_channel* lc, const std::string&, void*)
+static void command_dump(line_channel* lc, const std::string&, void* hists)
 {
-    time_t now = time(0);
-    char dirname[1024];
-    strftime(dirname, sizeof(dirname), "dump-%Y%m%d-%H%M%S", localtime(&now));
-    if( mkdir(dirname, 0755) != 0 ) {
-        line_sender ls(lc);
-        ls << "401 error_file Could not create '" << dirname << "'.\n";
-        return;
-    }
-    std::string dn = dirname;
 
-    std::vector<std::string> args;
-    bool all_okay = true;
-    for(int i=1; sort_spectra[i].specno; ++i) {
-        char filename[1024];
-        snprintf(filename, sizeof(filename), "%s/%s", dirname, sort_spectra[i].name);
-        if( !dump_spectrum(&sort_spectra[i], 0, filename) ) {
-            all_okay = false;
-            line_sender ls(lc);
-            ls << "401 error_file Could not write '" << filename << "'.\n";
-        } else {
-            args.emplace_back(filename);
-        }
+
+    time_t now = time(0);
+    char filename[1024];
+    strftime(filename, sizeof(filename), "dump-%Y%m%d-%H%M%S.root", localtime(&now));
+
+    if ( !hists ) {
+        line_sender ls(lc);
+        ls << "401 error_file Could not write '" << filename << "'.\n";
+        LFLOG_ERROR << "User data 'hists' was not provided";
     }
-    if( !args.empty() ) {
-        args.push_back(dn+"/"+dn+".root");
-        //commands->run("mama2root", args);
-    }
-    if( all_okay )
-        ls_sort->send_all("203 status_dumped all\n");
+    auto histograms = reinterpret_cast<SharedHistograms *>(hists);
+    RootWriter::Write(*histograms, filename, "XIAonline");
+    ls_sort->send_all("203 status_dumped all\n");
 }
 
 // ########################################################################
@@ -225,6 +214,9 @@ int main (int argc, char* argv[])
 
     // Set up a log-handler to stdout
     logfault::LogManager::Instance().AddHandler(std::make_unique<logfault::StreamHandler>(std::clog, logfault::LogLevel::INFO));
+    ::shm_unlink("/XIAonline");
+
+    SharedHistograms histograms = SharedHistograms::Create("XIAonline", size_t(1) << 33, 256);
 
     // Set up logger instance
     UserConfiguration config = UserConfiguration::FromFile(config_file);
@@ -236,8 +228,8 @@ int main (int argc, char* argv[])
     io_select ioc;
     struct command_cb::command sort_commands[] = {
         {"quit",        0,  command_quit,       0},
-        {"clear",       0,  command_clear,      0},
-        {"dump",        0,  command_dump,       0},
+        {"clear",       0,  command_clear,      reinterpret_cast<void*>(&histograms)},
+        {"dump",        0,  command_dump,       reinterpret_cast<void*>(&histograms)},
         {"status_cwd",  0, command_status_cwd,  0},
         {"change_cwd",  1, command_change_cwd,  0},
         {"gain",        1, command_gain,        0},
@@ -248,12 +240,6 @@ int main (int argc, char* argv[])
     ls_sort = new line_server(ioc, 32010, "acq_sort",
                               new line_cb(cb_connected), new line_cb(cb_disconnected),
                               new command_cb(sort_commands, "407 error_cmd"));
-
-    // Attach shared memory
-    if ( !spectra_attach_all(true) ){
-        std::cerr << "Failed to attach shm spectra." << std::endl;
-        exit(EXIT_FAILURE);
-    }
 
     // attach shared databuffer segment (written by engine)
     unsigned int *engine_shm = engine_shm_attach(false);
@@ -272,8 +258,9 @@ int main (int argc, char* argv[])
     Task::Unpacker unpacker(input_queue, config.GetConfigManager());
     Task::Buffer buffer(unpacker.GetQueue());
     Task::Splitter splitter(buffer.GetQueue(), config.GetSplitTime());
-    Task::Trigger trigger(splitter.GetQueue(), config);
-    Task::Coincidence::Sorter sorter(trigger.GetQueue(), config);
+    Task::Singles::Sorter ssort(histograms, splitter.GetQueue(), config);
+    Task::Trigger trigger(ssort.GetQueue(), config);
+    Task::Coincidence::Sorter csort(histograms, trigger.GetQueue(), config);
 
     // Declare the sorting routine
     ThreadPool<std::thread> pool;
@@ -281,8 +268,9 @@ int main (int argc, char* argv[])
     pool.AddTask(&unpacker);
     pool.AddTask(&buffer);
     pool.AddTask(&splitter);
+    pool.AddTask(&ssort);
     pool.AddTask(&trigger);
-    pool.AddTask(&sorter);
+    pool.AddTask(&csort);
 
     bool error = false;
     int last_tus=0;
@@ -328,5 +316,4 @@ int main (int argc, char* argv[])
 
     // detach shared memory
     engine_shm_detach();
-    spectra_detach_all();
 }
