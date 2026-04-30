@@ -25,6 +25,8 @@
 #include <cstdlib>
 #include <cstdio>
 #include <sys/time.h>
+#include <sys/file.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 #include <xiaconfigurator.h>
@@ -554,6 +556,31 @@ int main_gui(int nmod, QApplication &app, XIAConfigurator &c)
 
 int main(int argc, char* argv[])
 {
+    const char* lock_file = "/tmp/XIAengine.lock";
+
+    int fd = open(lock_file, O_CREAT | O_RDWR, 0666);
+    if (fd == -1) {
+        std::cerr << "Could not open lock file: " << lock_file << ". Got error: " << std::strerror(errno) << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    // locking the file
+    if ( flock(fd, LOCK_EX | LOCK_NB) == -1 ) {
+        if ( errno == EWOULDBLOCK ) {
+            std::cerr << "Another instance of XIAengine is already running." << std::endl;
+        } else {
+            std::cerr << "Failed to lock file: " << lock_file << ". Got error: " << std::strerror(errno) << std::endl;
+        }
+        close(fd);
+        return EXIT_FAILURE;
+    }
+
+    std::cout << "Lock on lockfile sucessfully acquired." << std::endl;
+    ftruncate(fd, 0);
+    std::string pidStr = std::to_string(getpid()) + "\n";
+    write(fd, pidStr.c_str(), pidStr.size());
+
+
     QApplication app(argc, argv);
     unsigned short PXIMapping[PRESET_MAX_MODULES];
     for (unsigned short & mapping : PXIMapping)
@@ -604,6 +631,10 @@ int main(int argc, char* argv[])
     auto r = main_gui(nmod, app, configurator);
 
     if ( engine_thread.joinable() ) engine_thread.join();
+
+    // Cleanup
+    flock(fd, LOCK_UN);
+    close(fd);
 
     return r;
 }
