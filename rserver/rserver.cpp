@@ -26,6 +26,7 @@ void keyb_int(int sig_num)
 
 void start_server(const Options_t& options) {
     ROOTServer server(options, leaveprog);
+    server.run();
 }
 
 int main(int argc, char *argv[]) {

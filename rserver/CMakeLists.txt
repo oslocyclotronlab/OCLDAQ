@@ -32,7 +32,7 @@ CPMAddPackage(
         VERSION 1.13.0
 )
 
-CPMAddPackage("gh:vetlewi/Histogram@2.2.0")
+CPMAddPackage("gh:vetlewi/Histogram@2.3.0")
 CPMAddPackage("gh:p-ranav/structopt@0.1.3")
 CPMAddPackage("gh:jgaa/logfault@0.8.5")
 
