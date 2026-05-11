@@ -6,7 +6,7 @@
 
 #include <memory>
 #include <utility>
-
+#include <thread>
 
 
 using namespace Task;
@@ -26,24 +26,27 @@ void Unpacker::Run()
     std::vector<uint32_t> raw;
     while ( input_queue.is_not_finish() || !input_queue.empty() ) {
         if ( !input_queue.try_pop(raw) ) {
-            data.insert(data.end(), raw.begin(), raw.end());
-            auto* begin = data.data();
-            auto* end = data.data() + data.size();
-            auto* pos = begin;
-            while ( pos < end ) {
-                const auto *header = reinterpret_cast<const XIA_base_t *>(pos);
-                if ( pos + header->eventLen <= end ) {
-                    if ( config.keep(header) ) {
-                        output_queue.push(config(header));
-                    }
-                } else {
-                    overflow.insert(overflow.end(), pos, end);
-                    data.clear();
-                    data.insert(data.end(), overflow.begin(), overflow.end());
-                    overflow.clear();
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            //std::this_thread::yield();
+            continue;
+        }
+        data.insert(data.end(), raw.begin(), raw.end());
+        auto* begin = data.data();
+        auto* end = data.data() + data.size();
+        auto* pos = begin;
+        while ( pos < end ) {
+            const auto *header = reinterpret_cast<const XIA_base_t *>(pos);
+            if ( pos + header->eventLen <= end ) {
+                if ( config.keep(header) ) {
+                    output_queue.push(config(header));
                 }
-                pos += header->eventLen;
+            } else {
+                overflow.insert(overflow.end(), pos, end);
+                data.clear();
+                data.insert(data.end(), overflow.begin(), overflow.end());
+                overflow.clear();
             }
+            pos += header->eventLen;
         }
     }
 }

@@ -3,7 +3,6 @@
 //
 
 #include "SortSingles.h"
-
 #include "Trigger.h"
 
 using namespace Task::Singles;

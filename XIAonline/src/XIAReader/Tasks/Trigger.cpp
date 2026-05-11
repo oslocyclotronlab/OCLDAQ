@@ -6,6 +6,8 @@
 
 #include <stdexcept>
 
+#include "ThreadPool.hpp"
+
 using namespace Task;
 
 Trigger::Trigger(MCEventQueue_t &input, const UserConfiguration &_config)
@@ -75,7 +77,8 @@ void Trigger::Run()
     std::vector<Entry_t> input;
     while ( input_queue.is_not_finish() || !input_queue.empty() ) {
         if ( !input_queue.try_pop(input)) {
-            std::this_thread::yield();
+            //std::this_thread::yield();
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
             continue;
         }
         ++entries_processed;
