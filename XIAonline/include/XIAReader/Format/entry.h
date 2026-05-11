@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <array>
 
 struct Entry_t {
 
