@@ -8,19 +8,18 @@
 #include "XIAControl.h"
 #include "functions.h"
 
-//#include "mainwindow.h"
-#include "xiainterface.h"
-#include "xiainterface2.h"
-#include <QApplication>
+#include "engine_daemon_context.h"
+#include "engine_json_rpc.h"
+#include "engine_state.h"
 
 #include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <string>
-
-#include <thread>
+#include <vector>
 
 #include <cerrno>
+#include <cstring>
 #include <csignal>
 #include <cstdlib>
 #include <cstdio>
@@ -29,40 +28,33 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <xiaconfigurator.h>
-
 #if _FILE_OFFSET_BITS != 64
 #error must compile with _FILE_OFFSET_BITS == 64
 #endif
 
-//static const int MAX_BUFFER_COUNT = 8192; // max 2GB files
-static const int MAX_BUFFER_COUNT = 16384; // max 2GB files
+static const int MAX_BUFFER_COUNT = 16384;
 
-char leaveprog='n'; // leave program (Ctrl-C / INT)
-static bool stopped = true;
+char leaveprog = 'n';
 static int buffer_count = -1;
 static float buffer_rate = 0;
 static std::string output_filename;
-static FILE* output_file=0;
+static FILE *output_file = nullptr;
 static unsigned int datalen_char = 1;
 static timeval last_time = { 0, 0 };
 
-static line_server* ls_engine = 0;
+static line_server *ls_engine = nullptr;
+static line_server *ls_json = nullptr;
 
 static WriteTerminal termWrite;
-static XIAControl *xiacontr;
-static std::thread gui_thread;
-static int gui_is_running;
-static int globargc;
-static char **globargv;
-command_list* commands = 0;
-XIAConfigurator *config = nullptr;
+static XIAControl *xiacontr = nullptr;
+command_list *commands = nullptr;
+
+static EngineDaemonContext g_ctx;
 
 #ifndef OFFLINE
 #define OFFLINE false
-#endif // OFFLINE
+#endif
 
-// ########################################################################
 // ########################################################################
 
 void keyb_int(int sig_num)
@@ -74,21 +66,10 @@ void keyb_int(int sig_num)
 }
 
 // ########################################################################
-// ########################################################################
-
-
-int GUI_thread(int nmod)
-{
-    if ( config )
-        config->show();
-    return 0;
-}
-
-
 
 static void close_file()
 {
-    if( output_file ) {
+    if (output_file) {
         char tmp[2048];
         snprintf(tmp, sizeof(tmp), "engine: file '%s' was closed.\n", output_filename.c_str());
         fflush(output_file);
@@ -104,25 +85,22 @@ static bool open_file()
 {
     close_file();
 
-    if( output_filename.empty() )
+    if (output_filename.empty())
         return true;
 
     output_file = fopen(output_filename.c_str(), "ab");
-    if( !output_file ) {
+    if (!output_file) {
         std::ostringstream out;
-        out << "501 error_file Could not open '"
-            << escape(output_filename)
-            << "' for append.\n";
+        out << "501 error_file Could not open '" << escape(output_filename) << "' for append.\n";
         ls_engine->send_all(out.str());
         return false;
-    } else {
-        const long fs = ftell(output_file);
-        buffer_count = fs / datalen_char;
-        char tmp[2048];
-        snprintf(tmp, sizeof(tmp), "engine: file '%s' (%d buffers) was opened.\n", output_filename.c_str(), buffer_count);
-        termWrite.Write(tmp);
-        return true;
     }
+    const long fs = ftell(output_file);
+    buffer_count = static_cast<int>(fs / static_cast<long>(datalen_char));
+    char tmp[2048];
+    snprintf(tmp, sizeof(tmp), "engine: file '%s' (%d buffers) was opened.\n", output_filename.c_str(), buffer_count);
+    termWrite.Write(tmp);
+    return true;
 }
 
 // ########################################################################
@@ -131,7 +109,8 @@ static void do_stop()
 {
     xiacontr->XIA_end_run(output_file, output_filename.c_str());
     close_file();
-    stopped = true;
+    g_ctx.stopped = true;
+    g_ctx.state = EngineState::Idle;
     last_time.tv_sec = last_time.tv_usec = 0;
 
     ls_engine->send_all("201 status_stopped\n");
@@ -143,28 +122,23 @@ static void do_stop()
 
 // ########################################################################
 
-static bool do_change_output_file(const std::string& fname)
+static bool do_change_output_file(const std::string &fname)
 {
-    if( fname.empty() || fname == output_filename )
+    if (fname.empty() || fname == output_filename)
         return false;
 
-    // close the file if it exists
     close_file();
-
-    // change output filename
     output_filename = fname;
 
-    // inform about filename change
     std::ostringstream out;
     out << "203 output_file " << escape(output_filename) << '\n';
     ls_engine->send_all(out.str());
 
-    if ( xiacontr )
+    if (xiacontr)
         xiacontr->setFile(output_filename.c_str());
 
-    // if started, try to open the new file, and stop if that fails
-    if( !stopped ) {
-        if( !open_file() ) {
+    if (g_ctx.state == EngineState::Run) {
+        if (!open_file()) {
             do_stop();
             return false;
         }
@@ -177,67 +151,56 @@ static bool do_change_output_file(const std::string& fname)
 static bool change_output_file()
 {
     std::string::size_type dot = output_filename.find_last_of(".");
-    if( dot == 0 || dot == std::string::npos ) {
+    if (dot == 0 || dot == std::string::npos) {
         std::cerr << "engine: dot not found in filename '" << output_filename
                   << "', will not change filename." << std::endl;
         return false;
     }
 
     std::string new_filename = output_filename;
-
     const std::string extension = "-big-";
     std::string::size_type ext = output_filename.find(extension);
-    if( ext != std::string::npos && (ext+extension.size()+3 == dot) ) {
-        // already have extension; need to find new number
-        std::string num = output_filename.substr(ext+extension.size(), 3);
+    if (ext != std::string::npos && (ext + extension.size() + 3 == dot)) {
+        std::string num = output_filename.substr(ext + extension.size(), 3);
         int n = 0;
-        for(int i=0; i<3; ++i) {
-            if( num[i]>='0' && num[i]<='9' )
-                n = 10*n + (num[i]-'0');
+        for (int i = 0; i < 3; ++i) {
+            if (num[i] >= '0' && num[i] <= '9')
+                n = 10 * n + (num[i] - '0');
         }
-        if( n<0 || n>998 )
+        if (n < 0 || n > 998)
             return false;
         n += 1;
-        new_filename.replace(ext+extension.size(), 3, ioprintf("%03d", n));
-        //std::cerr << "file with 2+ extension: '" << new_filename << "'" << std::endl;
+        new_filename.replace(ext + extension.size(), 3, ioprintf("%03d", n));
     } else {
-        // no extension yet,
         const std::string i = extension + "000";
         new_filename.insert(dot, i);
-        //std::cerr << "file with 1st extension: '" << new_filename << "'" << std::endl;
     }
-    // need to check if new_filename exists and fail if yes; otherwise
-    // files could contain data in confused time order
-    if( file_exists(new_filename) ) {
-        //std::cerr << "file '" << new_filename << "'exists" << std::endl;
+    if (file_exists(new_filename))
         return false;
-    }
 
     return do_change_output_file(new_filename);
 }
 
 // ########################################################################
-// ########################################################################
 
-static void command_quit(line_channel* lc, const std::string&, void*)
+static void command_quit(line_channel *lc, const std::string &, void *)
 {
-    if( !stopped ) {
+    if (g_ctx.state == EngineState::Run) {
         lc->send("401 error_state Can only quit if stopped.\n");
-    } else {
-        close_file();
-        leaveprog = 'y';
+        return;
     }
+    close_file();
+    leaveprog = 'y';
 }
 
 // ########################################################################
 
-static void command_stop(line_channel* lc, const std::string&, void*)
+static void command_stop(line_channel *lc, const std::string &, void *)
 {
-    if( stopped ) {
+    if (g_ctx.state != EngineState::Run) {
         return lc->send("402 error_state Already stopped.\n");
-    } else {
-        do_stop();
     }
+    do_stop();
 }
 
 // ########################################################################
@@ -251,23 +214,24 @@ static void broadcast_buffer_count()
 
 // ########################################################################
 
-static void command_start(line_channel* lc, const std::string&, void*)
+static void command_start(line_channel *lc, const std::string &, void *)
 {
-    if( !stopped ) {
-        lc->send("403 error_state Already started.\n");
+    if (g_ctx.state != EngineState::Idle) {
+        line_sender ls(lc);
+        ls << "403 error_state start requires idle state (current: " << engine_state_cstr(g_ctx.state) << ")\n";
         return;
     }
-
-    if( !open_file() )
+    if (!open_file())
         return;
     xiacontr->XIA_start_run();
-    if( !xiacontr->XIA_check_status() ) {
+    if (!xiacontr->XIA_check_status()) {
         close_file();
         lc->send("502 error_vme Could not connect to VME - eventbuilder stopped?.\n");
         return;
     }
 
-    stopped = false;
+    g_ctx.stopped = false;
+    g_ctx.state = EngineState::Run;
 
     ls_engine->send_all("202 status_started\n");
     broadcast_buffer_count();
@@ -275,12 +239,12 @@ static void command_start(line_channel* lc, const std::string&, void*)
 
 // ########################################################################
 
-static void command_output_get_dir(line_channel* lc, const std::string&, void*)
+static void command_output_get_dir(line_channel *lc, const std::string &, void *)
 {
     char cwd[1024];
-    if( !getcwd(cwd, sizeof(cwd)) ) {
+    if (!getcwd(cwd, sizeof(cwd))) {
         line_sender ls(lc);
-        if( errno == ENOENT ) {
+        if (errno == ENOENT) {
             ls << "205 output_dir -unlinked-\n";
         } else {
             ls << "407 error_dir Cannot get current directory.\n";
@@ -293,17 +257,21 @@ static void command_output_get_dir(line_channel* lc, const std::string&, void*)
 
 // ########################################################################
 
-static void command_status(line_channel* lc, const std::string&, void*)
+static void command_status(line_channel *lc, const std::string &, void *)
 {
-    lc->send(stopped ? "201 status_stopped\n" : "202 status_started\n");
-    if( !output_filename.empty() ) {
+    lc->send(g_ctx.state == EngineState::Run ? "202 status_started\n" : "201 status_stopped\n");
+    {
+        line_sender ls(lc);
+        ls << "206 engine_state " << engine_state_cstr(g_ctx.state) << '\n';
+    }
+    if (!output_filename.empty()) {
         line_sender ls(lc);
         ls << "203 output_file " << escape(output_filename) << '\n';
-    } else  {
+    } else {
         lc->send("204 output_none\n");
     }
-    command_output_get_dir(lc, "status", 0);
-    if( !stopped ) {
+    command_output_get_dir(lc, "status", nullptr);
+    if (g_ctx.state == EngineState::Run) {
         line_sender ls(lc);
         ls << "101 buffer_count " << buffer_count << '\n';
     }
@@ -311,57 +279,16 @@ static void command_status(line_channel* lc, const std::string&, void*)
 
 // ########################################################################
 
-static void command_launch_GUI(line_channel* lc, const std::string&, void*)
+static void command_output_none(line_channel *lc, const std::string &, void *)
 {
-    // We need to open the GUI. First check if the GUI is in fact open, if so
-    // we will need to give information back to the user that we have the GUI
-    // open.
-
-    // Check if we are running, if still in 'main loop' we do not want to try to join the threads. Return something else for now...
-    if ( gui_is_running == 1 ) {
-            lc->send("403 error_state GUI is already launched");
-            return;
-    }
-
-
-    if ( gui_thread.joinable() ){
-        gui_thread.join();
-    }
-
-    // If we reach this point we can safely launch the gui :D
-    gui_thread = std::thread(GUI_thread, xiacontr->GetNumMod());
-
-}
-
-// ########################################################################
-
-static void command_reload(line_channel *lc, const std::string&, void *)
-{
-    command_launch_GUI(lc,"",nullptr);
-    /*if ( !stopped ){
-        lc->send("403 error_state cannot reload while running.\n");
-        return;
-    }
-
-    if (xiacontr->XIA_reload()){
-        lc->send("504 error_xia Couldn't reload parameters\n");
-        return;
-    }*/
-}
-
-
-// ########################################################################
-
-static void command_output_none(line_channel* lc, const std::string&, void*)
-{
-    if( output_filename.empty() ) {
+    if (output_filename.empty()) {
         lc->send("404 error_cmd 'none' output already selected.\n");
         return;
     }
 
     close_file();
     output_filename = "";
-    if ( xiacontr )
+    if (xiacontr)
         xiacontr->setFile(output_filename.c_str());
 
     ls_engine->send_all("204 output_none\n");
@@ -369,10 +296,10 @@ static void command_output_none(line_channel* lc, const std::string&, void*)
 
 // ########################################################################
 
-static void command_output_file(line_channel* lc, const std::string& line, void*)
+static void command_output_file(line_channel *lc, const std::string &line, void *)
 {
     const std::string fname = line.substr(12);
-    if( !do_change_output_file(fname) ) {
+    if (!do_change_output_file(fname)) {
         line_sender ls(lc);
         ls << "405 error_file Cannot select file '" << escape(fname) << "'.\n";
     }
@@ -380,15 +307,15 @@ static void command_output_file(line_channel* lc, const std::string& line, void*
 
 // ########################################################################
 
-static void command_output_dir(line_channel* lc, const std::string& line, void*)
+static void command_output_dir(line_channel *lc, const std::string &line, void *)
 {
-    if( !stopped ) {
+    if (g_ctx.state == EngineState::Run) {
         line_sender ls(lc);
         ls << "406 error_dir Cannot change directory while started.\n";
         return;
     }
     const std::string dirname = line.substr(11);
-    if( chdir(dirname.c_str()) != 0 ) {
+    if (chdir(dirname.c_str()) != 0) {
         line_sender ls(lc);
         ls << "406 error_dir Cannot change to directory '" << escape(dirname) << "'.\n";
     } else {
@@ -399,114 +326,144 @@ static void command_output_dir(line_channel* lc, const std::string& line, void*)
 }
 
 // ########################################################################
-// ########################################################################
 
-static void cb_connected(line_channel* lc, void*)
+static void cb_connected(line_channel *lc, void *)
 {
     termWrite.Write("engine: new client\n");
-    command_status(lc, "status", 0);
+    command_status(lc, "status", nullptr);
 }
 
-static void cb_disconnected(line_channel*, void*)
+static void cb_disconnected(line_channel *, void *)
 {
     termWrite.Write("engine: client disconnected\n");
 }
 
-// ########################################################################
-// ########################################################################
-
-int main_engine(int argc, char* argv[])
+static void cb_json_connected(line_channel *, void *)
 {
+    termWrite.Write("engine: JSON RPC client connected\n");
+}
 
+static void cb_json_disconnected(line_channel *, void *)
+{
+    termWrite.Write("engine: JSON RPC client disconnected\n");
+}
+
+struct JsonRpcLineCb : line_callback {
+    void run(line_channel *lc) override
+    {
+        engine_json_rpc_handle_line(lc, g_ctx, lc->get_line());
+    }
+};
+
+// ########################################################################
+
+static bool parse_slot_mapping(int argc, char **argv, unsigned short *PXIMapping)
+{
+    for (int k = 0; k < PRESET_MAX_MODULES; ++k)
+        PXIMapping[k] = 0;
+
+    if (argc <= 1) {
+        try {
+            auto mapping = ReadSlotMap();
+            if (mapping.size() >= PRESET_MAX_MODULES) {
+                std::cerr << "Too many PCI devices found, found " << mapping.size() << std::endl;
+                return false;
+            }
+            int set = 0;
+            for (auto &entry : mapping)
+                PXIMapping[set++] = entry;
+        } catch (std::exception &ex) {
+            std::cerr << "Could not determine PLX slot mapping: " << ex.what() << std::endl;
+            std::cerr << "Try with manual PXI slot mapping, e.g.:" << std::endl;
+            std::cerr << argv[0] << " [--auto-boot] [--offline] 2 3 4 5" << std::endl;
+            return false;
+        }
+    } else {
+        for (int i = 1; i < argc; ++i)
+            PXIMapping[i] = static_cast<unsigned short>(atoi(argv[i]));
+    }
+    return true;
+}
+
+static int run_main_loop(int argc, char **argv)
+{
     commands = new command_list();
-    if( (commands->read("acq_master_commands.txt")) ) {
+    if (commands->read("acq_master_commands.txt")) {
         std::cerr << "Using commands from acq_master_commands.txt." << std::endl;
     } else {
         std::cerr << "Using default commands." << std::endl;
         commands->read_text(
-                "mama     = xterm -bg moccasin -fg black -geometry 80x25+5-60 -e mama\n"
-                "rupdate  = rupdate\n"
-                "loadsort = xterm -bg khaki -fg black -geometry 100x25-50+0 -e loadsort\n"
-                "readme   = echo\n"
-                "manual   = firefox http://ocl.uio.no/sirius/\n"
-                "sort     = xterm -e acq_sort\n"
-                "engine   = xterm -e usb-engine\n"
-                "elog     = echo\n"
-        );
+            "mama     = xterm -bg moccasin -fg black -geometry 80x25+5-60 -e mama\n"
+            "rupdate  = rupdate\n"
+            "loadsort = xterm -bg khaki -fg black -geometry 100x25-50+0 -e loadsort\n"
+            "readme   = echo\n"
+            "manual   = firefox http://ocl.uio.no/sirius/\n"
+            "sort     = xterm -e acq_sort\n"
+            "engine   = xterm -e usb-engine\n"
+            "elog     = echo\n");
     }
 
     io_select ioc;
 
     static command_cb::command engine_commands[] = {
-            { "quit",        false, command_quit,        0 },
-            { "stop",        false, command_stop,        0 },
-            { "start",       false, command_start,       0 },
-            { "output_none", false, command_output_none, 0 },
-            { "output_file", true,  command_output_file, 0 },
-            { "output_get_dir", false, command_output_get_dir, 0 },
-            { "output_dir",  true,  command_output_dir,  0 },
-            { "status",      false, command_status,      0 },
-            { "reload",      false, command_reload,      0 },
-            { 0, 0, 0, 0 }
+        {"quit", false, command_quit, nullptr},
+        {"stop", false, command_stop, nullptr},
+        {"start", false, command_start, nullptr},
+        {"output_none", false, command_output_none, nullptr},
+        {"output_file", true, command_output_file, nullptr},
+        {"output_get_dir", false, command_output_get_dir, nullptr},
+        {"output_dir", true, command_output_dir, nullptr},
+        {"status", false, command_status, nullptr},
+        {nullptr, false, nullptr, nullptr},
     };
 
     try {
-        ls_engine = new line_server
-                (ioc, 32009, "engine",
-                 new line_cb(cb_connected), new line_cb(cb_disconnected),
-                 new command_cb(engine_commands, "407 error_cmd"));
-    } catch ( const std::exception &ex ){
+        ls_engine = new line_server(ioc, 32009, "engine", new line_cb(cb_connected), new line_cb(cb_disconnected),
+                                    new command_cb(engine_commands, "407 error_cmd"));
+        ls_json = new line_server(ioc, 32010, "xiajson", new line_cb(cb_json_connected), new line_cb(cb_json_disconnected),
+                                  new JsonRpcLineCb());
+    } catch (const std::exception &ex) {
         std::cerr << ex.what() << std::endl;
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
-    // attach shared memory and initialize some variables
-    unsigned int* buffer  = engine_shm_attach(true);
-    if( !buffer ) {
+    unsigned int *buffer = engine_shm_attach(true);
+    if (!buffer) {
         std::cerr << "engine: Failed to attach shared memory." << std::endl;
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
-    unsigned int* time_us       = &buffer[ENGINE_TIME_US];
-    unsigned int* time_s        = &buffer[ENGINE_TIME_S ];
-    unsigned int* data          = buffer + buffer[ENGINE_DATA_START];
-    unsigned int* first_header  = &buffer[ENGINE_FIRST_HEADER];
-    const unsigned int datalen  = buffer[ENGINE_DATA_SIZE];
-    /*const unsigned int*/ datalen_char = datalen*sizeof(int);
+    unsigned int *time_us = &buffer[ENGINE_TIME_US];
+    unsigned int *time_s = &buffer[ENGINE_TIME_S];
+    unsigned int *data = buffer + buffer[ENGINE_DATA_START];
+    unsigned int *first_header = &buffer[ENGINE_FIRST_HEADER];
+    const unsigned int datalen = buffer[ENGINE_DATA_SIZE];
+    datalen_char = datalen * sizeof(int);
 
-    // main loop
-    while( leaveprog == 'n' ) {
-        if( !stopped ) {
-            if ( xiacontr->XIA_check_buffer(datalen) ) {
-                // a buffer is available; reset timestamp
+    while (leaveprog == 'n') {
+        if (g_ctx.state == EngineState::Run) {
+            if (xiacontr->XIA_check_buffer(static_cast<int>(datalen))) {
                 *time_us = *time_s = 0;
-                // transfer the buffer
-                if( !xiacontr->XIA_fetch_buffer(data, datalen, first_header) ) {
-                    // the buffer was not transferred completely, stop
+                if (!xiacontr->XIA_fetch_buffer(data, static_cast<int>(datalen), first_header)) {
                     do_stop();
                 } else {
-
-                    // write actual timestamp
                     timeval t{};
-                    gettimeofday(&t, 0);
+                    gettimeofday(&t, nullptr);
                     *time_us = t.tv_usec;
-                    *time_s  = t.tv_sec;
+                    *time_s = t.tv_sec;
 
-                    // write buffer
-                    if( output_file ) {
+                    if (output_file) {
                         unsigned int w = fwrite(data, 1, datalen_char, output_file);
-                        if( w != datalen_char ) {
+                        if (w != datalen_char) {
                             ls_engine->send_all("503 error_file Write error, closing file and stopping.\n");
                             do_stop();
                         }
                     }
 
-                    // calculate buffer rate
-                    if( last_time.tv_sec!=0 && last_time.tv_usec!=0 ) {
-                        // but only if this is not the first buffer
-                        buffer_rate = (t.tv_sec + 1e-6*t.tv_usec)
-                                      -(last_time.tv_sec + 1e-6*last_time.tv_usec);
-                        if( buffer_rate>0 )
-                            buffer_rate = 1/buffer_rate;
+                    if (last_time.tv_sec != 0 && last_time.tv_usec != 0) {
+                        buffer_rate = static_cast<float>((t.tv_sec + 1e-6 * t.tv_usec)
+                                                         - (last_time.tv_sec + 1e-6 * last_time.tv_usec));
+                        if (buffer_rate > 0)
+                            buffer_rate = 1.f / buffer_rate;
                         else
                             buffer_rate = 999999;
                     } else {
@@ -514,155 +471,119 @@ int main_engine(int argc, char* argv[])
                     }
                     last_time = t;
 
-
-                    // send message about new buffer count
                     buffer_count += 1;
                     broadcast_buffer_count();
-                    if( output_file && buffer_count == MAX_BUFFER_COUNT )
+                    if (output_file && buffer_count == MAX_BUFFER_COUNT)
                         change_output_file();
                 }
                 continue;
             }
 
-            if( !xiacontr->XIA_check_status() )
+            if (!xiacontr->XIA_check_status())
                 do_stop();
         }
-        struct timeval timeout = { 0, 250 };
+        struct timeval timeout = {0, 250000};
         ioc.run(&timeout);
     }
 
     engine_shm_detach();
-
-
     delete commands;
+    commands = nullptr;
+    delete ls_engine;
+    ls_engine = nullptr;
+    delete ls_json;
+    ls_json = nullptr;
     return 0;
-
 }
 
 // ########################################################################
-// ########################################################################
 
-int main_gui(int nmod, QApplication &app, XIAConfigurator &c)
+static void try_auto_boot(bool offline)
 {
-    const char* display = std::getenv("DISPLAY");
-    const char* wayland = std::getenv("WAYLAND_DISPLAY");
-
-    if (!display && !wayland) {
-        std::cout << "No display detected. Running in headless mode.\n";
-        return 0; // do NOT start Qt event loop
+    g_ctx.state = EngineState::Initializing;
+    if (!xiacontr->XIA_boot_all(offline)) {
+        xiacontr->shutdownPixie();
+        g_ctx.xia_iface.reset();
+        g_ctx.state = EngineState::Unconfigured;
+        std::cerr << "Auto-boot failed; use JSON-RPC init_boot on port 32010." << std::endl;
+        return;
     }
-    c.show();
-    return app.exec();
+    const size_t nmod = static_cast<size_t>(xiacontr->GetNumMod());
+    if (nmod < 1) {
+        xiacontr->shutdownPixie();
+        g_ctx.state = EngineState::Unconfigured;
+        std::cerr << "No modules after boot." << std::endl;
+        return;
+    }
+    g_ctx.xia_iface = std::make_unique<XIAInterfaceAPI2>(nmod);
+    g_ctx.state = EngineState::Idle;
+    g_ctx.stopped = true;
+    std::cerr << "Auto-boot OK, " << nmod << " module(s), state=idle" << std::endl;
 }
 
-bool has_display()
+int main(int argc, char *argv[])
 {
-    return std::getenv("DISPLAY") || std::getenv("WAYLAND_DISPLAY");
-}
-
-
-// ########################################################################
-// ########################################################################
-
-int main(int argc, char* argv[])
-{
-    const char* lock_file = "/tmp/XIAengine.lock";
+    const char *lock_file = "/tmp/XIAengine.lock";
 
     int fd = open(lock_file, O_CREAT | O_RDWR, 0666);
     if (fd == -1) {
-        std::cerr << "Could not open lock file: " << lock_file << ". Got error: " << std::strerror(errno) << std::endl;
+        std::cerr << "Could not open lock file: " << lock_file << " (" << std::strerror(errno) << ")\n";
         return EXIT_FAILURE;
     }
-
-    // locking the file
-    if ( flock(fd, LOCK_EX | LOCK_NB) == -1 ) {
-        if ( errno == EWOULDBLOCK ) {
-            std::cerr << "Another instance of XIAengine is already running." << std::endl;
-        } else {
-            std::cerr << "Failed to lock file: " << lock_file << ". Got error: " << std::strerror(errno) << std::endl;
-        }
+    if (flock(fd, LOCK_EX | LOCK_NB) == -1) {
+        if (errno == EWOULDBLOCK)
+            std::cerr << "Another instance of XIAengine is already running.\n";
+        else
+            std::cerr << "Failed to lock file: " << lock_file << " (" << std::strerror(errno) << ")\n";
         close(fd);
         return EXIT_FAILURE;
     }
 
-    std::cout << "Lock on lockfile sucessfully acquired." << std::endl;
     ftruncate(fd, 0);
-    std::string pidStr = std::to_string(getpid()) + "\n";
-    write(fd, pidStr.c_str(), pidStr.size());
-
-
-    std::unique_ptr<QApplication> app;
-    if ( has_display() ) {
-        app = std::make_unique<QApplication>(argc, argv);
+    {
+        std::string pidStr = std::to_string(getpid()) + "\n";
+        write(fd, pidStr.c_str(), pidStr.size());
     }
 
+    bool auto_boot = false;
+    bool offline_boot = OFFLINE;
+    std::vector<char *> slot_argv;
+    slot_argv.push_back(argv[0]);
+    for (int i = 1; i < argc; ++i) {
+        std::string a(argv[i]);
+        if (a == "--auto-boot")
+            auto_boot = true;
+        else if (a == "--offline")
+            offline_boot = true;
+        else
+            slot_argv.push_back(argv[i]);
+    }
+    const int slot_argc = static_cast<int>(slot_argv.size());
 
     unsigned short PXIMapping[PRESET_MAX_MODULES];
-    for (unsigned short & mapping : PXIMapping)
-        mapping = 0;
+    if (!parse_slot_mapping(slot_argc, slot_argv.data(), PXIMapping))
+        return EXIT_FAILURE;
 
-    // If there is a mapping given in the command line we will read that, if not we will try
-    // to determine the slot mapping our self.
-    if ( argc == 1 ){
-        try {
-            auto mapping = ReadSlotMap();
-            if ( mapping.size() >= PRESET_MAX_MODULES ){
-                std::string errmsg = "Too many PCI devices found, found " + std::to_string(mapping.size());
-                throw std::runtime_error(errmsg);
-            }
-            int set = 0;
-            for ( auto &entry : mapping ){
-                PXIMapping[set++] = entry;
-            }
-        } catch ( std::exception &ex ){
-            std::cerr << "Could not determine PLX slot mapping, got error " << ex.what() << std::endl;
-            std::cerr << "Try with manual PXI slot mapping, e.g.:" << std::endl;
-            std::cerr << argv[0] << " 2 3 4 5" << std::endl;
-            exit(EXIT_FAILURE);
-        }
-    } else {
-        for (int i = 1 ; i < argc ; ++i)
-            PXIMapping[i] = atoi(argv[i]);
-    }
-
-    signal(SIGINT, keyb_int); // set up interrupt handler (Ctrl-C)
+    signal(SIGINT, keyb_int);
     signal(SIGPIPE, SIG_IGN);
-
-    // sleep a little to avoid repeated timestamps
     usleep(10);
 
     xiacontr = new XIAControl(&termWrite, PXIMapping);
+    g_ctx.xiacontr = xiacontr;
+    g_ctx.state = EngineState::Unconfigured;
+    g_ctx.stopped = true;
 
-    // We will now boot before anything else will happend.
-    if ( !xiacontr->XIA_boot_all(OFFLINE) )
-        leaveprog = 'y';
+    if (auto_boot)
+        try_auto_boot(offline_boot);
 
-    auto nmod = xiacontr->GetNumMod();
-    XIAInterfaceAPI2 interface(nmod);
-    std::unique_ptr<XIAConfigurator> configurator;
-    if ( has_display() ) {
-        configurator = std::make_unique<XIAConfigurator>(&interface);
-    }
+    const int rc = run_main_loop(argc, argv);
 
-    // Now we are ready to start the two threads, this will launch the settings window!
-    auto engine_thread = std::thread(main_engine, argc, argv);
-    int r = 0;
-    if ( has_display() )
-        r = main_gui(nmod, *app, *configurator);
+    g_ctx.xia_iface.reset();
+    delete xiacontr;
+    xiacontr = nullptr;
+    g_ctx.xiacontr = nullptr;
 
-    if ( engine_thread.joinable() ) engine_thread.join();
-
-    // Cleanup
     flock(fd, LOCK_UN);
     close(fd);
-
-    return r;
+    return rc;
 }
-
-// ########################################################################
-// ########################################################################
-
-/* for emacs */
-/*** Local Variables: ***/
-/*** indent-tabs-mode: nil ***/
-/*** End: ***/

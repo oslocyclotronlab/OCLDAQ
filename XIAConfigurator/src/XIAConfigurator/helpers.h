@@ -17,7 +17,7 @@ class QLabel;
 QT_END_NAMESPACE
 
 
-extern QLoggingCategory logger;
+Q_DECLARE_LOGGING_CATEGORY(logger)
 
 struct CSRmap_t {
     const unsigned short bit;

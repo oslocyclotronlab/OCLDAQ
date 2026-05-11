@@ -63,3 +63,21 @@ void XIAInterfaceMock::SetModParam(const size_t &module, const char *ModParName,
     std::cout << "Module: " << module << " Parameter '" << ModParName << "': " << parameter << std::endl;
     return;
 }
+
+unsigned int XIAInterfaceMock::MeasureBLCut(const unsigned short &, const unsigned short &)
+{
+    return 0;
+}
+
+void XIAInterfaceMock::MeasureBaseline(const unsigned short &) {}
+
+int XIAInterfaceMock::CopyDSPParameters(const unsigned short &, const unsigned short &, const unsigned short &,
+                                        unsigned short *)
+{
+    return 0;
+}
+
+bool XIAInterfaceMock::WriteSettings(const char *)
+{
+    return true;
+}

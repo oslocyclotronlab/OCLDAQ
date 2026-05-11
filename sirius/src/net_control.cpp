@@ -77,16 +77,16 @@ void io_select::update(io_channel* c, bool read, bool write)
     // if channel can read data, add it to the read_fd_set, otherwise
     // remove it from there
     if( read )
-	FD_SET(fd, &read_fd_set);
+	    FD_SET(fd, &read_fd_set);
     else
-	FD_CLR(fd, &read_fd_set);
+	    FD_CLR(fd, &read_fd_set);
 
     // if channel can read data, add it to the read_fd_set, otherwise
     // remove it from there
     if( write )
-	FD_SET(fd, &write_fd_set);
+	    FD_SET(fd, &write_fd_set);
     else
-	FD_CLR(fd, &write_fd_set);
+	    FD_CLR(fd, &write_fd_set);
 }
 
 // ########################################################################
@@ -143,7 +143,7 @@ bool io_select::run(timeval* timeout_p)
 		if( it != io_channels.end() ) {
 		    io_channel* c = io_channels.find(i)->second;
 		    if( c )
-			c->handle_read();
+			    c->handle_read();
 		}
             }
             if(FD_ISSET(i, &w_fd_set)) {
@@ -152,7 +152,7 @@ bool io_select::run(timeval* timeout_p)
 		if( it != io_channels.end() ) {
 		    io_channel* c = io_channels.find(i)->second;
 		    if( c )
-			c->handle_write();
+			    c->handle_write();
 		}
             }
         }
@@ -533,7 +533,7 @@ io_channel* line_server::new_channel(int fd)
 					 new line_cb(line_server_cb_disconnected, this),
 					 new line_cb(line_server_cb_have_line, this));
     if( cb_connected )
-	cb_connected->run(lc);
+	    cb_connected->run(lc);
     return lc;
 }
 

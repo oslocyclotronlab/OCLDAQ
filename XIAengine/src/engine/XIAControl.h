@@ -101,6 +101,9 @@ private:
     // Mapping of XIA firmware data.
     std::map<std::string, std::string> firmwares;
 
+    // Path to firmware key file (e.g. XIA_Firmware.txt)
+    std::string firmware_list_path;
+
     // Temporary buffer for strings
     char errmsg[1024];
 
@@ -163,6 +166,19 @@ public:
 
     // Set the current filename
     void setFile(const char* fname){ filename = fname; }
+
+    // Paths used by ReadConfigFile / boot (mutable while Pixie is not initialized)
+    void setFirmwareConfigPath(const std::string &path);
+    void setSettingsFilePath(const std::string &path);
+    const std::string &getFirmwareConfigPath() const { return firmware_list_path; }
+    const std::string &getSettingsFilePath() const { return settings_file; }
+    bool reloadFirmwareConfig();
+
+    bool isPixieInitialized() const { return is_initialized; }
+    bool isPixieBooted() const { return is_booted; }
+
+    /** Release Pixie (safe if never initialized). Used after failed boot. */
+    bool shutdownPixie() { return ExitXIA(); }
 
 private:
 

@@ -64,8 +64,9 @@ XIAControl::XIAControl(WriteTerminal *writeTerm,
     , is_booted( false )
     , is_running( false )
     , settings_file( SETname )
+    , firmware_list_path( FWname )
 {
-    ReadConfigFile(FWname.c_str());
+    ReadConfigFile(firmware_list_path.c_str());
     num_modules = 0;
     for (int i = 0 ; i < PRESET_MAX_MODULES ; ++i){
         if (PXImap[i] > 0)
@@ -79,6 +80,21 @@ XIAControl::~XIAControl()
 {
     free(lmdata);
     ExitXIA();
+}
+
+void XIAControl::setFirmwareConfigPath(const std::string &path)
+{
+    firmware_list_path = path;
+}
+
+void XIAControl::setSettingsFilePath(const std::string &path)
+{
+    settings_file = path;
+}
+
+bool XIAControl::reloadFirmwareConfig()
+{
+    return ReadConfigFile(firmware_list_path.c_str());
 }
 
 
@@ -881,6 +897,12 @@ bool XIAControl::ReadFIFO()
 
 bool XIAControl::ExitXIA()
 {
+    if (!is_initialized) {
+        is_booted = false;
+        is_running = false;
+        return true;
+    }
+
     // Check that there are no runs currently going on.
     is_running = CheckIsRunning();
 
@@ -892,8 +914,13 @@ bool XIAControl::ExitXIA()
     if (retval < 0){
         snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16ExitSystem failed, retval = %d\n", retval);
         termWrite->Write(errmsg);
+        is_initialized = false;
+        is_booted = false;
         return false;
     }
+    is_initialized = false;
+    is_booted = false;
+    is_running = false;
     return true;
 }
 

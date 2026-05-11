@@ -10,8 +10,6 @@ project(
 
 include(../cmake/tools.cmake)
 
-# ---- Options ----
-
 # ---- Include guards ----
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
   message(
@@ -21,13 +19,18 @@ if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 endif()
 
 # ---- Add dependencies via CPM ----
-# see https://github.com/TheLartians/CPM.cmake for more info
 include(../cmake/CPM.cmake)
 
 CPMAddPackage(
 		NAME PackageProject.cmake
 		GITHUB_REPOSITORY TheLartians/PackageProject.cmake
 		VERSION 1.4
+)
+
+CPMAddPackage(
+	NAME nlohmann_json
+	VERSION 3.11.3
+	GITHUB_REPOSITORY nlohmann/json
 )
 
 CPMAddPackage(
@@ -103,56 +106,20 @@ endif()
 add_library(XIA::Pixie16 ALIAS Pixie16)
 set_property(TARGET Pixie16 PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-# To find Qt5: -DQt5_DIR=/opt/homebrew/opt/qt@5/lib/cmake/Qt5
-find_package(Qt6 COMPONENTS Widgets REQUIRED)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_AUTOUIC ON)
-
-
-set(GUI_PROJECT_SOURCES
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/BaselineFilterWidget.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/BaselineFilterWidget.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/CFDFilterWidget.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/CFDFilterWidget.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/ChannelRegisterTab.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/ChannelRegisterTab.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/CopySettingsTab.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/CopySettingsTab.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/EnergyFilterWidget.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/EnergyFilterWidget.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/ModuleRegisterTab.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/ModuleRegisterTab.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/QDCFilterWidget.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/QDCFilterWidget.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/TimingFilterTab.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/TimingFilterTab.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/TimingSettingsWidget.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/TimingSettingsWidget.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/TriggerFilterWidget.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/TriggerFilterWidget.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/xiaconfigurator.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/xiaconfigurator.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/xiainterface.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/helpers.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/helpers.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/enumerate.h
-)
-
-qt_add_executable(XIAengine MANUAL_FINALIZATION ${GUI_PROJECT_SOURCES}
+add_executable(XIAengine
 	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/engine.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/functions.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/WriteTerminal.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/XIAControl.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/xiainterface_base.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/xiainterface2.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/engine_json_rpc.cpp
 )
 
 target_include_directories(XIAengine
 	PRIVATE
-		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/engine/src>
-		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/XIAConfigurator>
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/engine>
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/XIAConfigurator>
 )
 
 set_target_properties(XIAengine PROPERTIES CXX_STANDARD 20)
@@ -160,19 +127,18 @@ set_property(TARGET XIAengine PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_compile_definitions(XIAengine PRIVATE NUMBER_OF_CHANNELS=16)
 
 target_link_libraries(XIAengine
-	PUBLIC
+	PRIVATE
 		XIA::Pixie16
 		sirius::sirius
-		Qt6::Core
-		Qt6::Widgets
+		nlohmann_json::nlohmann_json
 		inih::inih
 		Threads::Threads
 )
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	target_compile_definitions(XIAengine PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1 OFFLINE=1)
+	target_compile_definitions(XIAengine PRIVATE _FILE_OFFSET_BITS=64 REMOVE_TRACE=1 OFFLINE=1)
 else()
-	target_compile_definitions(XIAengine PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1)
+	target_compile_definitions(XIAengine PRIVATE _FILE_OFFSET_BITS=64 REMOVE_TRACE=1)
 endif()
 
 add_custom_command(
@@ -196,8 +162,6 @@ add_custom_command(
 		${CMAKE_CURRENT_BINARY_DIR}/settings.set
 )
 
-if(QT_VERSION_MAJOR EQUAL 6)
-	qt_finalize_executable(XIAengine)
-endif()
+install(TARGETS XIAengine RUNTIME DESTINATION bin)
 
-install(TARGETS ${PROJECT_NAME} DESTINATION bin)
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../XIAConfigurator ${CMAKE_CURRENT_BINARY_DIR}/XIAConfigurator_sub)

@@ -5,6 +5,11 @@
 #include <QWidget>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLoggingCategory>
+
+#include "helpers.h"
+
+Q_LOGGING_CATEGORY(logger, "XIAConfigurator")
 
 QHBoxLayout *getLayoutUnitless(QWidget *parent, const char *prefix, QWidget *widget)
 {
