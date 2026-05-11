@@ -8,11 +8,11 @@
 using namespace Task::Coincidence;
 
 Detector_Histograms_t::Detector_Histograms_t(SharedHistograms &hm, const std::string &name, const size_t &num)
-    : time( hm.Create2D(std::string("time_"+name), std::string("Time spectra "+name), 30000, -1500, 1500, "Time [ns]", num, 0, num, std::string(name+" ID")) )
-    , time_CFDfail( hm.Create2D(std::string("time_"+name+"_CFDfail"), std::string("Time spectra"+name+" CFD fail"), 30000, -1500, 1500, "Time [ns]", num, 0, num, std::string(name+" ID")) )
-    , energy( hm.Create2D(std::string("energy_"+name), std::string("Energy spectra "+name), 65536, 0, 65536, "Energy [ch]", num, 0, num, std::string(name+" ID")) )
-    , energy_cal( hm.Create2D(std::string("energy_cal_"+name), std::string("energy spectra "+name+" (cal)"), 16384, 0, 16384, "Energy [keV]", num, 0, num, std::string(name+" ID")) )
-    , mult( hm.Create1D(std::string("mult_"+name), std::string("Multiplicity " + name), 128, 0, 128, "Multiplicity") )
+    : time( hm.Create2D(std::string("time_"+name), std::string("Time spectra "+name), 30000, -1500, 1500, "Time [ns]", num, 0, num, std::string(name+" ID"), "triggered") )
+    , time_CFDfail( hm.Create2D(std::string("time_"+name+"_CFDfail"), std::string("Time spectra"+name+" CFD fail"), 30000, -1500, 1500, "Time [ns]", num, 0, num, std::string(name+" ID"), "triggered") )
+    , energy( hm.Create2D(std::string("energy_"+name), std::string("Energy spectra "+name), 65536, 0, 65536, "Energy [ch]", num, 0, num, std::string(name+" ID"), "triggered") )
+    , energy_cal( hm.Create2D(std::string("energy_cal_"+name), std::string("energy spectra "+name+" (cal)"), 16384, 0, 16384, "Energy [keV]", num, 0, num, std::string(name+" ID"), "triggered") )
+    , mult( hm.Create1D(std::string("mult_"+name), std::string("Multiplicity " + name), 128, 0, 128, "Multiplicity", "triggered") )
 {}
 
 void Detector_Histograms_t::Fill(const Entry_t &word)
@@ -39,39 +39,45 @@ void Detector_Histograms_t::Fill(const subvector<Entry_t> &subvec,
     }
 }
 
+#define EDE_XDIM 250
+#define EDE_YDIM 250
+#define EDE_RAW_XDIM 256
+#define EDE_RAW_YDIM 256
+
+
 Particle_telescope_t::Particle_telescope_t(SharedHistograms &hm, const size_t &num)
         : ede_spectra{hm.Create2D("ede_spectra_b"+std::to_string(num)+"f0", "E energy vs dE energy",
-                                  3000, 0, 30000, "E energy [keV]", 1500, 0, 15000, "dE energy [keV]"),
+                                  EDE_XDIM, 0, 30000, "E energy [keV]", EDE_YDIM, 0, 15000, "dE energy [keV]", "ede_cal"),
                       hm.Create2D("ede_spectra_b"+std::to_string(num)+"f1", "E energy vs dE energy",
-                                  3000, 0, 30000, "E energy [keV]", 1500, 0, 15000, "dE energy [keV]"),
+                                  EDE_XDIM, 0, 30000, "E energy [keV]", EDE_YDIM, 0, 15000, "dE energy [keV]", "ede_cal"),
                       hm.Create2D("ede_spectra_b"+std::to_string(num)+"f2", "E energy vs dE energy",
-                                  3000, 0, 30000, "E energy [keV]", 1500, 0, 15000, "dE energy [keV]"),
+                                  EDE_XDIM, 0, 30000, "E energy [keV]", EDE_YDIM, 0, 15000, "dE energy [keV]", "ede_cal"),
                       hm.Create2D("ede_spectra_b"+std::to_string(num)+"f3", "E energy vs dE energy",
-                                  3000, 0, 30000, "E energy [keV]", 1500, 0, 15000, "dE energy [keV]"),
+                                  EDE_XDIM, 0, 30000, "E energy [keV]", EDE_YDIM, 0, 15000, "dE energy [keV]", "ede_cal"),
                       hm.Create2D("ede_spectra_b"+std::to_string(num)+"f4", "E energy vs dE energy",
-                                  3000, 0, 30000, "E energy [keV]", 1500, 0, 15000, "dE energy [keV]"),
+                                  EDE_XDIM, 0, 30000, "E energy [keV]", EDE_YDIM, 0, 15000, "dE energy [keV]", "ede_cal"),
                       hm.Create2D("ede_spectra_b"+std::to_string(num)+"f5", "E energy vs dE energy",
-                                  3000, 0, 30000, "E energy [keV]", 1500, 0, 15000, "dE energy [keV]"),
+                                  EDE_XDIM, 0, 30000, "E energy [keV]", EDE_YDIM, 0, 15000, "dE energy [keV]", "ede_cal"),
                       hm.Create2D("ede_spectra_b"+std::to_string(num)+"f6", "E energy vs dE energy",
-                                  3000, 0, 30000, "E energy [keV]", 1500, 0, 15000, "dE energy [keV]"),
+                                  EDE_XDIM, 0, 30000, "E energy [keV]", EDE_YDIM, 0, 15000, "dE energy [keV]", "ede_cal"),
                       hm.Create2D("ede_spectra_b"+std::to_string(num)+"f7", "E energy vs dE energy",
-                                  3000, 0, 30000, "E energy [keV]", 2048, 0, 16384, "dE energy [keV]")}
+                                  EDE_XDIM, 0, 30000, "E energy [keV]", EDE_YDIM, 0, 15000, "dE energy [keV]", "ede_cal")}
         , ede_spectra_raw{ hm.Create2D("ede_spectra_raw_b"+std::to_string(num)+"f0", "E energy vs dE energy (raw, uncalibrated)",
-                                   2048, 0, 16384, "E energy [ch]", 2048, 0, 16384, "dE energy [ch]"),
+                                   EDE_RAW_XDIM, 0, 65536, "E energy [ch]", EDE_RAW_YDIM, 0, 65536, "dE energy [ch]", "ede_raw"),
                            hm.Create2D("ede_spectra_raw_b"+std::to_string(num)+"f1", "E energy vs dE energy (raw, uncalibrated)",
-                                   2048, 0, 16384, "E energy [ch]", 2048, 0, 16384, "dE energy [ch]"),
+                                   EDE_RAW_XDIM, 0, 65536, "E energy [ch]", EDE_RAW_YDIM, 0, 65536, "dE energy [ch]", "ede_raw"),
                            hm.Create2D("ede_spectra_raw_b"+std::to_string(num)+"f2", "E energy vs dE energy (raw, uncalibrated)",
-                                   2048, 0, 16384, "E energy [ch]", 2048, 0, 16384, "dE energy [ch]"),
+                                   EDE_RAW_XDIM, 0, 65536, "E energy [ch]", EDE_RAW_YDIM, 0, 65536, "dE energy [ch]", "ede_raw"),
                            hm.Create2D("ede_spectra_raw_b"+std::to_string(num)+"f3", "E energy vs dE energy (raw, uncalibrated)",
-                                   2048, 0, 16384, "E energy [ch]", 2048, 0, 16384, "dE energy [ch]"),
+                                   EDE_RAW_XDIM, 0, 65536, "E energy [ch]", EDE_RAW_YDIM, 0, 65536, "dE energy [ch]", "ede_raw"),
                            hm.Create2D("ede_spectra_raw_b"+std::to_string(num)+"f4", "E energy vs dE energy (raw, uncalibrated)",
-                                   2048, 0, 16384, "E energy [ch]", 2048, 0, 16384, "dE energy [ch]"),
+                                   EDE_RAW_XDIM, 0, 65536, "E energy [ch]", EDE_RAW_YDIM, 0, 65536, "dE energy [ch]", "ede_raw"),
                            hm.Create2D("ede_spectra_raw_b"+std::to_string(num)+"f5", "E energy vs dE energy (raw, uncalibrated)",
-                                   2048, 0, 16384, "E energy [ch]", 2048, 0, 16384, "dE energy [ch]"),
+                                   EDE_RAW_XDIM, 0, 65536, "E energy [ch]", EDE_RAW_YDIM, 0, 65536, "dE energy [ch]", "ede_raw"),
                            hm.Create2D("ede_spectra_raw_b"+std::to_string(num)+"f6", "E energy vs dE energy (raw, uncalibrated)",
-                                   2048, 0, 16384, "E energy [ch]", 2048, 0, 16384, "dE energy [ch]"),
+                                   EDE_RAW_XDIM, 0, 65536, "E energy [ch]", EDE_RAW_YDIM, 0, 65536, "dE energy [ch]", "ede_raw"),
                            hm.Create2D("ede_spectra_raw_b"+std::to_string(num)+"f7", "E energy vs dE energy (raw, uncalibrated)",
-                                   2048, 0, 16384, "E energy [ch]", 2048, 0, 16384, "dE energy [ch]")}
+                                   EDE_RAW_XDIM, 0, 65536, "E energy [ch]", EDE_RAW_YDIM, 0, 65536, "dE energy [ch]", "ede_raw")}
 {
 }
 
@@ -114,6 +120,7 @@ HistManager::HistManager(SharedHistograms &histograms, const UserConfiguration &
     , ppacs( histograms, "ppac", user_config.GetNumDetectors(DetectorType::ppac) )
     , particle_coincidence{{ histograms, 0}, { histograms, 1}, { histograms, 2}, { histograms, 3},
                            { histograms, 4}, { histograms, 5}, { histograms, 6},{ histograms, 7}}
+    , ede_spectra_all( histograms.Create2D("ede_all", "E-#Delta E spectra (all)", 1024, 0, 16384, "E energy [keV]", 1024, 0, 16384, "#Delta E energy [keV]") )
 {
 }
 
