@@ -72,7 +72,7 @@ class Triggered_event {
 private:
     std::vector<Entry_t> entries;
     Entry_t trigger;
-    Map<DetectorType, subvector<Entry_t>, 10> type_bounds;
+    Map<DetectorType, subvector<Entry_t>, 12> type_bounds;
     subvector<Entry_t> de_by_ring[NUM_SI_DE_DET];
 
     void index(); // Should run each initialization, unless empty.
