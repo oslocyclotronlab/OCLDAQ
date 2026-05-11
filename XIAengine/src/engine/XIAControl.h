@@ -52,7 +52,7 @@ private:
     std::priority_queue<Event_t, std::vector<Event_t>, std::greater<Event_t> > sorted_events;
 
     // Number of 32-bit words in the queue
-    int data_avalible;
+    int data_available;
 
     // Most recent timestamp of each module
     int64_t most_recent_t[PRESET_MAX_MODULES];
@@ -99,8 +99,8 @@ private:
 
     timeval last_time;
 
-    // raw memory used during readout of list mode.
-    unsigned int *lmdata;
+    // Raw memory used during readout of list mode.
+    std::vector<uint32_t> lmdata;
 
     // Simple string to store the current active file, if any.
     std::string filename;

@@ -7,11 +7,15 @@
 #include <algorithm>
 #include <thread>
 #include <chrono>
+#include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <sstream>
+#include <utility>
+#include <vector>
 
-#include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <sys/time.h>
@@ -19,19 +23,18 @@
 #include <pixie16app_export.h>
 #include <pixie16sys_export.h>
 
-#define MIN(a,b) (((a)<(b))?(a):(b))
-#define MAX(a,b) (((a)>(b))?(a):(b))
+namespace {
+constexpr unsigned int kLiveTimeAAddress = 0x0004a37f;
+constexpr unsigned int kLiveTimeBAddress = 0x0004a38f;
+constexpr unsigned int kFastPeaksAAddress = 0x0004a39f;
+constexpr unsigned int kFastPeaksBAddress = 0x0004a3af;
+constexpr unsigned int kRunTimeAAddress = 0x0004a342;
+constexpr unsigned int kRunTimeBAddress = 0x0004a343;
+constexpr unsigned int kChanEventsAAddress = 0x0004a41f;
+constexpr unsigned int kChanEventsBAddress = 0x0004a42f;
 
-
-// Define some addresses...
-#define LIVETIMEA_ADDRESS 0x0004a37f
-#define LIVETIMEB_ADDRESS 0x0004a38f
-#define FASTPEAKSA_ADDRESS 0x0004a39f
-#define FASTPEAKSB_ADDRESS 0x0004a3af
-#define RUNTIMEA_ADDRESS 0x0004a342
-#define RUNTIMEB_ADDRESS 0x0004a343
-#define CHANEVENTSA_ADDRESS 0x0004a41f
-#define CHANEVENTSB_ADDRESS 0x0004a42f
+constexpr int kChannelsPerModule = 16;
+constexpr int kStatisticsWords = 448;
 
 bool next_line(std::istream &in, std::string &line)
 {
@@ -52,6 +55,32 @@ bool next_line(std::istream &in, std::string &line)
     return in || !line.empty();
 }
 
+uint64_t read_counter(const unsigned int *stats, unsigned int high_address, unsigned int low_address)
+{
+    const auto high_index = high_address - DATA_MEMORY_ADDRESS - DSP_IO_BORDER;
+    const auto low_index = low_address - DATA_MEMORY_ADDRESS - DSP_IO_BORDER;
+    return (static_cast<uint64_t>(stats[high_index]) << 32) | stats[low_index];
+}
+
+std::string firmware_key(const std::string &prefix,
+                         unsigned short revision,
+                         unsigned short adc_bits,
+                         unsigned short adc_msps)
+{
+    if (revision == 11 || revision == 12 || revision == 13)
+        return prefix + "_RevBCD";
+
+    return prefix + "_RevF_" + std::to_string(adc_msps) + "MHz_" + std::to_string(adc_bits) + "Bit";
+}
+
+std::string output_path_near_data_file(const std::string &data_filename, const std::string &filename)
+{
+    const std::filesystem::path data_path(data_filename);
+    const auto parent = data_path.parent_path();
+    return (parent.empty() ? std::filesystem::path(filename) : parent / filename).string();
+}
+}
+
 
 
 XIAControl::XIAControl(WriteTerminal *writeTerm,
@@ -59,25 +88,26 @@ XIAControl::XIAControl(WriteTerminal *writeTerm,
                        const std::string &FWname,
                        const std::string &SETname)
     : termWrite( writeTerm )
-    , data_avalible( 0 )
+    , data_available( 0 )
     , is_initialized( false )
     , is_booted( false )
     , is_running( false )
     , settings_file( SETname )
+    , num_modules( 0 )
+    , lmdata( EXTERNAL_FIFO_LENGTH )
 {
     ReadConfigFile(FWname.c_str());
-    num_modules = 0;
     for (int i = 0 ; i < PRESET_MAX_MODULES ; ++i){
         if (PXImap[i] > 0)
             PXISlotMap[num_modules++] = PXImap[i];
     }
-
-    lmdata = (unsigned int *)malloc(sizeof(unsigned int) * EXTERNAL_FIFO_LENGTH);
+    std::fill(std::begin(most_recent_t), std::end(most_recent_t), 0);
+    std::fill(std::begin(timestamp_factor), std::end(timestamp_factor), 10);
+    std::fill(&last_stats[0][0], &last_stats[0][0] + PRESET_MAX_MODULES * kStatisticsWords, 0);
 }
 
 XIAControl::~XIAControl()
 {
-    free(lmdata);
     ExitXIA();
 }
 
@@ -104,7 +134,7 @@ bool XIAControl::XIA_check_buffer(int bufsize)
     }
 
     // Here we decide if we have one or more buffers for the engine to process.
-    int have_data = data_avalible + overflow_queue.size();
+    int have_data = data_available + overflow_queue.size();
     have_data -= XIA_MIN_READOUT;
     if ( have_data < bufsize) // First test to determine if we have enough data to make an actual buffer.
         return false;
@@ -116,7 +146,7 @@ bool XIAControl::XIA_check_buffer(int bufsize)
 bool XIAControl::XIA_fetch_buffer(uint32_t *buffer, int bufsize, unsigned int *first_header)
 {
     int current_pos = 0;
-    int have_data = data_avalible + overflow_queue.size();
+    int have_data = data_available + overflow_queue.size();
     have_data -= XIA_MIN_READOUT;
 
     // This function should NEVER be called unless we have
@@ -135,7 +165,7 @@ bool XIAControl::XIA_fetch_buffer(uint32_t *buffer, int bufsize, unsigned int *f
 
     while (current_pos < bufsize){
         current_word = sorted_events.top();
-        data_avalible -= current_word.size_raw;
+        data_available -= current_word.size_raw;
         sorted_events.pop();
 
         for (int i = 0 ; i < current_word.size_raw ; ++i){
@@ -318,60 +348,37 @@ bool XIAControl::InitializeXIA(const bool &offline)
 bool XIAControl::GetFirmwareFile(const unsigned short &revision, const unsigned short &ADCbits, const unsigned short &ADCMSPS,
                                  char *ComFPGA, char *SPFPGA, char *DSPcode, char *DSPVar)
 {
-    std::string key_Com, key_SPFPGA, key_DSPcode, key_DSPVar;
-
-    // First, if Rev 11, 12 or 13.
-    if ( (revision == 11 || revision == 12 || revision == 13) ){
-
-        // We set the keys.
-        key_Com = "comFPGAConfigFile_RevBCD";
-        key_SPFPGA = "SPFPGAConfigFile_RevBCD";
-        key_DSPcode = "DSPCodeFile_RevBCD";
-        key_DSPVar = "DSPVarFile_RevBCD";
-
-    } else if ( revision == 15 ){
-
-        key_Com = "comFPGAConfigFile_RevF_" + std::to_string(ADCMSPS) + "MHz_" + std::to_string(ADCbits) + "Bit";
-        key_SPFPGA = "SPFPGAConfigFile_RevF_" + std::to_string(ADCMSPS) + "MHz_" + std::to_string(ADCbits) + "Bit";
-        key_DSPcode = "DSPCodeFile_RevF_" + std::to_string(ADCMSPS) + "MHz_" + std::to_string(ADCbits) + "Bit";
-        key_DSPVar = "DSPVarFile_RevF_" + std::to_string(ADCMSPS) + "MHz_" + std::to_string(ADCbits) + "Bit";
-
-    } else {
+    if (revision != 11 && revision != 12 && revision != 13 && revision != 15) {
         snprintf(errmsg, sizeof(errmsg), "Unknown Pixie-16 revision, rev=%d\n", revision);
         termWrite->WriteError(errmsg);
         return false;
     }
 
-    // Search our map for the firmware files.
-    if ( firmwares.find(key_Com) == firmwares.end() ){
-        snprintf(errmsg, sizeof(errmsg), "Missing firmware file '%s'\n", key_Com.c_str());
-        termWrite->WriteError(errmsg);
-        return false;
+    const std::string key_Com = firmware_key("comFPGAConfigFile", revision, ADCbits, ADCMSPS);
+    const std::string key_SPFPGA = firmware_key("SPFPGAConfigFile", revision, ADCbits, ADCMSPS);
+    const std::string key_DSPcode = firmware_key("DSPCodeFile", revision, ADCbits, ADCMSPS);
+    const std::string key_DSPVar = firmware_key("DSPVarFile", revision, ADCbits, ADCMSPS);
+
+    const auto com_fpga = firmwares.find(key_Com);
+    const auto sp_fpga = firmwares.find(key_SPFPGA);
+    const auto dsp_code = firmwares.find(key_DSPcode);
+    const auto dsp_var = firmwares.find(key_DSPVar);
+
+    for (const auto &entry : {std::make_pair(key_Com, com_fpga),
+                              std::make_pair(key_SPFPGA, sp_fpga),
+                              std::make_pair(key_DSPcode, dsp_code),
+                              std::make_pair(key_DSPVar, dsp_var)}) {
+        if (entry.second == firmwares.end()) {
+            snprintf(errmsg, sizeof(errmsg), "Missing firmware file '%s'\n", entry.first.c_str());
+            termWrite->WriteError(errmsg);
+            return false;
+        }
     }
 
-    if ( firmwares.find(key_SPFPGA) == firmwares.end() ){
-        snprintf(errmsg, sizeof(errmsg), "Missing firmware file '%s'\n", key_SPFPGA.c_str());
-        termWrite->WriteError(errmsg);
-        return false;
-    }
-
-    if ( firmwares.find(key_DSPcode) == firmwares.end() ){
-        snprintf(errmsg, sizeof(errmsg), "Missing firmware file '%s'\n", key_DSPcode.c_str());
-        termWrite->WriteError(errmsg);
-        return false;
-    }
-
-    if ( firmwares.find(key_DSPVar) == firmwares.end() ){
-        snprintf(errmsg, sizeof(errmsg), "Missing firmware file '%s'\n", key_DSPVar.c_str());
-        termWrite->WriteError(errmsg);
-        return false;
-    }
-
-    // If we reach this point, we know that we have all the firmwares!
-    strcpy(ComFPGA, firmwares[key_Com].c_str());
-    strcpy(SPFPGA, firmwares[key_SPFPGA].c_str());
-    strcpy(DSPcode, firmwares[key_DSPcode].c_str());
-    strcpy(DSPVar, firmwares[key_DSPVar].c_str());
+    snprintf(ComFPGA, 2048, "%s", com_fpga->second.c_str());
+    snprintf(SPFPGA, 2048, "%s", sp_fpga->second.c_str());
+    snprintf(DSPcode, 2048, "%s", dsp_code->second.c_str());
+    snprintf(DSPVar, 2048, "%s", dsp_var->second.c_str());
 
     return true;
 }
@@ -472,10 +479,10 @@ bool XIAControl::AdjustBaseline()
 bool XIAControl::AdjustBlCut()
 {
     termWrite->Write("Acquiring the baseline cut...");
-    unsigned int BLcut[PRESET_MAX_MODULES][16];
+    unsigned int BLcut[PRESET_MAX_MODULES][kChannelsPerModule];
     int retval;
     for (int i = 0 ; i < num_modules ; ++i){
-        for (int j = 0 ; j < 16 ; ++j){
+        for (int j = 0 ; j < kChannelsPerModule ; ++j){
             retval = Pixie16BLcutFinder(i, j, &BLcut[i][j]);
             if (retval < 0){
                 snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16BLcutFinder for mod = %d, ch = %d failed, retval = %d\n", i, j, retval);
@@ -489,7 +496,7 @@ bool XIAControl::AdjustBlCut()
 
     termWrite->Write("\n... Done.\n");
     termWrite->Write("Module:");
-    for (int i = 0 ; i < 16 ; ++i){
+    for (int i = 0 ; i < kChannelsPerModule ; ++i){
         snprintf(errmsg, sizeof(errmsg), "\tCh. %d:",i);
         termWrite->Write(errmsg);
     }
@@ -498,7 +505,7 @@ bool XIAControl::AdjustBlCut()
     for (int i = 0 ; i < num_modules ; ++i){
         snprintf(errmsg, sizeof(errmsg), "%d:", i);
         termWrite->Write(errmsg);
-        for (int j = 0 ; j < 16 ; ++j){
+        for (int j = 0 ; j < kChannelsPerModule ; ++j){
             snprintf(errmsg, sizeof(errmsg), "\t%d", BLcut[i][j]);
             termWrite->Write(errmsg);
         }
@@ -596,11 +603,11 @@ bool XIAControl::XIA_end_run(FILE *output_file, const char *fname)
         return true;
 
     // Allocate memory where we will dump the FIFO contents.
-    unsigned int current_pos = 0;
-    unsigned int size = overflow_queue.size() + data_avalible;
-    auto *buf = new uint32_t[size];
+    size_t current_pos = 0;
+    const size_t size = overflow_queue.size() + data_available;
+    std::vector<uint32_t> buf(size);
     for (auto &i : overflow_queue)
-        buf[current_pos++] = overflow_queue[i];
+        buf[current_pos++] = i;
     overflow_queue.clear();
     Event_t evt;
     while (current_pos < size){
@@ -608,20 +615,25 @@ bool XIAControl::XIA_end_run(FILE *output_file, const char *fname)
         for (int i = 0 ; i < evt.size_raw ; ++i){
             buf[current_pos++] = evt.raw_data[i];
         }
-        data_avalible = data_avalible - evt.size_raw;
+        data_available = data_available - evt.size_raw;
         sorted_events.pop();
     }
 
     // Write to disk
     if ( output_file ){
-        if ( fwrite(buf, sizeof(uint32_t), size, output_file) != size ){
+        if ( fwrite(buf.data(), sizeof(uint32_t), size, output_file) != size ){
             termWrite->WriteError("Error while writing to file...\n");
         }
 
         // Lastly we will save run statistics from each module
-        unsigned int run_statistics[448];
+        unsigned int run_statistics[kStatisticsWords];
         std::string outname = std::string(fname) + ".stats";
         auto stat_file = fopen(outname.c_str(), "w");
+        if (!stat_file) {
+            snprintf(errmsg, sizeof(errmsg), "Error: Could not open statistics file '%s'\n", outname.c_str());
+            termWrite->WriteError(errmsg);
+            return true;
+        }
         for ( int mod = 0 ; mod < num_modules ; ++mod ){
             auto retval = Pixie16ReadStatisticsFromModule(run_statistics, mod);
             if ( retval < 0 ){
@@ -629,14 +641,13 @@ bool XIAControl::XIA_end_run(FILE *output_file, const char *fname)
                 std::cerr << retval << std::endl;
             }
             fprintf(stat_file, "mod %d: %u", mod, run_statistics[0]);
-            for ( int i = 1 ; i < 448 ; ++i ){
+            for ( int i = 1 ; i < kStatisticsWords ; ++i ){
                 fprintf(stat_file, ", %u", run_statistics[i]);
             }
             fprintf(stat_file, "\n");
         }
         fclose(stat_file);
     }
-    delete[] buf;
 
     return true;
 }
@@ -704,8 +715,8 @@ bool XIAControl::SynchModules()
 
 bool XIAControl::WriteScalers()
 {
-    double ICR[PRESET_MAX_MODULES][16], OCR[PRESET_MAX_MODULES][16];
-    unsigned int stats[448];
+    double ICR[PRESET_MAX_MODULES][kChannelsPerModule], OCR[PRESET_MAX_MODULES][kChannelsPerModule];
+    unsigned int stats[kStatisticsWords];
     int retval;
     FILE* stat_file = nullptr;
     if ( filename.empty() )
@@ -713,6 +724,10 @@ bool XIAControl::WriteScalers()
     else {
         std::string outname = std::string(filename) + ".stats";
         stat_file = fopen(outname.c_str(), "w");
+    }
+    if (!stat_file) {
+        termWrite->WriteError("Error: Could not open statistics output file\n");
+        return false;
     }
 
     {
@@ -722,32 +737,24 @@ bool XIAControl::WriteScalers()
                 snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16ReadStatisticsFromModule failed, retval = %d\n", retval);
                 termWrite->WriteError(errmsg);
                 Pixie_Print_MSG(errmsg);
+                fclose(stat_file);
+                return false;
             }
             fprintf(stat_file, "mod %d: %u", i, stats[0]);
-            for ( int k = 1 ; k < 448 ; ++k ){
+            for ( int k = 1 ; k < kStatisticsWords ; ++k ){
                 fprintf(stat_file, ", %u", stats[k]);
             }
             fprintf(stat_file, "\n");
 
-            for (int j = 0 ; j < 16 ; ++j){
+            for (int j = 0 ; j < kChannelsPerModule ; ++j){
                 
-                uint64_t fastPeakN = stats[FASTPEAKSA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
-                fastPeakN = fastPeakN << 32;
-                fastPeakN += stats[FASTPEAKSB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
-
-                uint64_t fastPeakP = last_stats[i][FASTPEAKSA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
-                fastPeakP = fastPeakP << 32;
-                fastPeakP += last_stats[i][FASTPEAKSB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+                uint64_t fastPeakN = read_counter(stats, kFastPeaksAAddress + j, kFastPeaksBAddress + j);
+                uint64_t fastPeakP = read_counter(last_stats[i], kFastPeaksAAddress + j, kFastPeaksBAddress + j);
 
                 double fastPeak = fastPeakN - fastPeakP;
 
-                uint64_t LiveTimeN = stats[LIVETIMEA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
-                LiveTimeN = LiveTimeN << 32;
-                LiveTimeN |= stats[LIVETIMEB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
-
-                uint64_t LiveTimeP = last_stats[i][LIVETIMEA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
-                LiveTimeP = LiveTimeP << 32;
-                LiveTimeP |= last_stats[i][LIVETIMEB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+                uint64_t LiveTimeN = read_counter(stats, kLiveTimeAAddress + j, kLiveTimeBAddress + j);
+                uint64_t LiveTimeP = read_counter(last_stats[i], kLiveTimeAAddress + j, kLiveTimeBAddress + j);
 
                 double liveTime = LiveTimeN - LiveTimeP;
                 if (timestamp_factor[i] == 8)
@@ -755,23 +762,13 @@ bool XIAControl::WriteScalers()
                 else
                     liveTime *= 1e-6/100.;
 
-                uint64_t ChanEventsN = stats[CHANEVENTSA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
-                ChanEventsN = ChanEventsN << 32;
-                ChanEventsN |= stats[CHANEVENTSB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
-
-                uint64_t ChanEventsP = last_stats[i][CHANEVENTSA_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
-                ChanEventsP = ChanEventsP << 32;
-                ChanEventsP |= last_stats[i][CHANEVENTSB_ADDRESS + j - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+                uint64_t ChanEventsN = read_counter(stats, kChanEventsAAddress + j, kChanEventsBAddress + j);
+                uint64_t ChanEventsP = read_counter(last_stats[i], kChanEventsAAddress + j, kChanEventsBAddress + j);
                 
                 double ChanEvents = ChanEventsN - ChanEventsP;
 
-                uint64_t runTimeN = stats[RUNTIMEA_ADDRESS - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
-                runTimeN = runTimeN << 32;
-                runTimeN |= stats[RUNTIMEB_ADDRESS - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
-
-                uint64_t runTimeP = last_stats[i][RUNTIMEA_ADDRESS - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
-                runTimeP = runTimeP << 32;
-                runTimeP |= last_stats[i][RUNTIMEB_ADDRESS - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
+                uint64_t runTimeN = read_counter(stats, kRunTimeAAddress, kRunTimeBAddress);
+                uint64_t runTimeP = read_counter(last_stats[i], kRunTimeAAddress, kRunTimeBAddress);
 
                 double runTime = runTimeN - runTimeP;
 
@@ -781,15 +778,27 @@ bool XIAControl::WriteScalers()
                 OCR[i][j] = (runTime != 0) ? ChanEvents/runTime : 0;
             }
 
-            for (int j = 0 ; j < 448 ; ++j){
+            for (int j = 0 ; j < kStatisticsWords ; ++j){
                 last_stats[i][j] = stats[j];
             }
         }
     }
 
     fclose(stat_file);
-    FILE *scaler_file_in = fopen(SCALER_FILE_NAME_IN, "w");
-    FILE *scaler_file_out = fopen(SCALER_FILE_NAME_OUT, "w");
+    const std::string scaler_file_in_name = output_path_near_data_file(filename, SCALER_FILE_NAME_IN);
+    const std::string scaler_file_out_name = output_path_near_data_file(filename, SCALER_FILE_NAME_OUT);
+    const std::string scaler_file_csv_name = output_path_near_data_file(filename, SCALER_FILE_CSV);
+
+    FILE *scaler_file_in = fopen(scaler_file_in_name.c_str(), "w");
+    FILE *scaler_file_out = fopen(scaler_file_out_name.c_str(), "w");
+    if (!scaler_file_in || !scaler_file_out) {
+        termWrite->WriteError("Error: Could not open scaler output files\n");
+        if (scaler_file_in)
+            fclose(scaler_file_in);
+        if (scaler_file_out)
+            fclose(scaler_file_out);
+        return false;
+    }
 
     fprintf(scaler_file_in, "Input count rate:\n\n\n");
     fprintf(scaler_file_out, "Output count rate:\n\n\n");
@@ -797,7 +806,7 @@ bool XIAControl::WriteScalers()
     std::stringstream csv_stream;
     csv_stream << "module,channel,input,output\n";
 
-    for (int i = 0 ; i < 16 ; ++i){
+    for (int i = 0 ; i < kChannelsPerModule ; ++i){
         fprintf(scaler_file_in, "\t%d", i);
         fprintf(scaler_file_out, "\t%d", i);
     }
@@ -807,7 +816,7 @@ bool XIAControl::WriteScalers()
     for (int i = 0 ; i < num_modules ; ++i){
         fprintf(scaler_file_in, "%d", i);
         fprintf(scaler_file_out, "%d", i);
-        for (int j = 0 ; j < 16 ; ++j){
+        for (int j = 0 ; j < kChannelsPerModule ; ++j){
             fprintf(scaler_file_in, "\t%.2f", ICR[i][j]);
             fprintf(scaler_file_out, "\t%.2f", OCR[i][j]);
             csv_stream << i << "," << j << "," << ICR[i][j] << "," << OCR[i][j] << "\n";
@@ -820,7 +829,7 @@ bool XIAControl::WriteScalers()
     fclose(scaler_file_out);
 
     {
-        std::ofstream csv_file(SCALER_FILE_CSV);
+        std::ofstream csv_file(scaler_file_csv_name);
         csv_file << csv_stream.str();
     }
 
@@ -853,7 +862,7 @@ bool XIAControl::CheckFIFO(unsigned int minReadout)
 
 bool XIAControl::ReadFIFO()
 {
-    uint32_t *FIFOdata = lmdata;
+    uint32_t *FIFOdata = lmdata.data();
     unsigned int fifoSize;
     int retval;
     for (int i = 0 ; i < num_modules ; ++i){
@@ -866,6 +875,11 @@ bool XIAControl::ReadFIFO()
         }
         if (fifoSize < 12 /* EXTFIFO_READ_THRESH */ ) // Make sure we don't read from an empty FIFO.
             continue;
+        if (fifoSize > lmdata.size()) {
+            snprintf(errmsg, sizeof(errmsg), "*ERROR* External FIFO size (%u) exceeds readout buffer size (%zu)\n", fifoSize, lmdata.size());
+            termWrite->WriteError(errmsg);
+            return false;
+        }
         retval = Pixie16ReadDataFromExternalFIFO(FIFOdata, fifoSize, i);
         if (retval < 0){
             snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16ReadDataFromExternalFIFO failed, retval = %d\n", retval);
@@ -900,23 +914,27 @@ bool XIAControl::ExitXIA()
 
 void XIAControl::ParseQueue(uint32_t *raw_data, size_t size, int module)
 {
-    int event_length=0, header_length=0;
-    int current_position=0;
+    size_t event_length = 0;
+    size_t current_position = 0;
     int64_t tlow, thigh;
     Event_t evt;
 
     if (overflow_fifo[module].size() > 0){
         event_length = (overflow_fifo[module][0] & 0x7FFE0000) >> 17;
-        header_length = (overflow_fifo[module][0] & 0x1F000) >> 12;
-        int evtsize = event_length - overflow_fifo[module].size();
+        if (event_length < 3 || event_length < overflow_fifo[module].size()) {
+            overflow_fifo[module].clear();
+            termWrite->WriteError("Error: Dropping malformed partial FIFO event\n");
+            return;
+        }
+        size_t evtsize = event_length - overflow_fifo[module].size();
         if (evtsize > size) { // Event spans several FIFOs :O
-            for (int i = 0 ; i < size ; ++i){
+            for (size_t i = 0 ; i < size ; ++i){
                 overflow_fifo[module].push_back(raw_data[i]);
             }
             return;
         }
 
-        uint32_t *tmp = new uint32_t[event_length];
+        std::vector<uint32_t> tmp(event_length);
         for (size_t i = 0 ; i < overflow_fifo[module].size() ; ++i){
             tmp[i] = overflow_fifo[module][i];
         }
@@ -931,15 +949,15 @@ void XIAControl::ParseQueue(uint32_t *raw_data, size_t size, int module)
         evt.timestamp |= tlow;
         evt.timestamp *= timestamp_factor[module];
 
-        for (int i = 0 ; i < header_length ; ++i){
+        const size_t stored_length = std::min(event_length, static_cast<size_t>(MAX_RAWDATA_LEN));
+        for (size_t i = 0 ; i < stored_length ; ++i){
             evt.raw_data[i] = tmp[i];
         }
-        evt.size_raw = event_length;
-        delete[] tmp;
+        evt.size_raw = static_cast<int>(stored_length);
 
         sorted_events.push(evt);
-        most_recent_t[module] = MAX(most_recent_t[module], evt.timestamp);
-        data_avalible += evt.size_raw;
+        most_recent_t[module] = std::max(most_recent_t[module], evt.timestamp);
+        data_available += evt.size_raw;
 
         current_position = event_length - overflow_fifo[module].size();
         overflow_fifo[module].clear();
@@ -947,19 +965,23 @@ void XIAControl::ParseQueue(uint32_t *raw_data, size_t size, int module)
 
     while (current_position < size){
         event_length = (raw_data[current_position] & 0x7FFE0000) >> 17;
-        header_length = (raw_data[current_position] & 0x1F000 ) >> 12;
+        if (event_length < 3) {
+            termWrite->WriteError("Error: Dropping malformed FIFO event\n");
+            break;
+        }
 
         if (current_position + event_length > size){
-            for (int i = current_position ; i < size ; ++i){
+            for (size_t i = current_position ; i < size ; ++i){
                 overflow_fifo[module].push_back(raw_data[i]);
             }
             break;
         }
 
-        for (int i = 0 ; i < header_length ; ++i){
+        const size_t stored_length = std::min(event_length, static_cast<size_t>(MAX_RAWDATA_LEN));
+        for (size_t i = 0 ; i < stored_length ; ++i){
             evt.raw_data[i] = raw_data[current_position+i];
         }
-        evt.size_raw = event_length;
+        evt.size_raw = static_cast<int>(stored_length);
 
         tlow = evt.raw_data[1];
         thigh = (evt.raw_data[2] & 0x0000FFFF);
@@ -968,8 +990,8 @@ void XIAControl::ParseQueue(uint32_t *raw_data, size_t size, int module)
         evt.timestamp *= timestamp_factor[module];
 
         sorted_events.push(evt);
-        most_recent_t[module] = MAX(most_recent_t[module], evt.timestamp);
-        data_avalible += evt.size_raw;
+        most_recent_t[module] = std::max(most_recent_t[module], evt.timestamp);
+        data_available += evt.size_raw;
 
         current_position += event_length;
     }
