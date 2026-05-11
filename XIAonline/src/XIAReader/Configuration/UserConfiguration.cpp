@@ -9,6 +9,7 @@
 #include <yaml-cpp/yaml.h>
 #include "yaml_helpers.h"
 
+#include <variant>
 #include <logfault/logfault.h>
 
 UserConfiguration UserConfiguration::FromFile(const char *file)
@@ -22,7 +23,8 @@ UserConfiguration UserConfiguration::FromFile(std::istream &s)
 }
 
 UserConfiguration::UserConfiguration(const YAML::Node &setup)
-    : config_manager( setup )
+    : userConfig( setup )
+    , config_manager( setup )
     , split_time( 1500. )
     , coincidence_time( 1500. )
     , trigger_type( any )
@@ -52,7 +54,7 @@ UserConfiguration::UserConfiguration(const YAML::Node &setup)
     }
 
     try {
-        coincidence_time = setup["analysis"]["split_time"].as<double>();
+        coincidence_time = setup["analysis"]["coincidence_time"].as<double>();
     } catch (std::exception &e) {
         LFLOG_WARN << "Split time is missing or wrongly formatted. Using 1500 ns. Error message: " << e.what() << ".";
         LFLOG_DEBUG << "Error reading 'split_time'. Error: " << e.what() << ".";
