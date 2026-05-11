@@ -154,6 +154,9 @@ public:
     // Set the current filename
     void setFile(const char* fname){ filename = fname; }
 
+    // Save current DSP settings next to a data file, replacing the suffix with .set.
+    bool SaveSettingsForDataFile(const char *fname);
+
 private:
 
     // Some private functions that are needed.

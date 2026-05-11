@@ -277,6 +277,30 @@ bool XIAControl::XIA_reload()
     return !is_initialized;
 }
 
+bool XIAControl::SaveSettingsForDataFile(const char *fname)
+{
+    if (!fname || fname[0] == '\0')
+        return false;
+
+    std::filesystem::path settings_path(fname);
+    settings_path.replace_extension(".set");
+
+    char settings_filename[2048];
+    snprintf(settings_filename, sizeof(settings_filename), "%s", settings_path.string().c_str());
+
+    int retval = Pixie16SaveDSPParametersToFile(settings_filename);
+    if (retval < 0) {
+        snprintf(errmsg, sizeof(errmsg), "*ERROR* Pixie16SaveDSPParametersToFile failed, retval = %d\n", retval);
+        termWrite->WriteError(errmsg);
+        Pixie_Print_MSG(errmsg);
+        return false;
+    }
+
+    snprintf(errmsg, sizeof(errmsg), "Saved DSP settings to '%s'\n", settings_filename);
+    termWrite->Write(errmsg);
+    return true;
+}
+
 
 bool XIAControl::ReadConfigFile(const char *config)
 {

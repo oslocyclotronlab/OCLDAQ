@@ -188,13 +188,20 @@ static void do_stop()
 
 // ########################################################################
 
-static bool do_change_output_file(const std::string& fname)
+static bool do_change_output_file(const std::string& fname, bool save_settings = true)
 {
     if( fname.empty() || fname == output_filename )
         return false;
 
     // close the file if it exists
     close_file();
+
+    if ( save_settings && xiacontr && !xiacontr->SaveSettingsForDataFile(fname.c_str()) ) {
+        ls_engine->send_all("501 error_file Could not save DSP settings file.\n");
+        if( !stopped )
+            do_stop();
+        return false;
+    }
 
     // change output filename
     output_filename = fname;
@@ -214,6 +221,7 @@ static bool do_change_output_file(const std::string& fname)
             return false;
         }
     }
+
     return true;
 }
 
@@ -258,7 +266,7 @@ static bool change_output_file()
         return false;
     }
 
-    return do_change_output_file(new_filename);
+    return do_change_output_file(new_filename, false);
 }
 
 // ########################################################################
@@ -418,7 +426,7 @@ static void command_output_file(line_channel* lc, const std::string& line, void*
 {
     const std::string fname = line.substr(12);
     std::string actual_filename;
-    if( !prepare_output_file_path(fname, actual_filename) || !do_change_output_file(actual_filename) ) {
+    if( !prepare_output_file_path(fname, actual_filename) || !do_change_output_file(actual_filename, true) ) {
         line_sender ls(lc);
         ls << "405 error_file Cannot select file '" << escape(fname) << "'.\n";
     }
