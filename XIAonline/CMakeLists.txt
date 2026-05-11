@@ -82,8 +82,7 @@ target_include_directories(XIAReader
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/XIAReader/Tools>
 )
 
-set_target_properties(XIAReader PROPERTIES CXX_STANDARD 20)
-set_property(TARGET XIAReader PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_target_properties(XIAReader PROPERTIES CXX_STANDARD 20 POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(XIAReader PUBLIC
 		yaml-cpp::yaml-cpp
 		magic_enum::magic_enum
