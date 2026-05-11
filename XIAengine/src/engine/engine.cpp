@@ -544,12 +544,22 @@ int main_engine(int argc, char* argv[])
 
 int main_gui(int nmod, QApplication &app, XIAConfigurator &c)
 {
+    const char* display = std::getenv("DISPLAY");
+    const char* wayland = std::getenv("WAYLAND_DISPLAY");
+
+    if (!display && !wayland) {
+        std::cout << "No display detected. Running in headless mode.\n";
+        return 0; // do NOT start Qt event loop
+    }
     c.show();
-    /*while ( leaveprog == 'n' )
-        app.processEvents();
-    return 0;*/
     return app.exec();
 }
+
+bool has_display()
+{
+    return std::getenv("DISPLAY") || std::getenv("WAYLAND_DISPLAY");
+}
+
 
 // ########################################################################
 // ########################################################################
@@ -581,7 +591,12 @@ int main(int argc, char* argv[])
     write(fd, pidStr.c_str(), pidStr.size());
 
 
-    QApplication app(argc, argv);
+    std::unique_ptr<QApplication> app;
+    if ( has_display() ) {
+        app = std::make_unique<QApplication>(argc, argv);
+    }
+
+
     unsigned short PXIMapping[PRESET_MAX_MODULES];
     for (unsigned short & mapping : PXIMapping)
         mapping = 0;
@@ -624,11 +639,16 @@ int main(int argc, char* argv[])
 
     auto nmod = xiacontr->GetNumMod();
     XIAInterfaceAPI2 interface(nmod);
-    XIAConfigurator configurator(&interface);
+    std::unique_ptr<XIAConfigurator> configurator;
+    if ( has_display() ) {
+        configurator = std::make_unique<XIAConfigurator>(&interface);
+    }
 
     // Now we are ready to start the two threads, this will launch the settings window!
     auto engine_thread = std::thread(main_engine, argc, argv);
-    auto r = main_gui(nmod, app, configurator);
+    int r = 0;
+    if ( has_display() )
+        r = main_gui(nmod, *app, *configurator);
 
     if ( engine_thread.joinable() ) engine_thread.join();
 
