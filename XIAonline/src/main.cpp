@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <variant> // To make sure that logfault is compiling... its soooooo stupid
 
 #include <csignal>
 #include <unistd.h>
@@ -33,6 +34,8 @@ static int buffer_count=0,bad_buffer_count=0;
 
 static line_server *ls_sort = nullptr;
 static SharedHistograms *histograms = nullptr;
+
+static RingBuffer *stats = nullptr;
 
 void keyb_int(int sig_num)
 {
@@ -127,7 +130,7 @@ static void command_dump(line_channel* lc, const std::string&, void* hists)
         LFLOG_ERROR << "User data 'hists' was not provided";
     }
     auto histograms = reinterpret_cast<SharedHistograms *>(hists);
-    RootWriter::Write(*histograms, filename, "XIAonline");
+    //RootWriter::Write(*histograms, filename, "XIAonline");
     ls_sort->send_all("203 status_dumped all\n");
 }
 
@@ -136,8 +139,8 @@ static void command_dump(line_channel* lc, const std::string&, void* hists)
 static void broadcast_bufcount(line_channel* lc=nullptr)
 {
     std::ostringstream o;
-    o << "101 bufs " << buffer_count <<' '<< bad_buffer_count;
-      //<<' '<< evtbldr->GetAverageLength() <<'\n';
+    o << "101 bufs " << buffer_count <<' '<< bad_buffer_count
+      <<' ' << (( stats ) ? stats->GetAvg() : 0) << '\n';
     send_1_or_all(o.str(), lc);
 }
 
@@ -216,7 +219,7 @@ int main (int argc, char* argv[])
     logfault::LogManager::Instance().AddHandler(std::make_unique<logfault::StreamHandler>(std::clog, logfault::LogLevel::INFO));
     ::shm_unlink("/XIAonline");
 
-    SharedHistograms histograms = SharedHistograms::Create("XIAonline", size_t(1) << 33, 256);
+    SharedHistograms histograms = SharedHistograms::Create("XIAonline", size_t(1) << 31, 256);
 
     // Set up logger instance
     UserConfiguration config = UserConfiguration::FromFile(config_file);
@@ -262,6 +265,8 @@ int main (int argc, char* argv[])
     Task::Trigger trigger(ssort.GetQueue(), config);
     Task::Coincidence::Sorter csort(histograms, trigger.GetQueue(), config);
 
+    stats = &trigger.GetStats();
+
     // Declare the sorting routine
     ThreadPool<std::thread> pool;
 
@@ -286,25 +291,7 @@ int main (int argc, char* argv[])
                 last_t = ts;
                 last_tus = tus;
                 input_queue.push(std::vector(data+(*first_header), data+datalen-(*first_header)));
-
-                //data_p = unpacker->ParseBuffer(data+(*first_header), datalen-(*first_header), error);
-                //sort_singles(data_p);
                 ++buffer_count;
-                //evtbldr->SetBuffer(data_p);
-                if ( error )
-                    continue; // We just skip if there was a problem!
-
-                /*while (true){
-                    evt_status = evtbldr->Next(event);
-                    if (evt_status == EventBuilder::ERROR){
-                        ++bad_buffer_count;
-                        break;
-                    }
-                    sort_coincidence(event);
-                    if (evt_status == EventBuilder::END)
-                        break;
-                } */
-
                 broadcast_bufcount(0);
             }
         }
