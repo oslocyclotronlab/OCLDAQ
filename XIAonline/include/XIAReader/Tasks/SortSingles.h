@@ -5,6 +5,8 @@
 #ifndef SORTSINGLES_H
 #define SORTSINGLES_H
 
+#include <functional>
+
 #include <Tasks/Task.h>
 #include <Tasks/Queue.h>
 #include <Configuration/UserConfiguration.h>

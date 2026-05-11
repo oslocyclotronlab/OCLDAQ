@@ -1,7 +1,7 @@
 #include "../../include/XIAReader/Format/XIA_CFD.h"
 
 #include <stdexcept>
-
+#include <variant>
 #include <logfault/logfault.h>
 
 using namespace XIA;

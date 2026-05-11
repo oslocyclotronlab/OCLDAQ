@@ -6,6 +6,8 @@
 
 #include <iostream>
 #include <magic_enum.hpp>
+
+#include <variant>
 #include <logfault/logfault.h>
 
 #include <yaml-cpp/yaml.h>
