@@ -7,6 +7,8 @@
 
 #include <vector>
 #include <iosfwd>
+#include <cstdlib>
+
 
 #include <Configuration/DetectorTypes.h>
 #include <Format/XIA_CFD.h>
