@@ -13,6 +13,8 @@ Triggered_event::Triggered_event(const Triggered_event &event)
                    std::pair{labr, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{deDet, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{eDet, subvector<Entry_t>{nullptr, nullptr}},
+                   std::pair{oscarF, subvector<Entry_t>{nullptr, nullptr}},
+                   std::pair{oscarB, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{eGuard, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{ppac, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{rfchan, subvector<Entry_t>{nullptr, nullptr}},
@@ -32,6 +34,8 @@ Triggered_event::Triggered_event(const std::vector<Entry_t> &_entries)
                    std::pair{labr, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{deDet, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{eDet, subvector<Entry_t>{nullptr, nullptr}},
+                   std::pair{oscarF, subvector<Entry_t>{nullptr, nullptr}},
+                   std::pair{oscarB, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{eGuard, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{ppac, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{rfchan, subvector<Entry_t>{nullptr, nullptr}},
@@ -51,6 +55,8 @@ Triggered_event::Triggered_event(const std::vector<Entry_t> &_entries, const Ent
                    std::pair{labr, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{deDet, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{eDet, subvector<Entry_t>{nullptr, nullptr}},
+                   std::pair{oscarF, subvector<Entry_t>{nullptr, nullptr}},
+                   std::pair{oscarB, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{eGuard, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{ppac, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{rfchan, subvector<Entry_t>{nullptr, nullptr}},
@@ -71,6 +77,8 @@ Triggered_event::Triggered_event(std::vector<Entry_t> &&_entries, const Entry_t 
                    std::pair{labr, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{deDet, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{eDet, subvector<Entry_t>{nullptr, nullptr}},
+                   std::pair{oscarF, subvector<Entry_t>{nullptr, nullptr}},
+                   std::pair{oscarB, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{eGuard, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{ppac, subvector<Entry_t>{nullptr, nullptr}},
                    std::pair{rfchan, subvector<Entry_t>{nullptr, nullptr}},
@@ -93,7 +101,8 @@ void Triggered_event::index()
     });
 
     // Now we will sort through the detector types and fill our mapping for fast lookup later.
-    for ( auto &type : {DetectorType::labr, DetectorType::deDet, DetectorType::eDet, DetectorType::ppac, DetectorType::rfchan, DetectorType::qint} ){
+    for ( auto &type : {DetectorType::labr, DetectorType::deDet, DetectorType::eDet, DetectorType::oscarF, DetectorType::oscarB,
+                        DetectorType::ppac, DetectorType::rfchan, DetectorType::qint} ){
         auto begin = std::find_if(entries.begin(), entries.end(), [&type](const auto &c){ return c.type == type; });
         auto end = std::find_if_not(begin, entries.end(), [&type](const auto &c){ return c.type == type; });
         std::sort(begin, end, [](const auto &lhs, const auto &rhs){
@@ -115,25 +124,6 @@ void Triggered_event::index()
 
         de_by_ring[ring] = {begin, end};
     }
-
-    /*auto begin = std::find_if(entries.begin(), entries.end(), [](const auto &c){
-        return c.type == deDet;
-    });
-    auto end = std::find_if_not(begin, entries.end(), [](const auto &c){
-        return c.type == eDet;
-    });
-
-    std::sort(begin, (end == entries.end()) ? end : end + 1, [](const auto &lhs, const auto &rhs){
-        return lhs.detectorID < rhs.detectorID;
-    });
-
-    // Last point is to sort the particle entries by the detector ID to make life easier later on.
-    std::sort(type_bounds[deDet].begin(), type_bounds[deDet].end(), [](const auto &lhs, const auto &rhs){
-        return lhs.detectorID < rhs.detectorID;
-    });
-    std::sort(type_bounds[eDet].begin(), type_bounds[eDet].end(), [](const auto &lhs, const auto &rhs){
-        return lhs.detectorID < rhs.detectorID;
-    });*/
 }
 
 subvector<Entry_t> Triggered_event::GetRing(const size_t &ringNo)
