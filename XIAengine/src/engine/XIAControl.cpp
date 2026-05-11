@@ -129,20 +129,20 @@ bool XIAControl::XIA_fetch_buffer(uint32_t *buffer, int bufsize, unsigned int *f
         buffer[current_pos++] = i;
     }
     overflow_queue.clear();
-    Event_t current_word;
+    std::shared_ptr<Event_t> current_word;
 
     *first_header = current_pos;
 
     while (current_pos < bufsize){
         current_word = sorted_events.top();
-        data_avalible -= current_word.size_raw;
+        data_avalible -= current_word->size_raw;
         sorted_events.pop();
 
-        for (int i = 0 ; i < current_word.size_raw ; ++i){
+        for (int i = 0 ; i < current_word->size_raw ; ++i){
             if (current_pos < bufsize){
-                buffer[current_pos++] = current_word.raw_data[i];
+                buffer[current_pos++] = current_word->raw_data[i];
             } else {
-                overflow_queue.push_back(current_word.raw_data[i]);
+                overflow_queue.push_back(current_word->raw_data[i]);
             }
         }
     }
@@ -599,16 +599,16 @@ bool XIAControl::XIA_end_run(FILE *output_file, const char *fname)
     unsigned int current_pos = 0;
     unsigned int size = overflow_queue.size() + data_avalible;
     auto *buf = new uint32_t[size];
-    for (auto &i : overflow_queue)
+    for (size_t i = 0 ; i < overflow_queue.size() ; ++i)
         buf[current_pos++] = overflow_queue[i];
     overflow_queue.clear();
-    Event_t evt;
+    std::shared_ptr<Event_t> evt;
     while (current_pos < size){
         evt = sorted_events.top();
-        for (int i = 0 ; i < evt.size_raw ; ++i){
-            buf[current_pos++] = evt.raw_data[i];
+        for (int i = 0 ; i < evt->size_raw ; ++i){
+            buf[current_pos++] = evt->raw_data[i];
         }
-        data_avalible = data_avalible - evt.size_raw;
+        data_avalible = data_avalible - evt->size_raw;
         sorted_events.pop();
     }
 
@@ -900,17 +900,15 @@ bool XIAControl::ExitXIA()
 
 void XIAControl::ParseQueue(uint32_t *raw_data, size_t size, int module)
 {
-    int event_length=0, header_length=0;
+    int event_length=0;
     int current_position=0;
     int64_t tlow, thigh;
-    Event_t evt;
 
     if (overflow_fifo[module].size() > 0){
         event_length = (overflow_fifo[module][0] & 0x7FFE0000) >> 17;
-        header_length = (overflow_fifo[module][0] & 0x1F000) >> 12;
-        int evtsize = event_length - overflow_fifo[module].size();
-        if (evtsize > size) { // Event spans several FIFOs :O
-            for (int i = 0 ; i < size ; ++i){
+        int evtsize = event_length - static_cast<int>(overflow_fifo[module].size());
+        if (evtsize > static_cast<int>(size)) { // Event spans several FIFOs :O
+            for (size_t i = 0 ; i < size ; ++i){
                 overflow_fifo[module].push_back(raw_data[i]);
             }
             return;
@@ -925,51 +923,51 @@ void XIAControl::ParseQueue(uint32_t *raw_data, size_t size, int module)
             tmp[i+overflow_fifo[module].size()] = raw_data[i];
         }
 
-        tlow = tmp[1];
-        thigh = (tmp[2] & 0x0000FFFF);
-        evt.timestamp = thigh << 32;
-        evt.timestamp |= tlow;
-        evt.timestamp *= timestamp_factor[module];
-
-        for (int i = 0 ; i < header_length ; ++i){
-            evt.raw_data[i] = tmp[i];
-        }
-        evt.size_raw = event_length;
+        auto evt = std::make_shared<Event_t>();
+        evt->raw_data.resize(static_cast<size_t>(event_length));
+        std::memcpy(evt->raw_data.data(), tmp, static_cast<size_t>(event_length) * sizeof(uint32_t));
+        evt->size_raw = event_length;
         delete[] tmp;
 
-        sorted_events.push(evt);
-        most_recent_t[module] = MAX(most_recent_t[module], evt.timestamp);
-        data_avalible += evt.size_raw;
+        tlow = evt->raw_data[1];
+        thigh = (evt->raw_data[2] & 0x0000FFFF);
+        evt->timestamp = thigh << 32;
+        evt->timestamp |= tlow;
+        evt->timestamp *= timestamp_factor[module];
 
-        current_position = event_length - overflow_fifo[module].size();
+        sorted_events.push(evt);
+        most_recent_t[module] = MAX(most_recent_t[module], evt->timestamp);
+        data_avalible += evt->size_raw;
+
+        current_position = event_length - static_cast<int>(overflow_fifo[module].size());
         overflow_fifo[module].clear();
     }
 
     while (current_position < size){
         event_length = (raw_data[current_position] & 0x7FFE0000) >> 17;
-        header_length = (raw_data[current_position] & 0x1F000 ) >> 12;
 
-        if (current_position + event_length > size){
-            for (int i = current_position ; i < size ; ++i){
+        if (current_position + event_length > static_cast<int>(size)){
+            for (int i = current_position ; i < static_cast<int>(size) ; ++i){
                 overflow_fifo[module].push_back(raw_data[i]);
             }
             break;
         }
 
-        for (int i = 0 ; i < header_length ; ++i){
-            evt.raw_data[i] = raw_data[current_position+i];
-        }
-        evt.size_raw = event_length;
+        auto evt = std::make_shared<Event_t>();
+        evt->raw_data.resize(static_cast<size_t>(event_length));
+        std::memcpy(evt->raw_data.data(), raw_data + current_position,
+                    static_cast<size_t>(event_length) * sizeof(uint32_t));
+        evt->size_raw = event_length;
 
-        tlow = evt.raw_data[1];
-        thigh = (evt.raw_data[2] & 0x0000FFFF);
-        evt.timestamp = thigh << 32;
-        evt.timestamp |= tlow;
-        evt.timestamp *= timestamp_factor[module];
+        tlow = evt->raw_data[1];
+        thigh = (evt->raw_data[2] & 0x0000FFFF);
+        evt->timestamp = thigh << 32;
+        evt->timestamp |= tlow;
+        evt->timestamp *= timestamp_factor[module];
 
         sorted_events.push(evt);
-        most_recent_t[module] = MAX(most_recent_t[module], evt.timestamp);
-        data_avalible += evt.size_raw;
+        most_recent_t[module] = MAX(most_recent_t[module], evt->timestamp);
+        data_avalible += evt->size_raw;
 
         current_position += event_length;
     }

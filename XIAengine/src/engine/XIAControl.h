@@ -8,6 +8,7 @@
 #include <string>
 #include <map>
 #include <functional>
+#include <memory>
 
 #include <sys/time.h>
 #include <semaphore.h>
@@ -43,6 +44,12 @@ typedef struct {
 } Event_t;
 inline bool operator>(const Event_t &a, const Event_t &b) { return (a.timestamp>b.timestamp); }
 
+struct EventPtrGreater {
+    bool operator()(const std::shared_ptr<Event_t> &a, const std::shared_ptr<Event_t> &b) const {
+        return a->timestamp > b->timestamp;
+    }
+};
+
 class XIAControl
 {
 private:
@@ -52,7 +59,7 @@ private:
 
     // Ordered queue to fill with data as it arrives
     //std::vector<Event_t> sorted_events;
-    std::priority_queue<Event_t, std::vector<Event_t>, std::greater<Event_t> > sorted_events;
+    std::priority_queue<std::shared_ptr<Event_t>, std::vector<std::shared_ptr<Event_t>>, EventPtrGreater> sorted_events;
 
     // Number of 32-bit words in the queue
     int data_avalible;
