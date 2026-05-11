@@ -41,8 +41,8 @@ void Detector_Histograms_t::Fill(const subvector<Entry_t> &subvec,
 
 #define EDE_XDIM 250
 #define EDE_YDIM 250
-#define EDE_RAW_XDIM 256
-#define EDE_RAW_YDIM 256
+#define EDE_RAW_XDIM 1024
+#define EDE_RAW_YDIM 1024
 
 
 Particle_telescope_t::Particle_telescope_t(SharedHistograms &hm, const size_t &num)
@@ -178,6 +178,13 @@ void Sorter::Run() {
         if ( !input_queue.try_pop(entries) ) {
             std::this_thread::yield();
             continue;
+        }
+        if ( entries.second >= 0 && entries.second < entries.first.size() ) {
+            Triggered_event event(entries.first, entries.first[entries.second]);
+            analyzer.AddEntry(event);
+        } else {
+            Triggered_event event(entries.first);
+            analyzer.AddEntry(event);
         }
         ++entries_processed;
     }

@@ -130,7 +130,7 @@ static void command_dump(line_channel* lc, const std::string&, void* hists)
         LFLOG_ERROR << "User data 'hists' was not provided";
     }
     auto histograms = reinterpret_cast<SharedHistograms *>(hists);
-    //RootWriter::Write(*histograms, filename, "XIAonline");
+    RootWriter::Write(*histograms, filename, "XIAonline");
     ls_sort->send_all("203 status_dumped all\n");
 }
 
