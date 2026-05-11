@@ -2,9 +2,11 @@
 // Created by Vetle Wegner Ingeberg on 28/04/2026.
 //
 
+#include <iostream>
 #include <csignal>
 
 #include <histogram/SharedHistograms.h>
+#include <structopt/app.hpp>
 
 #include "options.h"
 #include "ROOTServer.h"
@@ -13,6 +15,8 @@
 #include <TH1.h>
 #include <TH2.h>
 #include <TH3.h>
+
+STRUCTOPT(Options_t, engine, bind_address, bind_port, log_level, shared_histograms_name);
 
 char leaveprog = 'n';
 
@@ -34,6 +38,7 @@ int main(int argc, char *argv[]) {
     signal(SIGQUIT, keyb_int);
     signal(SIGTERM, keyb_int);
     signal(SIGPIPE, SIG_IGN);
+
 
     try {
         auto options = structopt::app("rserver").parse<Options_t>(argc, argv);
