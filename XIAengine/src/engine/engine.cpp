@@ -14,6 +14,7 @@
 #include <QApplication>
 
 #include <algorithm>
+#include <filesystem>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -22,6 +23,7 @@
 
 #include <cerrno>
 #include <csignal>
+#include <cctype>
 #include <cstdlib>
 #include <cstdio>
 #include <sys/time.h>
@@ -57,6 +59,49 @@ static int globargc;
 static char **globargv;
 command_list* commands = 0;
 XIAConfigurator *config = nullptr;
+
+namespace {
+std::filesystem::path run_directory_for(const std::filesystem::path &file_path)
+{
+    std::string stem = file_path.stem().string();
+    const std::string rollover_suffix = "-big-";
+    const auto rollover_pos = stem.find(rollover_suffix);
+
+    if (rollover_pos != std::string::npos && rollover_pos + rollover_suffix.size() + 3 == stem.size()) {
+        const std::string digits = stem.substr(rollover_pos + rollover_suffix.size());
+        if (std::all_of(digits.begin(), digits.end(), [](unsigned char c) { return std::isdigit(c); }))
+            stem.erase(rollover_pos);
+    }
+
+    const auto parent = file_path.parent_path();
+    if (!parent.empty() && parent.filename() == stem)
+        return parent;
+
+    return parent.empty() ? std::filesystem::path(stem) : parent / stem;
+}
+
+bool prepare_output_file_path(const std::string &requested_filename, std::string &actual_filename)
+{
+    if (requested_filename.empty())
+        return false;
+
+    const std::filesystem::path requested_path(requested_filename);
+    const auto run_dir = run_directory_for(requested_path);
+    std::error_code error;
+
+    if (!std::filesystem::create_directories(run_dir, error) && error) {
+        std::ostringstream out;
+        out << "501 error_file Could not create output directory '"
+            << escape(run_dir.string())
+            << "'.\n";
+        ls_engine->send_all(out.str());
+        return false;
+    }
+
+    actual_filename = (run_dir / requested_path.filename()).string();
+    return true;
+}
+}
 
 #ifndef OFFLINE
 #define OFFLINE false
@@ -372,7 +417,8 @@ static void command_output_none(line_channel* lc, const std::string&, void*)
 static void command_output_file(line_channel* lc, const std::string& line, void*)
 {
     const std::string fname = line.substr(12);
-    if( !do_change_output_file(fname) ) {
+    std::string actual_filename;
+    if( !prepare_output_file_path(fname, actual_filename) || !do_change_output_file(actual_filename) ) {
         line_sender ls(lc);
         ls << "405 error_file Cannot select file '" << escape(fname) << "'.\n";
     }
