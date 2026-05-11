@@ -2,11 +2,10 @@
 // Created by Vetle Wegner Ingeberg on 06/03/2026.
 //
 
-#ifndef SORT_H
-#define SORT_H
+#ifndef SORTCOINCIDENCE_H
+#define SORTCOINCIDENCE_H
 
-
-
+#include <functional>
 
 #include <Tasks/Task.h>
 #include <Tasks/Queue.h>
@@ -58,6 +57,7 @@ namespace Task {
             Detector_Histograms_t ppacs;
 
             Particle_telescope_t particle_coincidence[NUM_SI_E_DET];
+            SharedHistogram2Dp ede_spectra_all;
 
             Detector_Histograms_t *GetSpec(const DetectorType &type);
 
@@ -94,4 +94,4 @@ namespace Task {
     }
 };
 
-#endif // SORT_H
+#endif // SORTCOINCIDENCE_H
