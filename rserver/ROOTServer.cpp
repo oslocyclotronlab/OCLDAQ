@@ -14,28 +14,28 @@
 
 
 TH1* Setup1D(SharedHistogram1Dp& shared_hist) {
-        if ( shared_hist.get() == nullptr)
-            return nullptr;
+    if ( shared_hist.get() == nullptr)
+        return nullptr;
 
-        const Axis& xax = shared_hist->GetAxisX();
-        const int channels = xax.GetBinCount();
-        TH1* r = new TH1I( shared_hist->GetName().c_str(), shared_hist->GetTitle().c_str(),
-                                            channels, xax.GetLeft(), xax.GetRight() );
 
-        TAxis* rxax = r->GetXaxis();
-        rxax->SetTitle(xax.GetTitle().c_str());
-        rxax->SetTitleSize(0.03);
-        rxax->SetLabelSize(0.03);
+    const Axis& xax = shared_hist->GetAxisX();
+    const int channels = xax.GetBinCount();
+    TH1* r = new TH1I( shared_hist->GetName().c_str(), shared_hist->GetTitle().c_str(),
+                                        channels, xax.GetLeft(), xax.GetRight() );
 
-        TAxis* ryax = r->GetYaxis();
-        ryax->SetLabelSize(0.03);
+    TAxis* rxax = r->GetXaxis();
+    rxax->SetTitle(xax.GetTitle().c_str());
+    rxax->SetTitleSize(0.03);
+    rxax->SetLabelSize(0.03);
 
-        for(int i=0; i<channels+2; ++i)
-            r->SetBinContent(i, shared_hist->GetBinContent(i));
-        r->SetEntries( shared_hist->GetEntries() );
+    TAxis* ryax = r->GetYaxis();
+    ryax->SetLabelSize(0.03);
 
-        return r;
-    }
+    for(int i=0; i<channels+2; ++i)
+        r->SetBinContent(i, shared_hist->GetBinContent(i));
+    r->SetEntries( shared_hist->GetEntries() );
+    return r;
+}
 
 TH2* Setup2D(SharedHistogram2Dp& shared_hist) {
         const Axis& xax = shared_hist->GetAxisX();
@@ -191,16 +191,17 @@ ROOTServer::ROOTServer(const Options_t &options, const char& _leaveprog)
     , cubes( MapCube(histogram_manager.GetAll3D()) )
 {
     // Register all histograms
+
     for ( auto& hist : histograms) {
-        server.Register("/", hist.first);
+        server.Register(hist.second->GetPath().c_str(), hist.first);
     }
     // Register all matrices
     for ( auto& mat : matrices) {
-        server.Register("/", mat.first);
+        server.Register(mat.second->GetPath().c_str(), mat.first);
     }
     // Register all cubes
     for ( auto& cube : cubes) {
-        server.Register("/", cube.first);
+        server.Register(cube.second->GetPath().c_str(), cube.first);
     }
 }
 
