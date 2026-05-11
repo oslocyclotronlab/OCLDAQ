@@ -18,6 +18,8 @@
 #include <unistd.h>
 #include <cstdint>
 
+#include "small_vector/small_vector.h"
+
 class WriteTerminal;
 
 #define XIA_MIN_READOUT 65536
@@ -35,7 +37,8 @@ class WriteTerminal;
 
 typedef struct {
     int64_t timestamp;                  //! Timestamp of the event.
-    uint32_t raw_data[MAX_RAWDATA_LEN]; //! Pointer to the raw data.
+    //uint32_t raw_data[MAX_RAWDATA_LEN]; //! Pointer to the raw data.
+    sv::small_vector<uint32_t, MAX_RAWDATA_LEN> raw_data;
     int size_raw;                       //! Size of the raw data in number of 32 bit words.
 } Event_t;
 inline bool operator>(const Event_t &a, const Event_t &b) { return (a.timestamp>b.timestamp); }
