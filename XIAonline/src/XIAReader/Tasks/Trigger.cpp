@@ -11,6 +11,7 @@ using namespace Task;
 Trigger::Trigger(MCEventQueue_t &input, const UserConfiguration &_config)
         : input_queue( input )
         , output_queue( )
+        , stats( 16384 )
         , config( _config )
 {}
 
@@ -80,6 +81,7 @@ void Trigger::Run()
         ++entries_processed;
         if ( config.GetSortType() == SortType::gap && config.GetTrigger() == DetectorType::any ) {
             output_queue.push(std::make_pair(input, -1));
+            stats.Add(input.size());
             continue;
         }
 
@@ -87,7 +89,7 @@ void Trigger::Run()
             // Check if there is an entry that satisfies the trigger
             if ( std::find_if(input.begin(), input.end(), [this](const auto& e){ return e.type == config.GetTrigger(); }) == input.end() )
                 continue;
-            //output_queue.enqueue(std::make_pair(input, -1));
+            stats.Add(input.size());
             output_queue.push({input, -1});
             continue;
         }
@@ -114,6 +116,7 @@ void Trigger::Run()
                           (end->cfdcorr - trig->cfdcorr) ) > config.GetCoincidenceTime() )
                     break;
             }
+            stats.Add(end-begin);
             output_queue.push({std::vector(begin, end), trig - begin});
         }
     }
