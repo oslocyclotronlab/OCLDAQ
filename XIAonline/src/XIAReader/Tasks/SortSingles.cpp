@@ -82,11 +82,7 @@ Sorter::Sorter(SharedHistograms& histograms, MCEventQueue_t &input, const UserCo
 
 void Sorter::Run() {
     std::vector<Entry_t> entries;
-    while ( input_queue.is_not_finish() || !input_queue.empty() ) {
-        if ( !input_queue.try_pop(entries) ) {
-            std::this_thread::yield();
-            continue;
-        }
+    while ( input_queue.wait_and_pop(entries) ){
         Triggered_event event(entries);
         analyzer.AddEntry(event);
         output_queue.push(entries);

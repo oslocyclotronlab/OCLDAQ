@@ -17,12 +17,7 @@ void Buffer::Run()
 {
     QueueWorker worker(output_queue);
     Entry_t event;
-    while ( input_queue.is_not_finish() || !input_queue.empty() ) {
-        if ( !input_queue.try_pop( event )) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            //std::this_thread::yield();
-            continue;
-        }
+    while ( input_queue.wait_and_pop(event) ){
         ++entries_processed;
         buffer.push(event);
         if ( buffer.size() > size ){

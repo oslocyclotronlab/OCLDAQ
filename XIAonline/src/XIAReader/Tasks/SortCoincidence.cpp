@@ -174,11 +174,7 @@ Sorter::Sorter(SharedHistograms& histograms, TEventQueue_t &input, const UserCon
 
 void Sorter::Run() {
     std::pair<std::vector<Entry_t>, int> entries;
-    while ( input_queue.is_not_finish() || !input_queue.empty() ) {
-        if ( !input_queue.try_pop(entries) ) {
-            std::this_thread::yield();
-            continue;
-        }
+    while ( input_queue.wait_and_pop(entries) ){
         if ( entries.second >= 0 && entries.second < entries.first.size() ) {
             Triggered_event event(entries.first, entries.first[entries.second]);
             analyzer.AddEntry(event);

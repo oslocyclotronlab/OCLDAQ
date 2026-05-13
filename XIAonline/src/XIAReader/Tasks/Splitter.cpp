@@ -17,12 +17,7 @@ void Splitter::Run()
     Entry_t entry;
     std::vector<Entry_t> entries;
     entries.reserve(128);
-    while ( input_queue.is_not_finish() || !input_queue.empty() ) {
-        if ( !input_queue.try_pop(entry) ) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            //std::this_thread::yield();
-            continue;
-        }
+    while ( input_queue.wait_and_pop(entry) ){
         ++entries_processed;
         if (entries.empty()) {
             entries.emplace_back(entry);

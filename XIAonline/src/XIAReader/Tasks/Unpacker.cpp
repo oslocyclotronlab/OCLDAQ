@@ -24,12 +24,7 @@ void Unpacker::Run()
 {
     QueueWorker worker(output_queue);
     std::vector<uint32_t> raw;
-    while ( input_queue.is_not_finish() || !input_queue.empty() ) {
-        if ( !input_queue.try_pop(raw) ) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            //std::this_thread::yield();
-            continue;
-        }
+    while ( input_queue.wait_and_pop(raw) ){
         data.insert(data.end(), raw.begin(), raw.end());
         auto* begin = data.data();
         auto* end = data.data() + data.size();
