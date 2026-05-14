@@ -102,6 +102,10 @@ public:
         tail_.notify_all();
     }
     bool is_not_finish() const { return !is_finish; }
+    size_t size() const {
+        return tail_.load(std::memory_order_acquire) - head_.load(std::memory_order_acquire);
+    }
+    constexpr size_t capacity() const { return Capacity; }
     bool empty() {
         size_t head = head_local_;
 

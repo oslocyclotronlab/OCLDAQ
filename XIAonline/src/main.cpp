@@ -29,6 +29,10 @@
 #include <Configuration/UserConfiguration.h>
 #include <sys/mman.h>
 
+#include <chrono>
+#include <indicators/progress_bar.hpp>
+#include <indicators/multi_progress.hpp>
+
 char leaveprog='n';
 static int buffer_count=0,bad_buffer_count=0;
 
@@ -322,6 +326,34 @@ int main (int argc, char* argv[])
     pool.AddTask(&trigger);
     pool.AddTask(&csort);
 
+    // Buffer monitoring
+    using namespace indicators;
+    auto bar_options = [](const std::string& name, Color color) {
+        return ProgressBar{
+            option::BarWidth{40},
+            option::Start{"["},
+            option::Fill{"■"},
+            option::Lead{"■"},
+            option::Remainder{" "},
+            option::End{" ]"},
+            option::ForegroundColor{color},
+            option::ShowPercentage{true},
+            option::PrefixText{name + " "},
+            option::FontStyles{std::vector<FontStyle>{FontStyle::bold}}
+        };
+    };
+
+    ProgressBar b_input    = bar_options("Input",    Color::cyan);
+    ProgressBar b_unpack   = bar_options("Unpack",   Color::magenta);
+    ProgressBar b_buffer   = bar_options("Buffer",   Color::yellow);
+    ProgressBar b_split    = bar_options("Split",    Color::green);
+    ProgressBar b_singles  = bar_options("Singles",  Color::red);
+    ProgressBar b_trigger  = bar_options("Trigger",  Color::blue);
+
+    MultiProgress<ProgressBar, 6> bars(b_input, b_unpack, b_buffer, b_split, b_singles, b_trigger);
+
+    auto last_update = std::chrono::steady_clock::now();
+
     bool error = false;
     int last_tus=0;
     int last_t=0;
@@ -341,6 +373,21 @@ int main (int argc, char* argv[])
                     broadcast_bufcount(0);
                 }
             }
+        }
+
+        // Update buffer bars
+        auto now = std::chrono::steady_clock::now();
+        if (now - last_update >= std::chrono::seconds(1)) {
+            auto get_pct = [](auto& q) {
+                return float((q.size()) * 100.0 / q.capacity());
+            };
+            bars.set_progress<0>(get_pct(input_queue));
+            bars.set_progress<1>(get_pct(unpacker.GetQueue()));
+            bars.set_progress<2>(get_pct(buffer.GetQueue()));
+            bars.set_progress<3>(get_pct(splitter.GetQueue()));
+            bars.set_progress<4>(get_pct(ssort.GetQueue()));
+            bars.set_progress<5>(get_pct(trigger.GetQueue()));
+            last_update = now;
         }
 
         // check for commands, wait up to 0.02ms

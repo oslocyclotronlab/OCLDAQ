@@ -45,6 +45,11 @@ CPMAddPackage(
 CPMAddPackage("gh:jgaa/logfault@0.8.5")
 CPMAddPackage("gh:vetlewi/Histogram@2.3.0")
 CPMAddPackage("gh:p-ranav/structopt@0.1.3")
+CPMAddPackage(
+		NAME indicators
+		GITHUB_REPOSITORY p-ranav/indicators
+		VERSION 2.3
+)
 
 
 FIND_PACKAGE(Threads REQUIRED)
@@ -104,7 +109,7 @@ target_include_directories(XIAonline
 target_compile_definitions(XIAonline PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1)
 set_target_properties(XIAonline PROPERTIES CXX_STANDARD 20 POSITION_INDEPENDENT_CODE ON)
 
-target_link_libraries(XIAonline PUBLIC XIAReader sirius::sirius Threads::Threads logfault::logfault)
+target_link_libraries(XIAonline PUBLIC XIAReader sirius::sirius Threads::Threads logfault::logfault indicators::indicators)
 
 #add_executable(XIAonlineReader
 #		${CMAKE_CURRENT_LIST_DIR}/test_reader/reader.cpp
