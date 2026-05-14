@@ -453,6 +453,21 @@ void tcp_server::remove_channel(io_channel* ic)
 // ########################################################################
 // ########################################################################
 
+/* binary callback helpers */
+static void binary_server_cb_disconnected(binary_channel* bc, void* user_data)
+{
+    binary_server* bs = static_cast<binary_server*>(user_data);
+    bs->client_disconnected(bc);
+}
+
+static void binary_server_cb_has_binary(binary_channel* bc, unsigned int s, unsigned int us, const unsigned char* data, size_t size, void* user_data)
+{
+    binary_server* bs = static_cast<binary_server*>(user_data);
+    bs->client_has_binary(bc, s, us, data, size);
+}
+
+// ########################################################################
+
 /* callback helpers */
 static void line_server_cb_disconnected(line_channel* lc, void* user_data)
 {

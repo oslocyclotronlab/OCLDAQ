@@ -29,6 +29,7 @@ CPMAddPackage(
 add_library(sirius STATIC
 		${CMAKE_CURRENT_SOURCE_DIR}/src/engine_shm.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/net_control.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/net_control_binary.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/run_command.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/sort_spectra.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/utilities.cpp)
