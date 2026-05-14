@@ -6,6 +6,7 @@
 #include <map>
 #include <set>
 #include <sstream>
+#include <vector>
 
 #include <sys/select.h>
 #include <time.h>

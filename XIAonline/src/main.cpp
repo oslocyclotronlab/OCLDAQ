@@ -207,7 +207,8 @@ class BinaryDataHandler : public binary_callback {
 public:
     BinaryDataHandler(Task::InputQueue_t& queue) : queue(queue) {}
     void run(binary_channel* bc, unsigned int s, unsigned int us, const unsigned char* data, size_t size) override {
-        queue.push(std::vector<unsigned char>(data, data + size));
+        const uint32_t* words = reinterpret_cast<const uint32_t*>(data);
+        queue.push(std::vector<uint32_t>(words, words + (size / sizeof(uint32_t))));
         buffer_count++;
         broadcast_bufcount(0);
     }
@@ -274,7 +275,7 @@ int main (int argc, char* argv[])
     const volatile int* time_us = nullptr;
     const volatile int* time_s  = nullptr;
     const volatile unsigned int* data    = nullptr;
-    const volatile unsigned int  datalen = 0;
+    volatile unsigned int  datalen = 0;
     const volatile unsigned int* first_header = nullptr;
 
     if (!network_mode) {
