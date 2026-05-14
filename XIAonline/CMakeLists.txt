@@ -106,11 +106,11 @@ set_target_properties(XIAonline PROPERTIES CXX_STANDARD 20 POSITION_INDEPENDENT_
 
 target_link_libraries(XIAonline PUBLIC XIAReader sirius::sirius Threads::Threads logfault::logfault)
 
-add_executable(XIAonlineReader
-		${CMAKE_CURRENT_LIST_DIR}/test_reader/reader.cpp
-		${CMAKE_CURRENT_LIST_DIR}/test_reader/MemoryMap.cpp)
+#add_executable(XIAonlineReader
+#		${CMAKE_CURRENT_LIST_DIR}/test_reader/reader.cpp
+#		${CMAKE_CURRENT_LIST_DIR}/test_reader/MemoryMap.cpp)
 
-set_target_properties(XIAonlineReader PROPERTIES CXX_STANDARD 20 POSITION_INDEPENDENT_CODE ON)
-target_link_libraries(XIAonlineReader PUBLIC XIAReader sirius::sirius Threads::Threads logfault::logfault structopt::structopt)
+#set_target_properties(XIAonlineReader PROPERTIES CXX_STANDARD 20 POSITION_INDEPENDENT_CODE ON)
+#target_link_libraries(XIAonlineReader PUBLIC XIAReader sirius::sirius Threads::Threads logfault::logfault structopt::structopt)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
