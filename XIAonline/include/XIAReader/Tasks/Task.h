@@ -17,19 +17,12 @@
     const char* name() override { return #class_name; }
 #endif // CLASS_NAME
 
-namespace TDR {
-    struct Entry_t;
-}
-
-//struct word_t;
-
 namespace Task {
 
     class Base
     {
     protected:
         std::atomic<bool> is_done = false;
-        //std::stop_token done;
         std::atomic<bool> done = false;
         std::optional<std::exception> exception;
         size_t entries_processed = 0;
