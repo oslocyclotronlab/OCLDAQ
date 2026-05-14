@@ -10,24 +10,7 @@
 // ######################################################################## 
 // ######################################################################## 
 
-#ifndef XIA
-sort_spectrum_t sort_spectra[] = {
-    {  0, 0, 0, 0, 0, 0, 0, 0 },
-    { SINGLES_ID,  SINGLES_KEY, SINGLES_SIZE, 0, SINGLES_XSIZE, SINGLES_YSIZE, "SINGLES", "singles" },
-    { ESP_ID,      ESP_KEY,     ESP_SIZE,     0, ESP_XSIZE,     ESP_YSIZE,     "ESP",     "E" },
-    { DESP_ID,     DESP_KEY,    DESP_SIZE,    0, DESP_XSIZE,    DESP_YSIZE,    "DESP",    "DE" },
-    { EDESP_ID,    EDESP_KEY,   EDESP_SIZE,   0, EDESP_XSIZE,   EDESP_YSIZE,   "EDESP",   "E-DE" },
-    { THICKSP_ID,  THICKSP_KEY, THICKSP_SIZE, 0, THICKSP_XSIZE, THICKSP_YSIZE, "THICKSP", "tickness" },
-    { GESP_ID,     GESP_KEY,    GESP_SIZE,    0, GESP_XSIZE,    GESP_YSIZE,    "GESP",    "Ge-energy" },
-    { TGESP_ID,    TGESP_KEY,   TGESP_SIZE,   0, TGESP_XSIZE,   TGESP_YSIZE,   "TGESP",   "Ge-time" },
-    { NASP_ID,     NASP_KEY,    NASP_SIZE,    0, NASP_XSIZE,    NASP_YSIZE,    "NASP",    "NaI-energy" },
-    { TNASP_ID,    TNASP_KEY,   TNASP_SIZE,   0, TNASP_XSIZE,   TNASP_YSIZE,   "TNASP",   "NaI-time" },
-    { ALFNA_ID,    ALFNA_KEY,   ALFNA_SIZE,   0, ALFNA_XSIZE,   ALFNA_YSIZE,   "ALFNA",   "Alpha-NaI" },
-    { ALFGE_ID,    ALFGE_KEY,   ALFGE_SIZE,   0, ALFGE_XSIZE,   ALFGE_YSIZE,   "ALFGE",   "Alpha-Ge" },
-    { MAT_ID,      MAT_KEY,     MAT_SIZE,     0, MAT_XSIZE,     MAT_YSIZE,     "MAT",     "general purpose" },
-    {  0, 0, 0, 0, 0, 0, 0, 0 }
-};
-#else
+
 sort_spectrum_t sort_spectra[] = {
     {  0, 0, 0, 0, 0, 0, 0, 0 },
     { LABRSP_ID,  LABRSP_KEY,   LABRSP_SIZE,    0,  LABRSP_XSIZE,   LABRSP_YSIZE,   "LABRSP",   "LaBr-energy" },
@@ -46,7 +29,6 @@ sort_spectrum_t sort_spectra[] = {
     { GUARD_ID,   GUARD_KEY,    GUARD_SIZE,     0,  GUARD_XSIZE,    GUARD_YSIZE,    "GUARD",    "E guard rings"},
     {  0, 0, 0, 0, 0, 0, 0, 0 }
 };
-#endif // XIA
 
 const int NSPEC = sizeof(sort_spectra)/sizeof(sort_spectra[0]);
 

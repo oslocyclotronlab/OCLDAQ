@@ -28,7 +28,7 @@ include(../cmake/CPM.cmake)
 CPMAddPackage(
 		NAME PackageProject.cmake
 		GITHUB_REPOSITORY TheLartians/PackageProject.cmake
-		VERSION 1.4
+		VERSION 1.13.0
 )
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)

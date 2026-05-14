@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "Event.h"
+#include "../include/XIAReader/Format/event.h"
 
 struct calibration_t;
 
