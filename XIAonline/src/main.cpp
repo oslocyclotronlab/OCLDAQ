@@ -395,6 +395,9 @@ int main (int argc, char* argv[])
         ioc.run(&timeout);
     }
 
+    input_queue.mark_as_finish();
+    pool.DoEnd();
+
     if (engine_shm) {
         engine_shm_detach();
     }
