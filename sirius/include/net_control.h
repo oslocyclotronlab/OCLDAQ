@@ -6,6 +6,7 @@
 #include <map>
 #include <set>
 #include <sstream>
+#include <vector>
 
 #include <sys/select.h>
 #include <time.h>
@@ -166,6 +167,73 @@ private:
 
 line_channel* line_connect(io_control& ioc, const char* host, int port,
 			   line_callback *cb_disconnected, line_callback *cb_have_line);
+
+// ########################################################################
+
+class binary_callback {
+public:
+    binary_callback() { }
+    virtual ~binary_callback() { }
+    virtual void run(class binary_channel* bc, unsigned int s, unsigned int us, const unsigned char* data, size_t size) = 0;
+};
+
+class binary_cb : public binary_callback {
+public:
+    typedef void (*callback_t)(class binary_channel* bc, unsigned int s, unsigned int us, const unsigned char* data, size_t size, void* user_data);
+
+    binary_cb(callback_t c, void* ud=0)
+	: callback(c), user_data(ud) { }
+
+    virtual void run(binary_channel* bc, unsigned int s, unsigned int us, const unsigned char* data, size_t size)
+	{ if(callback) callback(bc, s, us, data, size, user_data); }
+
+private:
+    callback_t callback;
+    void* user_data;
+};
+
+// ########################################################################
+
+class binary_channel : public io_channel {
+public:
+    binary_channel(io_control& ioc, int fd, binary_callback *cb_dis, binary_callback *cb_bin);
+    ~binary_channel();
+
+    void send_frame(unsigned int s, unsigned int us, const void* data, size_t size);
+
+    void handle_read();
+    void handle_write();
+
+    void disconnect();
+
+private:
+    enum state { STATE_HEADER, STATE_METADATA, STATE_PAYLOAD };
+    state _state;
+
+    std::vector<unsigned char> inbuf, outbuf;
+    binary_callback *cb_disconnected, *cb_binary;
+};
+
+// ########################################################################
+
+class binary_server : public tcp_server {
+public:
+    binary_server(io_control& ioc, int port, std::string const& name,
+		  binary_callback* cb_conn, binary_callback* cb_dis, binary_callback* cb_bin);
+    ~binary_server();
+
+    io_channel* new_channel(int fd);
+    void send_all(unsigned int s, unsigned int us, const void* data, size_t size);
+
+    void client_disconnected(binary_channel* bc);
+    void client_has_binary(binary_channel* bc, unsigned int s, unsigned int us, const unsigned char* data, size_t size);
+
+private:
+    binary_callback *cb_connected, *cb_disconnected, *cb_binary;
+};
+
+binary_channel* binary_connect(io_control& ioc, const char* host, int port,
+			   binary_callback *cb_disconnected, binary_callback *cb_binary);
 
 // ########################################################################
 

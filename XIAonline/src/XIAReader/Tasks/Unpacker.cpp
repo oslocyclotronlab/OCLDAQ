@@ -25,6 +25,8 @@ void Unpacker::Run()
     QueueWorker worker(output_queue);
     std::vector<uint32_t> raw;
     while ( input_queue.wait_and_pop(raw) ){
+        data.insert(data.end(), overflow.begin(), overflow.end());
+        overflow.clear();
         data.insert(data.end(), raw.begin(), raw.end());
         auto* begin = data.data();
         auto* end = data.data() + data.size();
@@ -37,11 +39,9 @@ void Unpacker::Run()
                 }
             } else {
                 overflow.insert(overflow.end(), pos, end);
-                data.clear();
-                data.insert(data.end(), overflow.begin(), overflow.end());
-                overflow.clear();
             }
             pos += header->eventLen;
         }
+        data.clear();
     }
 }

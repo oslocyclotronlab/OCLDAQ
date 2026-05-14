@@ -111,7 +111,7 @@ int make_socket(int port, bool reuse_addr)
     //    ::close(sock);
     //    return -1;
     //}
-    name.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    name.sin_addr.s_addr = htonl(INADDR_ANY);
     name.sin_port = htons(port);
     if(bind(sock,(struct sockaddr *) &name, sizeof(name)) < 0) {
         perror("binding address to socket");

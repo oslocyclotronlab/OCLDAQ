@@ -50,6 +50,7 @@ static unsigned int datalen_char = 1;
 static timeval last_time = { 0, 0 };
 
 static line_server* ls_engine = 0;
+static binary_server* bs_engine = 0;
 
 static WriteTerminal termWrite;
 static XIAControl *xiacontr;
@@ -509,6 +510,10 @@ int main_engine(int argc, char* argv[])
                 (ioc, 32009, "engine",
                  new line_cb(cb_connected), new line_cb(cb_disconnected),
                  new command_cb(engine_commands, "407 error_cmd"));
+
+        bs_engine = new binary_server
+                (ioc, 32008, "engine_bin",
+                 nullptr, nullptr, nullptr);
     } catch ( const std::exception &ex ){
         std::cerr << ex.what() << std::endl;
         exit(EXIT_FAILURE);
@@ -544,6 +549,11 @@ int main_engine(int argc, char* argv[])
                     gettimeofday(&t, 0);
                     *time_us = t.tv_usec;
                     *time_s  = t.tv_sec;
+
+                    // send via binary server
+                    if ( bs_engine ) {
+                        bs_engine->send_all(t.tv_sec, t.tv_usec, data, datalen_char);
+                    }
 
                     // write buffer
                     if( output_file ) {

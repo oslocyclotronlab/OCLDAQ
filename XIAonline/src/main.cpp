@@ -29,6 +29,10 @@
 #include <Configuration/UserConfiguration.h>
 #include <sys/mman.h>
 
+#include <chrono>
+#include <indicators/progress_bar.hpp>
+#include <indicators/multi_progress.hpp>
+
 char leaveprog='n';
 static int buffer_count=0,bad_buffer_count=0;
 
@@ -203,15 +207,42 @@ double avr_event_length(const std::vector<std::vector<Entry_t>>& events) {
 
 // ########################################################################
 
+class BinaryDataHandler : public binary_callback {
+public:
+    BinaryDataHandler(Task::InputQueue_t& queue) : queue(queue) {}
+    void run(binary_channel* bc, unsigned int s, unsigned int us, const unsigned char* data, size_t size) override {
+        const uint32_t* words = reinterpret_cast<const uint32_t*>(data);
+        queue.push(std::vector<uint32_t>(words, words + (size / sizeof(uint32_t))));
+        buffer_count++;
+        broadcast_bufcount(0);
+    }
+private:
+    Task::InputQueue_t& queue;
+};
+
 int main (int argc, char* argv[])
 {
-    std::ifstream config_file;
-    if ( argc == 1 ) {
-        config_file.open("config.yml");
-    } else if ( argc == 2 ) {
-        config_file.open(argv[1]);
-    } else {
-        std::cerr << "acq_sort runs with no or one parameter" << std::endl;
+    std::string config_path = "config.yml";
+    std::string host = "127.0.0.1";
+    bool network_mode = false;
+
+    if (argc > 1) {
+        for (int i = 1; i < argc; ++i) {
+            std::string arg = argv[i];
+            if (arg == "--network") {
+                network_mode = true;
+                if (i + 1 < argc && argv[i+1][0] != '-') {
+                    host = argv[++i];
+                }
+            } else if (arg[0] != '-') {
+                config_path = arg;
+            }
+        }
+    }
+
+    std::ifstream config_file(config_path);
+    if (!config_file.is_open()) {
+        std::cerr << "Could not open config file: " << config_path << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -244,20 +275,38 @@ int main (int argc, char* argv[])
                               new line_cb(cb_connected), new line_cb(cb_disconnected),
                               new command_cb(sort_commands, "407 error_cmd"));
 
-    // attach shared databuffer segment (written by engine)
-    unsigned int *engine_shm = engine_shm_attach(false);
-    if( !engine_shm ) {
-        std::cerr << "Failed to attach engine shm." << std::endl;
-        exit(EXIT_FAILURE);
+    unsigned int *engine_shm = nullptr;
+    const volatile int* time_us = nullptr;
+    const volatile int* time_s  = nullptr;
+    const volatile unsigned int* data    = nullptr;
+    volatile unsigned int  datalen = 0;
+    const volatile unsigned int* first_header = nullptr;
+
+    if (!network_mode) {
+        engine_shm = engine_shm_attach(false);
+        if( !engine_shm ) {
+            std::cerr << "Failed to attach engine shm." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        time_us = (int*)&engine_shm[ENGINE_TIME_US];
+        time_s  = (int*)&engine_shm[ENGINE_TIME_S ];
+        data    = engine_shm + engine_shm[ENGINE_DATA_START];
+        datalen = engine_shm[ENGINE_DATA_SIZE];
+        first_header = (unsigned int*)&engine_shm[ENGINE_FIRST_HEADER];
     }
-    const volatile int* time_us = (int*)&engine_shm[ENGINE_TIME_US];
-    const volatile int* time_s  = (int*)&engine_shm[ENGINE_TIME_S ];
-    const volatile unsigned int* data    = engine_shm + engine_shm[ENGINE_DATA_START];
-    const volatile unsigned int  datalen = engine_shm[ENGINE_DATA_SIZE];
-    const volatile unsigned int* first_header = (unsigned int*)&engine_shm[ENGINE_FIRST_HEADER];
 
     // Tasks
     Task::InputQueue_t input_queue;
+
+    if (network_mode) {
+        BinaryDataHandler* handler = new BinaryDataHandler(input_queue);
+        binary_channel* bc = binary_connect(ioc, host.c_str(), 32008, 
+                                           nullptr, handler);
+        if (!bc) {
+            std::cerr << "Failed to connect to engine at " << host << ":32008" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+    }
     Task::Unpacker unpacker(input_queue, config.GetConfigManager());
     Task::Buffer buffer(unpacker.GetQueue());
     Task::Splitter splitter(buffer.GetQueue(), config.GetSplitTime());
@@ -277,23 +326,68 @@ int main (int argc, char* argv[])
     pool.AddTask(&trigger);
     pool.AddTask(&csort);
 
+    // Buffer monitoring
+    using namespace indicators;
+    auto bar_options = [](const std::string& name, Color color) {
+        return ProgressBar{
+            option::BarWidth{40},
+            option::Start{"["},
+            option::Fill{"■"},
+            option::Lead{"■"},
+            option::Remainder{" "},
+            option::End{" ]"},
+            option::ForegroundColor{color},
+            option::ShowPercentage{true},
+            option::PrefixText{name + " "},
+            option::FontStyles{std::vector<FontStyle>{FontStyle::bold}}
+        };
+    };
+
+    ProgressBar b_input    = bar_options("Input",    Color::cyan);
+    ProgressBar b_unpack   = bar_options("Unpack",   Color::magenta);
+    ProgressBar b_buffer   = bar_options("Buffer",   Color::yellow);
+    ProgressBar b_split    = bar_options("Split",    Color::green);
+    ProgressBar b_singles  = bar_options("Singles",  Color::red);
+    ProgressBar b_trigger  = bar_options("Trigger",  Color::blue);
+
+    MultiProgress<ProgressBar, 6> bars(b_input, b_unpack, b_buffer, b_split, b_singles, b_trigger);
+
+    auto last_update = std::chrono::steady_clock::now();
+
     bool error = false;
     int last_tus=0;
     int last_t=0;
 
     while ( leaveprog == 'n' ){
-        const int tus = *time_us;
-        const int ts = *time_s;
-        error = false;
+        if (!network_mode) {
+            const int tus = *time_us;
+            const int ts = *time_s;
+            error = false;
 
-        if (tus != 0 && ts != 0) {
-            if (ts > last_t || (ts == last_t && tus > last_tus)){
-                last_t = ts;
-                last_tus = tus;
-                input_queue.push(std::vector(data+(*first_header), data+datalen-(*first_header)));
-                ++buffer_count;
-                broadcast_bufcount(0);
+            if (tus != 0 && ts != 0) {
+                if (ts > last_t || (ts == last_t && tus > last_tus)){
+                    last_t = ts;
+                    last_tus = tus;
+                    input_queue.push(std::vector(data+(*first_header), data+datalen-(*first_header)));
+                    ++buffer_count;
+                    broadcast_bufcount(0);
+                }
             }
+        }
+
+        // Update buffer bars
+        auto now = std::chrono::steady_clock::now();
+        if (now - last_update >= std::chrono::seconds(1)) {
+            auto get_pct = [](auto& q) {
+                return float((q.size()) * 100.0 / q.capacity());
+            };
+            bars.set_progress<0>(get_pct(input_queue));
+            bars.set_progress<1>(get_pct(unpacker.GetQueue()));
+            bars.set_progress<2>(get_pct(buffer.GetQueue()));
+            bars.set_progress<3>(get_pct(splitter.GetQueue()));
+            bars.set_progress<4>(get_pct(ssort.GetQueue()));
+            bars.set_progress<5>(get_pct(trigger.GetQueue()));
+            last_update = now;
         }
 
         // check for commands, wait up to 0.02ms
@@ -301,6 +395,10 @@ int main (int argc, char* argv[])
         ioc.run(&timeout);
     }
 
-    // detach shared memory
-    engine_shm_detach();
+    input_queue.mark_as_finish();
+    pool.DoEnd();
+
+    if (engine_shm) {
+        engine_shm_detach();
+    }
 }
