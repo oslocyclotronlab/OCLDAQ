@@ -32,6 +32,8 @@
 #include <unistd.h>
 
 #include <xiaconfigurator.h>
+#include "io/FileHeader.h"
+#include "io/MemoryMap.h"
 
 #if _FILE_OFFSET_BITS != 64
 #error must compile with _FILE_OFFSET_BITS == 64
@@ -45,7 +47,7 @@ static bool stopped = true;
 static int buffer_count = -1;
 static float buffer_rate = 0;
 static std::string output_filename;
-static FILE* output_file=0;
+static IO::MemoryMap* output_map = nullptr;
 static unsigned int datalen_char = 1;
 static timeval last_time = { 0, 0 };
 
@@ -133,12 +135,11 @@ int GUI_thread(int nmod)
 
 static void close_file()
 {
-    if( output_file ) {
+    if( output_map ) {
         char tmp[2048];
         snprintf(tmp, sizeof(tmp), "engine: file '%s' was closed.\n", output_filename.c_str());
-        fflush(output_file);
-        fclose(output_file);
-        output_file = nullptr;
+        delete output_map;
+        output_map = nullptr;
     }
     buffer_count = 0;
 }
@@ -152,21 +153,23 @@ static bool open_file()
     if( output_filename.empty() )
         return true;
 
-    output_file = fopen(output_filename.c_str(), "ab");
-    if( !output_file ) {
-        std::ostringstream out;
-        out << "501 error_file Could not open '"
-            << escape(output_filename)
-            << "' for append.\n";
-        ls_engine->send_all(out.str());
-        return false;
-    } else {
-        const long fs = ftell(output_file);
-        buffer_count = fs / datalen_char;
+    try {
+        // Max size 2^31 bytes
+        output_map = new IO::MemoryMap(output_filename.c_str(), (1ULL << 31), true);
+        IO::write_header(output_map->GetWritePtr());
+        
+        buffer_count = 0;
         char tmp[2048];
-        snprintf(tmp, sizeof(tmp), "engine: file '%s' (%d buffers) was opened.\n", output_filename.c_str(), buffer_count);
+        snprintf(tmp, sizeof(tmp), "engine: file '%s' (0 buffers) was opened with MemoryMap.\n", output_filename.c_str());
         termWrite.Write(tmp);
         return true;
+    } catch (const std::exception& e) {
+        std::ostringstream out;
+        out << "501 error_file Could not map '"
+            << escape(output_filename)
+            << "': " << e.what() << "\n";
+        ls_engine->send_all(out.str());
+        return false;
     }
 }
 
@@ -174,8 +177,22 @@ static bool open_file()
 
 static void do_stop()
 {
-    xiacontr->XIA_end_run(output_file, output_filename.c_str());
-    close_file();
+    if (output_map) {
+        // Close MemoryMap first to flush to disk
+        close_file();
+
+        // Open with FILE* to let XIA_end_run write to the end
+        FILE* f = fopen(output_filename.c_str(), "ab");
+        if (f) {
+            xiacontr->XIA_end_run(f, output_filename.c_str());
+            fclose(f);
+        } else {
+            std::cerr << "engine: Could not open file for XIA_end_run: " << output_filename << std::endl;
+        }
+    } else {
+        xiacontr->XIA_end_run(nullptr, output_filename.c_str());
+    }
+
     stopped = true;
     last_time.tv_sec = last_time.tv_usec = 0;
 
@@ -546,11 +563,30 @@ int main_engine(int argc, char* argv[])
                     *time_s  = t.tv_sec;
 
                     // write buffer
-                    if( output_file ) {
-                        unsigned int w = fwrite(data, 1, datalen_char, output_file);
-                        if( w != datalen_char ) {
-                            ls_engine->send_all("503 error_file Write error, closing file and stopping.\n");
-                            do_stop();
+                    if( output_map ) {
+                        size_t current_used = output_map->GetUsedSize();
+                        size_t header_size = sizeof(IO::FileHeader_t);
+                        
+                        // Check if we have space for the buffer (limit 2^31)
+                        if (current_used + datalen_char > (1ULL << 31) - header_size) {
+                            ls_engine->send_all("engine: file full, rotating...\n");
+                            change_output_file();
+                            
+                            // After rotation, we need to write the buffer to the new map
+                            if (output_map) {
+                                memcpy(output_map->GetWritePtr() + header_size, data, datalen_char);
+                                output_map->SetUsedSize(datalen_char);
+                                auto* header = reinterpret_cast<IO::FileHeader_t*>(output_map->GetWritePtr());
+                                header->bytes_written = datalen_char;
+                            } else {
+                                ls_engine->send_all("503 error_file Rotation failed, stopping.\n");
+                                do_stop();
+                            }
+                        } else {
+                            memcpy(output_map->GetWritePtr() + header_size + current_used, data, datalen_char);
+                            output_map->SetUsedSize(current_used + datalen_char);
+                            auto* header = reinterpret_cast<IO::FileHeader_t*>(output_map->GetWritePtr());
+                            header->bytes_written = current_used + datalen_char;
                         }
                     }
 
@@ -572,8 +608,6 @@ int main_engine(int argc, char* argv[])
                     // send message about new buffer count
                     buffer_count += 1;
                     broadcast_buffer_count();
-                    if( output_file && buffer_count == MAX_BUFFER_COUNT )
-                        change_output_file();
                 }
                 continue;
             }

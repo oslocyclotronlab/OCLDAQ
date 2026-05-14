@@ -103,6 +103,18 @@ endif()
 add_library(XIA::Pixie16 ALIAS Pixie16)
 set_property(TARGET Pixie16 PROPERTY POSITION_INDEPENDENT_CODE ON)
 
+add_library(IO STATIC
+		${CMAKE_CURRENT_LIST_DIR}/src/io/MemoryMap.cpp
+)
+add_library(XIAengine::IO ALIAS IO)
+target_include_directories(IO
+	PUBLIC
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/io>
+		$<INSTALL_INTERFACE:include/io>
+	PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/src/io)
+set_property(TARGET IO PROPERTY CXX_STANDARD 20 POSITION_INDEPENDENT_CODE ON)
+
 # To find Qt5: -DQt5_DIR=/opt/homebrew/opt/qt@5/lib/cmake/Qt5
 find_package(Qt6 COMPONENTS Widgets REQUIRED)
 set(CMAKE_AUTOMOC ON)
@@ -155,18 +167,18 @@ target_include_directories(XIAengine
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/XIAConfigurator>
 )
 
-set_target_properties(XIAengine PROPERTIES CXX_STANDARD 20)
-set_property(TARGET XIAengine PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_target_properties(XIAengine PROPERTIES CXX_STANDARD 20 POSITION_INDEPENDENT_CODE ON)
 target_compile_definitions(XIAengine PRIVATE NUMBER_OF_CHANNELS=16)
 
 target_link_libraries(XIAengine
 	PUBLIC
+		Threads::Threads
 		XIA::Pixie16
 		sirius::sirius
+		XIAengine::IO
 		Qt6::Core
 		Qt6::Widgets
 		inih::inih
-		Threads::Threads
 )
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
