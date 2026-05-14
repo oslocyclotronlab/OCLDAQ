@@ -14,6 +14,7 @@
 #include <QApplication>
 
 #include <algorithm>
+#include <filesystem>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -22,9 +23,12 @@
 
 #include <cerrno>
 #include <csignal>
+#include <cctype>
 #include <cstdlib>
 #include <cstdio>
 #include <sys/time.h>
+#include <sys/file.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 #include <xiaconfigurator.h>
@@ -55,6 +59,49 @@ static int globargc;
 static char **globargv;
 command_list* commands = 0;
 XIAConfigurator *config = nullptr;
+
+namespace {
+std::filesystem::path run_directory_for(const std::filesystem::path &file_path)
+{
+    std::string stem = file_path.stem().string();
+    const std::string rollover_suffix = "-big-";
+    const auto rollover_pos = stem.find(rollover_suffix);
+
+    if (rollover_pos != std::string::npos && rollover_pos + rollover_suffix.size() + 3 == stem.size()) {
+        const std::string digits = stem.substr(rollover_pos + rollover_suffix.size());
+        if (std::all_of(digits.begin(), digits.end(), [](unsigned char c) { return std::isdigit(c); }))
+            stem.erase(rollover_pos);
+    }
+
+    const auto parent = file_path.parent_path();
+    if (!parent.empty() && parent.filename() == stem)
+        return parent;
+
+    return parent.empty() ? std::filesystem::path(stem) : parent / stem;
+}
+
+bool prepare_output_file_path(const std::string &requested_filename, std::string &actual_filename)
+{
+    if (requested_filename.empty())
+        return false;
+
+    const std::filesystem::path requested_path(requested_filename);
+    const auto run_dir = run_directory_for(requested_path);
+    std::error_code error;
+
+    if (!std::filesystem::create_directories(run_dir, error) && error) {
+        std::ostringstream out;
+        out << "501 error_file Could not create output directory '"
+            << escape(run_dir.string())
+            << "'.\n";
+        ls_engine->send_all(out.str());
+        return false;
+    }
+
+    actual_filename = (run_dir / requested_path.filename()).string();
+    return true;
+}
+}
 
 #ifndef OFFLINE
 #define OFFLINE false
@@ -141,13 +188,20 @@ static void do_stop()
 
 // ########################################################################
 
-static bool do_change_output_file(const std::string& fname)
+static bool do_change_output_file(const std::string& fname, bool save_settings = true)
 {
     if( fname.empty() || fname == output_filename )
         return false;
 
     // close the file if it exists
     close_file();
+
+    if ( save_settings && xiacontr && !xiacontr->SaveSettingsForDataFile(fname.c_str()) ) {
+        ls_engine->send_all("501 error_file Could not save DSP settings file.\n");
+        if( !stopped )
+            do_stop();
+        return false;
+    }
 
     // change output filename
     output_filename = fname;
@@ -167,6 +221,7 @@ static bool do_change_output_file(const std::string& fname)
             return false;
         }
     }
+
     return true;
 }
 
@@ -211,7 +266,7 @@ static bool change_output_file()
         return false;
     }
 
-    return do_change_output_file(new_filename);
+    return do_change_output_file(new_filename, false);
 }
 
 // ########################################################################
@@ -370,7 +425,8 @@ static void command_output_none(line_channel* lc, const std::string&, void*)
 static void command_output_file(line_channel* lc, const std::string& line, void*)
 {
     const std::string fname = line.substr(12);
-    if( !do_change_output_file(fname) ) {
+    std::string actual_filename;
+    if( !prepare_output_file_path(fname, actual_filename) || !do_change_output_file(actual_filename, true) ) {
         line_sender ls(lc);
         ls << "405 error_file Cannot select file '" << escape(fname) << "'.\n";
     }
@@ -554,6 +610,31 @@ int main_gui(int nmod, QApplication &app, XIAConfigurator &c)
 
 int main(int argc, char* argv[])
 {
+    const char* lock_file = "/tmp/XIAengine.lock";
+
+    int fd = open(lock_file, O_CREAT | O_RDWR, 0666);
+    if (fd == -1) {
+        std::cerr << "Could not open lock file: " << lock_file << ". Got error: " << std::strerror(errno) << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    // locking the file
+    if ( flock(fd, LOCK_EX | LOCK_NB) == -1 ) {
+        if ( errno == EWOULDBLOCK ) {
+            std::cerr << "Another instance of XIAengine is already running." << std::endl;
+        } else {
+            std::cerr << "Failed to lock file: " << lock_file << ". Got error: " << std::strerror(errno) << std::endl;
+        }
+        close(fd);
+        return EXIT_FAILURE;
+    }
+
+    std::cout << "Lock on lockfile sucessfully acquired." << std::endl;
+    ftruncate(fd, 0);
+    std::string pidStr = std::to_string(getpid()) + "\n";
+    write(fd, pidStr.c_str(), pidStr.size());
+
+
     QApplication app(argc, argv);
     unsigned short PXIMapping[PRESET_MAX_MODULES];
     for (unsigned short & mapping : PXIMapping)
@@ -604,6 +685,10 @@ int main(int argc, char* argv[])
     auto r = main_gui(nmod, app, configurator);
 
     if ( engine_thread.joinable() ) engine_thread.join();
+
+    // Cleanup
+    flock(fd, LOCK_UN);
+    close(fd);
 
     return r;
 }
