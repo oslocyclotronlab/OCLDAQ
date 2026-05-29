@@ -13,6 +13,7 @@
 #include "engine_shm.h"
 #include "net_control.h"
 #include "utilities.h"
+#include "run_command.h"
 
 #include <histogram/SharedHistograms.h>
 #include <histogram/RootWriter.h>
@@ -40,6 +41,15 @@ static line_server *ls_sort = nullptr;
 static SharedHistograms *histograms = nullptr;
 
 static RingBuffer *stats = nullptr;
+command_list* commands = nullptr;
+
+static void reload_commands()
+{
+    if (!commands) commands = new command_list();
+    if (!commands->read("acq_master_commands.txt")) {
+        // Fallback or log error
+    }
+}
 
 void keyb_int(int sig_num)
 {
@@ -69,19 +79,30 @@ static void command_quit(line_channel*, const std::string&, void*)
 
 // ########################################################################
 
+static std::string read_marker()
+{
+    const std::string marker_file = ".cwd_marker";
+    std::ifstream ifs(marker_file);
+    std::string id;
+    if (ifs >> id) {
+        return id;
+    }
+    return "no-marker";
+}
+
 static void command_status_cwd(line_channel* lc, const std::string&, void*)
 {
     char cwd[1024];
     if( !getcwd(cwd, sizeof(cwd)) ) {
         line_sender ls(lc);
         if( errno == ENOENT ) {
-            ls << "207 status_cwd -unlinked-\n";
+            ls << "207 status_cwd -unlinked- no-id\n";
         } else {
             ls << "405 error_dir Cannot get current directory.\n";
         }
     } else {
         line_sender ls(lc);
-        ls << "207 status_cwd " << cwd << '\n';
+        ls << "207 status_cwd " << cwd << " " << (commands ? commands->get("exp_id", "no-id") : "no-id") << '\n';
     }
 }
 
@@ -94,8 +115,9 @@ static void command_change_cwd(line_channel* lc, const std::string& line, void*)
         line_sender ls(lc);
         ls << "406 error_dir Cannot change to directory '" << escape(dirname) << "'.\n";
     } else {
+        reload_commands();
         std::ostringstream out;
-        out << "207 status_cwd " << dirname << '\n';
+        out << "207 status_cwd " << dirname << " " << (commands ? commands->get("exp_id", "no-id") : "no-id") << '\n';
         ls_sort->send_all(out.str());
     }
 }
@@ -271,6 +293,7 @@ int main (int argc, char* argv[])
         {0, 0, 0, 0}
     };
 
+    reload_commands();
     ls_sort = new line_server(ioc, 32010, "acq_sort",
                               new line_cb(cb_connected), new line_cb(cb_disconnected),
                               new command_cb(sort_commands, "407 error_cmd"));

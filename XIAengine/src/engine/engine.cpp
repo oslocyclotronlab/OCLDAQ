@@ -435,6 +435,14 @@ static void command_output_file(line_channel* lc, const std::string& line, void*
 
 // ########################################################################
 
+static void reload_commands()
+{
+    if (!commands) commands = new command_list();
+    if (!commands->read("acq_master_commands.txt")) {
+        // Fallback or log error
+    }
+}
+
 static void command_output_dir(line_channel* lc, const std::string& line, void*)
 {
     if( !stopped ) {
@@ -447,8 +455,9 @@ static void command_output_dir(line_channel* lc, const std::string& line, void*)
         line_sender ls(lc);
         ls << "406 error_dir Cannot change to directory '" << escape(dirname) << "'.\n";
     } else {
+        reload_commands();
         std::ostringstream out;
-        out << "205 output_dir " << dirname << '\n';
+        out << "205 output_dir " << dirname << " " << (commands ? commands->get("exp_id", "no-id") : "no-id") << '\n';
         ls_engine->send_all(out.str());
     }
 }
