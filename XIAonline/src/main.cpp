@@ -228,7 +228,7 @@ private:
     Task::InputQueue_t& queue;
 };
 
-int start_application(const Options_t& options) {
+void start_application(const Options_t& options) {
 
     std::string config_path = options.configuration.value();
     bool network_mode = ( options.network_source != "0" );
