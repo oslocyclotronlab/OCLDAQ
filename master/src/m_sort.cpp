@@ -127,10 +127,21 @@ static void m_sort_have_line(line_channel*, void*)
 	std::getline(line, remain);
         log_message(LOG_INFO, "sort: user routine identifier is: %s\n", remain.c_str());
         break; }
-    case 207: { // status_cwd %s
+    case 207: { // status_cwd %s %s
         line.get();
-        std::getline(line, sort_cwd);
-        DBGV(sort_cwd);
+        std::string path, marker_id;
+        line >> path >> marker_id;
+        
+        std::string expected_id = commands->get("exp_id", "");
+
+        if (!expected_id.empty() && marker_id == expected_id) {
+            sort_cwd = path;
+            DBGV("CWD verified via marker: " << sort_cwd << " (ID: " << marker_id << ")");
+        } else {
+            sort_cwd = path;
+            log_message(LOG_WARN, "sort: CWD marker mismatch! Remote: %s, Expected: %s\n", 
+                        marker_id.c_str(), expected_id.c_str());
+        }
         gui_update_state();
         break; }
 
@@ -172,25 +183,8 @@ static void m_sort_disconnected(line_channel*, void*)
 
 bool m_sort_connect(io_control& ioc)
 {
-    if( lc_sort )
-        return true;
-
-
-    lc_sort = line_connect(ioc, "127.0.0.1", 32010,
-			   new line_cb(m_sort_disconnected),
-			   new line_cb(m_sort_have_line));
-    if( !lc_sort ) {
-	commands->run("sort");
-    #ifndef __APPLE__
-        sleep(1);
-    #endif // __APPLE__
-	lc_sort = line_connect(ioc, "127.0.0.1", 32010,
-			       new line_cb(m_sort_disconnected),
-			       new line_cb(m_sort_have_line));
-    }
-    gui_update_state();
-
-    return lc_sort != 0;
+    std::string host = commands->get("xia_sort_host", "127.0.0.1");
+    return m_sort_connect(ioc, host.c_str());
 }
 
 // ########################################################################
@@ -331,7 +325,14 @@ void m_sort_get_buffers(int& buffer_count, int& error_count, float& average_leng
 
 bool m_sort_change_cwd(const char* dirname)
 {
-    return m_sort_send("change_cwd", dirname);
+    std::string exp_id = commands->get("exp_id", "");
+    if (exp_id.empty()) {
+        log_message(LOG_ERR, "sort: exp_id not found in commands list\n");
+        return false;
+    }
+    
+    std::string full_path = "/mnt/ocl/ocl-experiments/" + exp_id;
+    return m_sort_send("change_cwd", full_path.c_str());
 }
 
 // ########################################################################

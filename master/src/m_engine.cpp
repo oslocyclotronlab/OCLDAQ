@@ -111,23 +111,8 @@ static void m_engine_disconnected(line_channel*, void*)
 
 bool m_engine_connect(io_control& ioc)
 {
-    if( lc_engine )
-        return true;
-
-    lc_engine = line_connect(ioc, "127.0.0.1", 32009,
-			     new line_cb(m_engine_disconnected),
-			     new line_cb(m_engine_have_line));
-    if( !lc_engine ) {
-	commands->run("engine");
-    #ifndef __APPLE__
-        sleep(1);
-    #endif // __APPLE__
-	lc_engine = line_connect(ioc, "127.0.0.1", 32009,
-				 new line_cb(m_engine_disconnected),
-				 new line_cb(m_engine_have_line));
-    }
-    gui_update_state();
-    return lc_engine != 0;
+    std::string host = commands->get("engine_host", "127.0.0.1");
+    return m_engine_connect(ioc, host.c_str());
 }
 
 // ########################################################################
