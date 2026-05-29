@@ -22,6 +22,7 @@ static line_channel* lc_sort = 0;
 static int sort_buffers=0, sort_errors=0;
 static float sort_average_length=0;
 static std::string sort_cwd;
+static std::string sort_exp_id;
 
 // ########################################################################
 
@@ -132,16 +133,9 @@ static void m_sort_have_line(line_channel*, void*)
         std::string path, marker_id;
         line >> path >> marker_id;
         
-        std::string expected_id = commands->get("exp_id", "");
-
-        if (!expected_id.empty() && marker_id == expected_id) {
-            sort_cwd = path;
-            DBGV("CWD verified via marker: " << sort_cwd << " (ID: " << marker_id << ")");
-        } else {
-            sort_cwd = path;
-            log_message(LOG_INFO, "sort: CWD marker mismatch! Remote: %s, Expected: %s\n",
-                        marker_id.c_str(), expected_id.c_str());
-        }
+        sort_cwd = path;
+        sort_exp_id = marker_id;
+        
         gui_update_state();
         break; }
 
@@ -340,4 +334,9 @@ bool m_sort_change_cwd(const char* dirname)
 const char* m_sort_get_cwd()
 {
     return sort_cwd.empty() ? 0 : sort_cwd.c_str();
+}
+
+const char* m_sort_get_exp_id()
+{
+    return sort_exp_id.empty() ? 0 : sort_exp_id.c_str();
 }

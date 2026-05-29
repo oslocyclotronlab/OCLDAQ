@@ -84,14 +84,8 @@ static void engine_cancel_directory(Widget dialog, XtPointer, XtPointer)
 
 static void engine_change_directory(Widget dialog, XtPointer, XtPointer)
 {
-    char cwd[1024];
-    if( !getcwd(cwd, sizeof(cwd)) ) {
-        log_message(LOG_ERR, "acq_master: Cannot get working directory!\n");
-        return;
-    }
-
-    log_message(LOG_INFO, "Asking engine to change to '%s'\n", cwd);
-    m_engine_output_dir(cwd);
+    log_message(LOG_INFO, "Asking engine to change directory based on exp_id\n");
+    m_engine_change_cwd();
     engine_cancel_directory(dialog, 0, 0);
 }
 
@@ -131,23 +125,19 @@ static void engine_check_directory()
         return;
     }
 
-    char cwd[1024];
-    if( !getcwd(cwd, sizeof(cwd)) ) {
-        log_message(LOG_ERR, "acq_master: Cannot get working directory!\n");
-        return;
-    }
-    const char* edir_c = m_engine_get_output_dir();
-    if( !edir_c )
-        return;
-    const std::string edir(edir_c), mdir(cwd);
-    if( edir == mdir )
+    const char* remote_id = m_engine_get_exp_id();
+    const std::string expected_id = commands->get("exp_id", "");
+
+    if (!remote_id || remote_id == expected_id)
         return;
 
     if( m_engine_is_started() ) {
-        log_message(LOG_INFO, "Engine started, but in different directory!\n");
+        log_message(LOG_INFO, "Engine started, but with different exp_id!\n");
         return;
     }
-    show_engine_dir_dialog(cwd);
+    
+    const char* cwd = m_engine_get_output_dir();
+    show_engine_dir_dialog(cwd ? cwd : "unknown");
 }
 
 // ########################################################################
@@ -166,14 +156,8 @@ static void sort_cancel_directory(Widget dialog, XtPointer, XtPointer)
 
 static void sort_change_directory(Widget dialog, XtPointer, XtPointer)
 {
-    char cwd[1024];
-    if( !getcwd(cwd, sizeof(cwd)) ) {
-        log_message(LOG_ERR, "acq_master: Cannot get working directory!\n");
-        return;
-    }
-
-    log_message(LOG_INFO, "Asking sort to change to '%s'\n", cwd);
-    m_sort_change_cwd(cwd);
+    log_message(LOG_INFO, "Asking sort to change directory based on exp_id\n");
+    m_sort_change_cwd(nullptr);
     sort_cancel_directory(dialog, 0, 0);
 }
 
@@ -213,19 +197,14 @@ static void sort_check_directory()
         return;
     }
 
-    char cwd[1024];
-    if( !getcwd(cwd, sizeof(cwd)) ) {
-        log_message(LOG_ERR, "acq_master: Cannot get working directory!\n");
-        return;
-    }
-    const char* sdir_c = m_sort_get_cwd();
-    if( !sdir_c )
-        return;
-    const std::string sdir(sdir_c), mdir(cwd);
-    if( sdir == mdir )
+    const char* remote_id = m_sort_get_exp_id();
+    const std::string expected_id = commands->get("exp_id", "");
+
+    if (!remote_id || remote_id == expected_id)
         return;
 
-    show_sort_dir_dialog(cwd);
+    const char* cwd = m_sort_get_cwd();
+    show_sort_dir_dialog(cwd ? cwd : "unknown");
 }
 
 // ########################################################################

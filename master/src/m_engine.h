@@ -17,11 +17,13 @@ bool m_engine_reload();
 bool m_engine_output_none();
 bool m_engine_output_filename(const char* filename);
 bool m_engine_output_dir(const char* dirname);
+bool m_engine_change_cwd();
 
 bool m_engine_is_started();
 bool m_engine_is_connected();
 const char* m_engine_get_output();
 const char* m_engine_get_output_dir();
+const char* m_engine_get_exp_id();
 int m_engine_get_buffercount();
 float m_engine_get_buffer_rate();
 
