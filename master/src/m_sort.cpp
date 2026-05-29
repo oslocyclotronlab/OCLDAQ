@@ -139,7 +139,7 @@ static void m_sort_have_line(line_channel*, void*)
             DBGV("CWD verified via marker: " << sort_cwd << " (ID: " << marker_id << ")");
         } else {
             sort_cwd = path;
-            log_message(LOG_WARN, "sort: CWD marker mismatch! Remote: %s, Expected: %s\n", 
+            log_message(LOG_INFO, "sort: CWD marker mismatch! Remote: %s, Expected: %s\n",
                         marker_id.c_str(), expected_id.c_str());
         }
         gui_update_state();
