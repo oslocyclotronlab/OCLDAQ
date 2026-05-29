@@ -245,11 +245,6 @@ int start_application(const Options_t& options) {
 
     SharedHistograms histograms = SharedHistograms::Create("XIAonline", size_t(1) << 31, 256);
 
-    // Set up ROOT server
-    Options_t root_options;
-    ROOTServer root_server(root_options, histograms, leaveprog);
-    std::thread server_thread(&ROOTServer::run, &root_server);
-
     // Set up logger instance
     UserConfiguration config = UserConfiguration::FromFile(config_file);
 
@@ -313,6 +308,10 @@ int start_application(const Options_t& options) {
     Task::Coincidence::Sorter csort(histograms, trigger.GetQueue(), config);
 
     stats = &trigger.GetStats();
+
+    // Set up ROOT server
+    ROOTServer root_server(options, histograms, leaveprog);
+    std::thread server_thread(&ROOTServer::run, &root_server);
 
     // Declare the sorting routine
     ThreadPool<std::thread> pool;
