@@ -177,7 +177,7 @@ static void m_sort_disconnected(line_channel*, void*)
 
 bool m_sort_connect(io_control& ioc)
 {
-    std::string host = commands->get("xia_sort_host", "127.0.0.1");
+    std::string host = commands->get("sort_host", "127.0.0.1");
     return m_sort_connect(ioc, host.c_str());
 }
 
