@@ -25,6 +25,7 @@ static line_channel* lc_engine = 0;
 static bool engine_started = false;
 static std::string engine_output;
 static std::string engine_output_dir;
+static std::string engine_exp_id;
 static int engine_buffer_count;
 static float engine_buffer_rate;
 
@@ -69,7 +70,9 @@ static void m_engine_have_line(line_channel*, void*)
         line >> engine_output_dir;
         gui_update_state();
         break;
-
+    case 206: // exp_id
+        line >> engine_exp_id;
+        gui_update_state();
     case 401:   // cannot quit
     case 402:   // already stopped
     case 403:   // already started
@@ -248,6 +251,13 @@ const char* m_engine_get_output()
 const char* m_engine_get_output_dir()
 {
     return engine_output_dir.empty() ? 0 : engine_output_dir.c_str();
+}
+
+// ########################################################################
+
+const char* m_engine_get_exp_id()
+{
+    return engine_exp_id.empty() ? 0 : engine_exp_id.c_str();
 }
 
 // ########################################################################
