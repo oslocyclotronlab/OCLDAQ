@@ -129,19 +129,8 @@ static void m_sort_have_line(line_channel*, void*)
         break; }
     case 207: { // status_cwd %s %s
         line.get();
-        std::string path, marker_id;
-        line >> path >> marker_id;
-        
-        std::string expected_id = commands->get("exp_id", "");
-
-        if (!expected_id.empty() && marker_id == expected_id) {
-            sort_cwd = path;
-            DBGV("CWD verified via marker: " << sort_cwd << " (ID: " << marker_id << ")");
-        } else {
-            sort_cwd = path;
-            log_message(LOG_INFO, "sort: CWD marker mismatch! Remote: %s, Expected: %s\n",
-                        marker_id.c_str(), expected_id.c_str());
-        }
+        std::getline(line, sort_cwd);
+        DBGV(sort_cwd);
         gui_update_state();
         break; }
 
@@ -325,14 +314,7 @@ void m_sort_get_buffers(int& buffer_count, int& error_count, float& average_leng
 
 bool m_sort_change_cwd(const char* dirname)
 {
-    std::string exp_id = commands->get("exp_id", "");
-    if (exp_id.empty()) {
-        log_message(LOG_ERR, "sort: exp_id not found in commands list\n");
-        return false;
-    }
-    
-    std::string full_path = "/mnt/ocl/ocl-experiments/" + exp_id;
-    return m_sort_send("change_cwd", full_path.c_str());
+    return m_sort_send("change_cwd", dirname);
 }
 
 // ########################################################################
