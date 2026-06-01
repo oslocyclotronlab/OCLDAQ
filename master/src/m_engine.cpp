@@ -25,7 +25,6 @@ static line_channel* lc_engine = 0;
 static bool engine_started = false;
 static std::string engine_output;
 static std::string engine_output_dir;
-static std::string engine_exp_id;
 static int engine_buffer_count;
 static float engine_buffer_rate;
 
@@ -66,10 +65,10 @@ static void m_engine_have_line(line_channel*, void*)
         engine_output = "";
         gui_update_state();
         break;
-    case 205: { // output_dir %s %s
-        line >> engine_output_dir >> engine_exp_id;
+    case 205: // output_dir
+        line >> engine_output_dir;
         gui_update_state();
-        break; }
+        break;
 
     case 401:   // cannot quit
     case 402:   // already stopped
@@ -223,17 +222,6 @@ bool m_engine_output_dir(const char* dirname)
     return m_engine_send("output_dir", dirname);
 }
 
-bool m_engine_change_cwd()
-{
-    std::string exp_id = commands->get("exp_id", "");
-    if (exp_id.empty()) {
-        log_message(LOG_ERR, "engine: exp_id not found in commands list\n");
-        return false;
-    }
-    std::string full_path = "/mnt/ocl/ocl-experiments/" + exp_id;
-    return m_engine_output_dir(full_path.c_str());
-}
-
 // ########################################################################
 
 bool m_engine_is_started()
@@ -260,11 +248,6 @@ const char* m_engine_get_output()
 const char* m_engine_get_output_dir()
 {
     return engine_output_dir.empty() ? 0 : engine_output_dir.c_str();
-}
-
-const char* m_engine_get_exp_id()
-{
-    return engine_exp_id.empty() ? 0 : engine_exp_id.c_str();
 }
 
 // ########################################################################
