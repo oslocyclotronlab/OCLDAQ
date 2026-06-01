@@ -22,6 +22,7 @@ static line_channel* lc_sort = 0;
 static int sort_buffers=0, sort_errors=0;
 static float sort_average_length=0;
 static std::string sort_cwd;
+static std::string sort_exp_id;
 
 // ########################################################################
 
@@ -133,7 +134,12 @@ static void m_sort_have_line(line_channel*, void*)
         DBGV(sort_cwd);
         gui_update_state();
         break; }
-
+    case 208: {
+        line.get();
+        std::getline(line, sort_exp_id);
+        DBGV(sort_exp_id);
+        gui_update_state();
+        break;}
     case 401: { // error_file %s -- could not dump to file
         getline(line, remain);
         log_message(LOG_ERR, "sort: could not dump. %s\n", remain.c_str());
@@ -323,3 +329,12 @@ const char* m_sort_get_cwd()
 {
     return sort_cwd.empty() ? 0 : sort_cwd.c_str();
 }
+
+// ########################################################################
+
+const char* m_sort_get_exp_id()
+{
+    return sort_exp_id.empty() ? 0 : sort_exp_id.c_str();
+}
+
+// ########################################################################

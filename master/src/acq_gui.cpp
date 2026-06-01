@@ -145,7 +145,8 @@ static void engine_check_directory()
 
     // Check if the exp id is the same
     auto exp_id = commands->get("exp_id");
-    if ( exp_id == m_engine_exp )
+    if ( exp_id == m_engine_get_exp_id() )
+        return;
 
     if( m_engine_is_started() ) {
         log_message(LOG_INFO, "Engine started, but in different directory!\n");
@@ -225,8 +226,13 @@ static void sort_check_directory()
     const char* sdir_c = m_sort_get_cwd();
     if( !sdir_c )
         return;
+
     const std::string sdir(sdir_c), mdir(cwd);
     if( sdir == mdir )
+        return;
+
+    auto exp_id = commands->get("exp_id");
+    if ( exp_id == m_sort_get_exp_id() )
         return;
 
     show_sort_dir_dialog(cwd);
