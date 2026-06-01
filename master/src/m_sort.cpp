@@ -128,12 +128,17 @@ static void m_sort_have_line(line_channel*, void*)
 	std::getline(line, remain);
         log_message(LOG_INFO, "sort: user routine identifier is: %s\n", remain.c_str());
         break; }
-    case 207: { // status_cwd %s
+    case 207: { // status_cwd %s %s
         line.get();
-        std::getline(line, sort_cwd);
-        DBGV(sort_cwd);
+        std::string path, marker_id;
+        line >> path >> marker_id;
+        
+        sort_cwd = path;
+        sort_exp_id = marker_id;
+        
         gui_update_state();
         break; }
+
     case 401: { // error_file %s -- could not dump to file
         getline(line, remain);
         log_message(LOG_ERR, "sort: could not dump. %s\n", remain.c_str());
@@ -314,7 +319,14 @@ void m_sort_get_buffers(int& buffer_count, int& error_count, float& average_leng
 
 bool m_sort_change_cwd(const char* dirname)
 {
-    return m_sort_send("change_cwd", dirname);
+    std::string exp_id = commands->get("exp_id", "");
+    if (exp_id.empty()) {
+        log_message(LOG_ERR, "sort: exp_id not found in commands list\n");
+        return false;
+    }
+    
+    std::string full_path = "/mnt/ocl/ocl-experiments/" + exp_id;
+    return m_sort_send("change_cwd", full_path.c_str());
 }
 
 // ########################################################################
