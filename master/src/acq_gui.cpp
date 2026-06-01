@@ -144,9 +144,11 @@ static void engine_check_directory()
         return;
 
     // Check if the exp id is the same
-    auto exp_id = commands->get("exp_id");
-    if ( exp_id == m_engine_get_exp_id() )
-        return;
+    auto exp_id = commands->get("exp_id", "-none-");
+    if ( exp_id != "-none-" ) { // Pointlsess test if we only get the default value
+        if ( exp_id == m_engine_get_exp_id() )
+            return;
+    }
 
     if( m_engine_is_started() ) {
         log_message(LOG_INFO, "Engine started, but in different directory!\n");
@@ -231,9 +233,11 @@ static void sort_check_directory()
     if( sdir == mdir )
         return;
 
-    auto exp_id = commands->get("exp_id");
-    if ( exp_id == m_sort_get_exp_id() )
-        return;
+    auto exp_id = commands->get("exp_id", "-none-");
+    if ( exp_id != "-none-" ) { // This test is pointless if the exp_id is not set.
+        if ( exp_id == m_sort_get_exp_id() )
+            return;
+    }
 
     show_sort_dir_dialog(cwd);
 }
