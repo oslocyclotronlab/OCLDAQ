@@ -429,8 +429,6 @@ static void command_output_none(line_channel* lc, const std::string&, void*)
 
     close_file();
     output_filename = "";
-    if ( xiacontr )
-        xiacontr->setFile(output_filename.c_str());
 
     ls_engine->send_all("204 output_none\n");
 }
