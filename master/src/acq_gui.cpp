@@ -143,6 +143,10 @@ static void engine_check_directory()
     if( edir == mdir )
         return;
 
+    // Check if the exp id is the same
+    auto exp_id = commands->get("exp_id");
+    if ( exp_id == m_engine_exp )
+
     if( m_engine_is_started() ) {
         log_message(LOG_INFO, "Engine started, but in different directory!\n");
         return;
