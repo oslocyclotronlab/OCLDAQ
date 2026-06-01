@@ -79,30 +79,35 @@ static void command_quit(line_channel*, const std::string&, void*)
 
 // ########################################################################
 
-static std::string read_marker()
-{
-    const std::string marker_file = ".cwd_marker";
-    std::ifstream ifs(marker_file);
-    std::string id;
-    if (ifs >> id) {
-        return id;
-    }
-    return "no-marker";
-}
-
 static void command_status_cwd(line_channel* lc, const std::string&, void*)
 {
     char cwd[1024];
     if( !getcwd(cwd, sizeof(cwd)) ) {
         line_sender ls(lc);
         if( errno == ENOENT ) {
-            ls << "207 status_cwd -unlinked- no-id\n";
+            ls << "207 status_cwd -unlinked-\n";
         } else {
             ls << "405 error_dir Cannot get current directory.\n";
         }
     } else {
         line_sender ls(lc);
-        ls << "207 status_cwd " << cwd << " " << (commands ? commands->get("exp_id", "no-id") : "no-id") << '\n';
+        ls << "207 status_cwd " << cwd << '\n';
+    }
+}
+
+// ########################################################################
+
+static void command_ced(line_channel* lc, const std::string&, void*)
+{
+    // Read current experiment from folder
+    if ( commands != nullptr ) {
+        auto exp_id = commands->get("exp_id");
+        line_sender ls(lc);
+        if ( !exp_id.empty() ) ls << "208 exp_id " << exp_id << '\n';
+        else ls << "208 exp_id " << "-none-" << '\n';
+    } else {
+        line_sender ls(lc);
+        ls << "208 exp_id" << "-none-" << '\n';
     }
 }
 
@@ -116,9 +121,22 @@ static void command_change_cwd(line_channel* lc, const std::string& line, void*)
         ls << "406 error_dir Cannot change to directory '" << escape(dirname) << "'.\n";
     } else {
         reload_commands();
-        std::ostringstream out;
-        out << "207 status_cwd " << dirname << " " << (commands ? commands->get("exp_id", "no-id") : "no-id") << '\n';
-        ls_sort->send_all(out.str());
+        {
+            std::ostringstream out;
+            out << "207 status_cwd " << dirname << '\n';
+            ls_sort->send_all(out.str());
+        }
+        {
+            std::ostringstream out;
+            out << "208 exp_id ";
+            if ( commands ) {
+                out << commands->get("exp_id", "-none-");
+            } else {
+                out << "-none-" << '\n';
+            }
+            out << '\n';
+            ls_sort->send_all(out.str());
+        }
     }
 }
 
@@ -177,6 +195,7 @@ static void cb_connected(line_channel* lc, void*)
     std::cout << "acq_sort: new client" << std::endl;
     broadcast_bufcount(lc);
     command_status_cwd(lc, "connect", nullptr);
+    command_ced(lc, "connect", nullptr);
 }
 
 // ########################################################################
