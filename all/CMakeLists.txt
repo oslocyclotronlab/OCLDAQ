@@ -6,7 +6,7 @@ include(../cmake/tools.cmake)
 include(../cmake/CPM.cmake)
 
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../master ${CMAKE_BINARY_DIR}/master)
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../rserver ${CMAKE_BINARY_DIR}/rserver)
+#add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../rserver ${CMAKE_BINARY_DIR}/rserver)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../rupdate ${CMAKE_BINARY_DIR}/rupdate)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../XIAengine ${CMAKE_BINARY_DIR}/XIAengine)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../XIAonline ${CMAKE_BINARY_DIR}/XIAonline)

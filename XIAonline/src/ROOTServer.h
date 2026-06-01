@@ -24,13 +24,13 @@ public:
     typedef std::vector<std::pair<TH2*,SharedHistogram2Dp>> list2D_t;
     typedef std::vector<std::pair<TH3*,SharedHistogram3Dp>> list3D_t;
 
-    ROOTServer(const Options_t& options, const char& leaveprog);
+    ROOTServer(const Options_t& options, SharedHistograms& hists, const char& leaveprog);
     ~ROOTServer() = default;
     void run();
 
 private:
-    const char leaveprog;
-    SharedHistograms histogram_manager;
+    const char* leaveprog_ptr;
+    SharedHistograms& histogram_manager;
     THttpServer server;
 
     list1D_t histograms;

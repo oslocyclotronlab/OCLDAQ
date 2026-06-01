@@ -25,6 +25,15 @@
         // Default is 8686.
         std::optional<size_t> bind_port = 8686;
 
+        // External network data source
+        std::optional<std::string> network_source = "0";
+
+        // External network data source port
+        std::optional<size_t> network_port = 32008;
+
+        // Configuration file
+        std::optional<std::string> configuration = "setup.yml";
+
         // Define log level
         std::optional<logfault::LogLevel> log_level = logfault::LogLevel::INFO;
 

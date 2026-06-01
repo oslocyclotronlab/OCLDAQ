@@ -51,8 +51,8 @@ CPMAddPackage(
 		VERSION 2.3
 )
 
-
-FIND_PACKAGE(Threads REQUIRED)
+find_package(ROOT CONFIG REQUIRED)
+find_package(Threads REQUIRED)
 
 if (NOT sirius_ADDED )
 	CPMAddPackage(NAME sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sirius)
@@ -97,20 +97,28 @@ target_link_libraries(XIAReader PUBLIC
 )
 
 add_executable(XIAonline
-		#${CMAKE_CURRENT_SOURCE_DIR}/src/Calib.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
-		#${CMAKE_CURRENT_SOURCE_DIR}/src/Sort_Funct.cpp
-		#${CMAKE_CURRENT_SOURCE_DIR}/src/spectrum_rw.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/ROOTServer.cpp
 )
 
 target_include_directories(XIAonline
-	PRIVATE
+		PRIVATE
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
 
 target_compile_definitions(XIAonline PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1)
 set_target_properties(XIAonline PROPERTIES CXX_STANDARD 20 POSITION_INDEPENDENT_CODE ON)
 
-target_link_libraries(XIAonline PUBLIC XIAReader sirius::sirius Threads::Threads logfault::logfault indicators::indicators)
+target_link_libraries(XIAonline PUBLIC 
+        XIAReader 
+        sirius::sirius 
+        Threads::Threads 
+        logfault::logfault 
+        indicators::indicators
+        ROOT::Hist
+        ROOT::RIO
+        ROOT::RHTTP
+        structopt::structopt
+)
 
 #add_executable(XIAonlineReader
 #		${CMAKE_CURRENT_LIST_DIR}/test_reader/reader.cpp

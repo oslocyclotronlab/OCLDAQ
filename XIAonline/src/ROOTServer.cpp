@@ -182,9 +182,9 @@ std::string setup_server_options(const char* engine, const char* bind_address, c
     return options;
 }
 
-ROOTServer::ROOTServer(const Options_t &options, const char& _leaveprog)
-    : leaveprog( _leaveprog )
-    , histogram_manager( SharedHistograms::Attach(options.shared_histograms_name.value()) )
+ROOTServer::ROOTServer(const Options_t &options, SharedHistograms& hists, const char& _leaveprog)
+    : leaveprog_ptr( &_leaveprog )
+    , histogram_manager( hists )
     , server( setup_server_options(options.engine.value().c_str(), options.bind_address.value().c_str(), options.bind_port.value()).c_str() )
     , histograms( MapHist(histogram_manager.GetAll1D()) )
     , matrices( MapMat(histogram_manager.GetAll2D()) )
@@ -217,7 +217,7 @@ void ROOTServer::update() {
 }
 
 void ROOTServer::run() {
-    while (leaveprog == 'n') {
+    while (*leaveprog_ptr == 'n') {
         server.ProcessRequests();
         update();
     }

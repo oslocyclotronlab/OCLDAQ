@@ -15,6 +15,9 @@
 #include "utilities.h"
 #include "run_command.h"
 
+#include "options.h"
+#include "ROOTServer.h"
+
 #include <histogram/SharedHistograms.h>
 #include <histogram/RootWriter.h>
 #include <logfault/logfault.h>
@@ -31,8 +34,13 @@
 #include <sys/mman.h>
 
 #include <chrono>
+#include <thread>
 #include <indicators/progress_bar.hpp>
 #include <indicators/multi_progress.hpp>
+
+#include <structopt/app.hpp>
+
+STRUCTOPT(Options_t, engine, bind_address, bind_port, network_source, network_port, configuration, log_level, shared_histograms_name);
 
 char leaveprog='n';
 static int buffer_count=0,bad_buffer_count=0;
@@ -261,25 +269,10 @@ private:
     Task::InputQueue_t& queue;
 };
 
-int main (int argc, char* argv[])
-{
-    std::string config_path = "config.yml";
-    std::string host = "127.0.0.1";
-    bool network_mode = false;
+void start_application(const Options_t& options) {
 
-    if (argc > 1) {
-        for (int i = 1; i < argc; ++i) {
-            std::string arg = argv[i];
-            if (arg == "--network") {
-                network_mode = true;
-                if (i + 1 < argc && argv[i+1][0] != '-') {
-                    host = argv[++i];
-                }
-            } else if (arg[0] != '-') {
-                config_path = arg;
-            }
-        }
-    }
+    std::string config_path = options.configuration.value();
+    bool network_mode = ( options.network_source != "0" );
 
     std::ifstream config_file(config_path);
     if (!config_file.is_open()) {
@@ -342,10 +335,10 @@ int main (int argc, char* argv[])
 
     if (network_mode) {
         BinaryDataHandler* handler = new BinaryDataHandler(input_queue);
-        binary_channel* bc = binary_connect(ioc, host.c_str(), 32008, 
+        binary_channel* bc = binary_connect(ioc, options.network_source.value().c_str(), 32008,
                                            nullptr, handler);
         if (!bc) {
-            std::cerr << "Failed to connect to engine at " << host << ":32008" << std::endl;
+            std::cerr << "Failed to connect to engine at " << options.network_source.value() << ":32008" << std::endl;
             exit(EXIT_FAILURE);
         }
     }
@@ -357,6 +350,10 @@ int main (int argc, char* argv[])
     Task::Coincidence::Sorter csort(histograms, trigger.GetQueue(), config);
 
     stats = &trigger.GetStats();
+
+    // Set up ROOT server
+    ROOTServer root_server(options, histograms, leaveprog);
+    std::thread server_thread(&ROOTServer::run, &root_server);
 
     // Declare the sorting routine
     ThreadPool<std::thread> pool;
@@ -440,7 +437,24 @@ int main (int argc, char* argv[])
     input_queue.mark_as_finish();
     pool.DoEnd();
 
+    if (server_thread.joinable()) {
+        server_thread.join();
+    }
+
     if (engine_shm) {
         engine_shm_detach();
     }
+}
+
+int main (int argc, char* argv[])
+{
+    try {
+        auto options = structopt::app("XIAonline").parse<Options_t>(argc, argv);
+        start_application(options);
+    } catch (structopt::exception& e) {
+        std::cout << e.what() << "\n";
+        std::cout << e.help() << std::endl;
+        exit(-1);
+    }
+    return 0;
 }
