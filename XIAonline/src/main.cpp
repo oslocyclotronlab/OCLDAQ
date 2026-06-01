@@ -13,6 +13,7 @@
 #include "engine_shm.h"
 #include "net_control.h"
 #include "utilities.h"
+#include "run_command.h"
 
 #include <histogram/SharedHistograms.h>
 #include <histogram/RootWriter.h>
@@ -40,6 +41,15 @@ static line_server *ls_sort = nullptr;
 static SharedHistograms *histograms = nullptr;
 
 static RingBuffer *stats = nullptr;
+command_list* commands = nullptr;
+
+static void reload_commands()
+{
+    if (!commands) commands = new command_list();
+    if (!commands->read("acq_master_commands.txt")) {
+        // Fallback or log error
+    }
+}
 
 void keyb_int(int sig_num)
 {
@@ -87,6 +97,22 @@ static void command_status_cwd(line_channel* lc, const std::string&, void*)
 
 // ########################################################################
 
+static void command_ced(line_channel* lc, const std::string&, void*)
+{
+    // Read current experiment from folder
+    if ( commands != nullptr ) {
+        auto exp_id = commands->get("exp_id");
+        line_sender ls(lc);
+        if ( !exp_id.empty() ) ls << "208 exp_id " << exp_id << '\n';
+        else ls << "208 exp_id " << "-none-" << '\n';
+    } else {
+        line_sender ls(lc);
+        ls << "208 exp_id" << "-none-" << '\n';
+    }
+}
+
+// ########################################################################
+
 static void command_change_cwd(line_channel* lc, const std::string& line, void*)
 {
     const std::string dirname = line.substr(11);
@@ -94,9 +120,23 @@ static void command_change_cwd(line_channel* lc, const std::string& line, void*)
         line_sender ls(lc);
         ls << "406 error_dir Cannot change to directory '" << escape(dirname) << "'.\n";
     } else {
-        std::ostringstream out;
-        out << "207 status_cwd " << dirname << '\n';
-        ls_sort->send_all(out.str());
+        reload_commands();
+        {
+            std::ostringstream out;
+            out << "207 status_cwd " << dirname << '\n';
+            ls_sort->send_all(out.str());
+        }
+        {
+            std::ostringstream out;
+            out << "208 exp_id ";
+            if ( commands ) {
+                out << commands->get("exp_id", "-none-");
+            } else {
+                out << "-none-" << '\n';
+            }
+            out << '\n';
+            ls_sort->send_all(out.str());
+        }
     }
 }
 
@@ -155,6 +195,7 @@ static void cb_connected(line_channel* lc, void*)
     std::cout << "acq_sort: new client" << std::endl;
     broadcast_bufcount(lc);
     command_status_cwd(lc, "connect", nullptr);
+    command_ced(lc, "connect", nullptr);
 }
 
 // ########################################################################
@@ -271,6 +312,7 @@ int main (int argc, char* argv[])
         {0, 0, 0, 0}
     };
 
+    reload_commands();
     ls_sort = new line_server(ioc, 32010, "acq_sort",
                               new line_cb(cb_connected), new line_cb(cb_disconnected),
                               new command_cb(sort_commands, "407 error_cmd"));

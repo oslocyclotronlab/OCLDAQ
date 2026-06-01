@@ -32,6 +32,8 @@ public:
     bool run(const std::string& cmd_key, const std::string& xarg)
         { const std::vector<std::string> xargs(1, xarg); return run(cmd_key, xargs); }
 
+    std::string get(const std::string& key, const std::string& default_val = "") const;
+
 private:
     std::map<std::string, std::string> commands;
 };

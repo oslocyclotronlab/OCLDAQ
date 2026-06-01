@@ -25,5 +25,6 @@ void m_sort_get_buffers(int& buffer_count, int& error_count, float& average_leng
 
 bool m_sort_change_cwd(const char* dirname);
 const char* m_sort_get_cwd();
+const char* m_sort_get_exp_id();
 
 #endif /* M_SORT_H */

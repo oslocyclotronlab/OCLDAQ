@@ -22,6 +22,7 @@ static line_channel* lc_sort = 0;
 static int sort_buffers=0, sort_errors=0;
 static float sort_average_length=0;
 static std::string sort_cwd;
+static std::string sort_exp_id;
 
 // ########################################################################
 
@@ -127,13 +128,18 @@ static void m_sort_have_line(line_channel*, void*)
 	std::getline(line, remain);
         log_message(LOG_INFO, "sort: user routine identifier is: %s\n", remain.c_str());
         break; }
-    case 207: { // status_cwd %s
+    case 207: { // status_cwd %s %s
         line.get();
         std::getline(line, sort_cwd);
         DBGV(sort_cwd);
         gui_update_state();
         break; }
-
+    case 208: {
+        line.get();
+        std::getline(line, sort_exp_id);
+        DBGV(sort_exp_id);
+        gui_update_state();
+        break;}
     case 401: { // error_file %s -- could not dump to file
         getline(line, remain);
         log_message(LOG_ERR, "sort: could not dump. %s\n", remain.c_str());
@@ -172,25 +178,8 @@ static void m_sort_disconnected(line_channel*, void*)
 
 bool m_sort_connect(io_control& ioc)
 {
-    if( lc_sort )
-        return true;
-
-
-    lc_sort = line_connect(ioc, "127.0.0.1", 32010,
-			   new line_cb(m_sort_disconnected),
-			   new line_cb(m_sort_have_line));
-    if( !lc_sort ) {
-	commands->run("sort");
-    #ifndef __APPLE__
-        sleep(1);
-    #endif // __APPLE__
-	lc_sort = line_connect(ioc, "127.0.0.1", 32010,
-			       new line_cb(m_sort_disconnected),
-			       new line_cb(m_sort_have_line));
-    }
-    gui_update_state();
-
-    return lc_sort != 0;
+    std::string host = commands->get("sort_host", "127.0.0.1");
+    return m_sort_connect(ioc, host.c_str());
 }
 
 // ########################################################################
@@ -340,3 +329,12 @@ const char* m_sort_get_cwd()
 {
     return sort_cwd.empty() ? 0 : sort_cwd.c_str();
 }
+
+// ########################################################################
+
+const char* m_sort_get_exp_id()
+{
+    return sort_exp_id.empty() ? 0 : sort_exp_id.c_str();
+}
+
+// ########################################################################

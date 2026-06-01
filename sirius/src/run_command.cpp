@@ -228,6 +228,14 @@ bool command_list::run(const std::string& cmd_key, const std::vector<std::string
 }
 
 // ########################################################################
+
+std::string command_list::get(const std::string& key, const std::string& default_val) const
+{
+    auto it = commands.find(key);
+    return (it != commands.end()) ? it->second : default_val;
+}
+
+// ########################################################################
 // ########################################################################
 
 #ifdef TEST_RUN_COMMAND

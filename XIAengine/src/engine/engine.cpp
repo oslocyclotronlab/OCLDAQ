@@ -212,9 +212,6 @@ static bool do_change_output_file(const std::string& fname, bool save_settings =
     out << "203 output_file " << escape(output_filename) << '\n';
     ls_engine->send_all(out.str());
 
-    if ( xiacontr )
-        xiacontr->setFile(output_filename.c_str());
-
     // if started, try to open the new file, and stop if that fails
     if( !stopped ) {
         if( !open_file() ) {
@@ -347,6 +344,22 @@ static void command_output_get_dir(line_channel* lc, const std::string&, void*)
 
 // ########################################################################
 
+static void command_ced(line_channel* lc, const std::string&, void*)
+{
+    // Read current experiment from folder
+    if ( commands != nullptr ) {
+        auto exp_id = commands->get("exp_id");
+        line_sender ls(lc);
+        if ( !exp_id.empty() ) ls << "206 exp_id " << exp_id << '\n';
+        else ls << "206 exp_id " << "-none-" << '\n';
+    } else {
+        line_sender ls(lc);
+        ls << "206 exp_id" << "-none-" << '\n';
+    }
+}
+
+// ########################################################################
+
 static void command_status(line_channel* lc, const std::string&, void*)
 {
     lc->send(stopped ? "201 status_stopped\n" : "202 status_started\n");
@@ -357,6 +370,7 @@ static void command_status(line_channel* lc, const std::string&, void*)
         lc->send("204 output_none\n");
     }
     command_output_get_dir(lc, "status", 0);
+    command_ced(lc, "status", 0);
     if( !stopped ) {
         line_sender ls(lc);
         ls << "101 buffer_count " << buffer_count << '\n';
@@ -415,8 +429,6 @@ static void command_output_none(line_channel* lc, const std::string&, void*)
 
     close_file();
     output_filename = "";
-    if ( xiacontr )
-        xiacontr->setFile(output_filename.c_str());
 
     ls_engine->send_all("204 output_none\n");
 }
@@ -435,6 +447,14 @@ static void command_output_file(line_channel* lc, const std::string& line, void*
 
 // ########################################################################
 
+static void reload_commands()
+{
+    if (!commands) commands = new command_list();
+    if (!commands->read("acq_master_commands.txt")) {
+        // Fallback or log error
+    }
+}
+
 static void command_output_dir(line_channel* lc, const std::string& line, void*)
 {
     if( !stopped ) {
@@ -447,8 +467,9 @@ static void command_output_dir(line_channel* lc, const std::string& line, void*)
         line_sender ls(lc);
         ls << "406 error_dir Cannot change to directory '" << escape(dirname) << "'.\n";
     } else {
+        reload_commands();
         std::ostringstream out;
-        out << "205 output_dir " << dirname << '\n';
+        out << "205 output_dir " << dirname << " " << (commands ? commands->get("exp_id", "no-id") : "no-id") << '\n';
         ls_engine->send_all(out.str());
     }
 }

@@ -93,6 +93,7 @@ target_link_libraries(XIAReader PUBLIC
 		magic_enum::magic_enum
 		logfault::logfault
 		OCL::Histogram
+		sirius::sirius
 )
 
 add_executable(XIAonline
