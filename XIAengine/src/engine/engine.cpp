@@ -347,6 +347,22 @@ static void command_output_get_dir(line_channel* lc, const std::string&, void*)
 
 // ########################################################################
 
+static void command_ced(line_channel* lc, const std::string&, void*)
+{
+    // Read current experiment from folder
+    if ( commands != nullptr ) {
+        auto exp_id = commands->get("exp_id");
+        line_sender ls(lc);
+        if ( !exp_id.empty() ) ls << "206 exp_id " << exp_id << '\n';
+        else ls << "206 exp_id " << "-none-" << '\n';
+    } else {
+        line_sender ls(lc);
+        ls << "206 exp_id" << "-none-" << '\n';
+    }
+}
+
+// ########################################################################
+
 static void command_status(line_channel* lc, const std::string&, void*)
 {
     lc->send(stopped ? "201 status_stopped\n" : "202 status_started\n");
@@ -357,6 +373,7 @@ static void command_status(line_channel* lc, const std::string&, void*)
         lc->send("204 output_none\n");
     }
     command_output_get_dir(lc, "status", 0);
+    command_ced(lc, "status", 0);
     if( !stopped ) {
         line_sender ls(lc);
         ls << "101 buffer_count " << buffer_count << '\n';
