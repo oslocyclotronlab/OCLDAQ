@@ -25,7 +25,7 @@ public:
 
 public:
     XIAInterface(const size_t &num_modules) : number_of_modules( num_modules ){}
-    ~XIAInterface();
+    virtual ~XIAInterface();
 
     size_t GetNumModules() const;
     virtual ModuleInfo_t GetModuleInfo(const size_t &moduleID) const = 0;
@@ -64,6 +64,14 @@ public:
     ModLim_t GetModLimits(const size_t &module, const char *ModParName) override;
     ModPar_t GetModParam(const size_t &module, const char *ModParName) override;
     void SetModParam(const size_t &module, const char *ModParName, const ModPar_t &parameter) override;
+
+    unsigned int MeasureBLCut(const unsigned short &module, const unsigned short &channel) override;
+    void MeasureBaseline(const unsigned short &module) override;
+
+    int CopyDSPParameters(const unsigned short& BitMap, const unsigned short& sourceModule,
+                          const unsigned short& sourceChannel, unsigned short* DestinationMask) override;
+
+    bool WriteSettings(const char *fname) override;
 
 };
 
