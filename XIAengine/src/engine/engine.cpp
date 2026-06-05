@@ -6,12 +6,12 @@
 
 #include "WriteTerminal.h"
 #include "XIAControl.h"
+#include "XIAConfigProtocol.h"
+#include "XIAConfigServer.h"
 #include "functions.h"
 
-//#include "mainwindow.h"
 #include "xiainterface.h"
 #include "xiainterface2.h"
-#include <QApplication>
 
 #include <algorithm>
 #include <filesystem>
@@ -19,19 +19,18 @@
 #include <sstream>
 #include <string>
 
-#include <thread>
-
 #include <cerrno>
 #include <csignal>
 #include <cctype>
 #include <cstdlib>
 #include <cstdio>
+#include <cstring>
+
+
 #include <sys/time.h>
 #include <sys/file.h>
 #include <fcntl.h>
 #include <unistd.h>
-
-#include <xiaconfigurator.h>
 
 #if _FILE_OFFSET_BITS != 64
 #error must compile with _FILE_OFFSET_BITS == 64
@@ -54,12 +53,8 @@ static binary_server* bs_engine = 0;
 
 static WriteTerminal termWrite;
 static XIAControl *xiacontr;
-static std::thread gui_thread;
-static int gui_is_running;
-static int globargc;
-static char **globargv;
+static XIAInterface *xia_config_interface;
 command_list* commands = 0;
-XIAConfigurator *config = nullptr;
 
 namespace {
 std::filesystem::path run_directory_for(const std::filesystem::path &file_path)
@@ -121,15 +116,6 @@ void keyb_int(int sig_num)
 
 // ########################################################################
 // ########################################################################
-
-
-int GUI_thread(int nmod)
-{
-    if ( config )
-        config->show();
-    return 0;
-}
-
 
 
 static void close_file()
@@ -379,42 +365,13 @@ static void command_status(line_channel* lc, const std::string&, void*)
 
 // ########################################################################
 
-static void command_launch_GUI(line_channel* lc, const std::string&, void*)
-{
-    // We need to open the GUI. First check if the GUI is in fact open, if so
-    // we will need to give information back to the user that we have the GUI
-    // open.
-
-    // Check if we are running, if still in 'main loop' we do not want to try to join the threads. Return something else for now...
-    if ( gui_is_running == 1 ) {
-            lc->send("403 error_state GUI is already launched");
-            return;
-    }
-
-
-    if ( gui_thread.joinable() ){
-        gui_thread.join();
-    }
-
-    // If we reach this point we can safely launch the gui :D
-    gui_thread = std::thread(GUI_thread, xiacontr->GetNumMod());
-
-}
-
-// ########################################################################
-
 static void command_reload(line_channel *lc, const std::string&, void *)
 {
-    command_launch_GUI(lc,"",nullptr);
-    /*if ( !stopped ){
-        lc->send("403 error_state cannot reload while running.\n");
-        return;
-    }
-
-    if (xiacontr->XIA_reload()){
-        lc->send("504 error_xia Couldn't reload parameters\n");
-        return;
-    }*/
+    std::ostringstream out;
+    out << "409 error_cmd The configurator is now a standalone client. "
+        << "Start XIAconfigurator and connect to port "
+        << xia_config_protocol::DefaultConfigPort << ".\n";
+    lc->send(out.str());
 }
 
 
@@ -535,105 +492,102 @@ int main_engine(int argc, char* argv[])
         bs_engine = new binary_server
                 (ioc, 32008, "engine_bin",
                  nullptr, nullptr, nullptr);
+
+        if (!xia_config_interface)
+            throw std::runtime_error("XIA configuration interface is not initialized");
+
+        XIAConfigServer config_server(
+            ioc,
+            xia_config_protocol::DefaultConfigPort,
+            *xia_config_interface,
+            [] { return stopped; });
+
+        // attach shared memory and initialize some variables
+        unsigned int* buffer  = engine_shm_attach(true);
+        if( !buffer ) {
+            std::cerr << "engine: Failed to attach shared memory." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        unsigned int* time_us       = &buffer[ENGINE_TIME_US];
+        unsigned int* time_s        = &buffer[ENGINE_TIME_S ];
+        unsigned int* data          = buffer + buffer[ENGINE_DATA_START];
+        unsigned int* first_header  = &buffer[ENGINE_FIRST_HEADER];
+        const unsigned int datalen  = buffer[ENGINE_DATA_SIZE];
+        /*const unsigned int*/ datalen_char = datalen*sizeof(int);
+
+        // main loop
+        while( leaveprog == 'n' ) {
+            if( !stopped ) {
+                if ( xiacontr->XIA_check_buffer(datalen) ) {
+                    // a buffer is available; reset timestamp
+                    *time_us = *time_s = 0;
+                    // transfer the buffer
+                    if( !xiacontr->XIA_fetch_buffer(data, datalen, first_header) ) {
+                        // the buffer was not transferred completely, stop
+                        do_stop();
+                    } else {
+
+                        // write actual timestamp
+                        timeval t{};
+                        gettimeofday(&t, 0);
+                        *time_us = t.tv_usec;
+                        *time_s  = t.tv_sec;
+
+                        // send via binary server
+                        if ( bs_engine ) {
+                            bs_engine->send_all(t.tv_sec, t.tv_usec, data, datalen_char);
+                        }
+
+                        // write buffer
+                        if( output_file ) {
+                            unsigned int w = fwrite(data, 1, datalen_char, output_file);
+                            if( w != datalen_char ) {
+                                ls_engine->send_all("503 error_file Write error, closing file and stopping.\n");
+                                do_stop();
+                            }
+                        }
+
+                        // calculate buffer rate
+                        if( last_time.tv_sec!=0 && last_time.tv_usec!=0 ) {
+                            // but only if this is not the first buffer
+                            buffer_rate = (t.tv_sec + 1e-6*t.tv_usec)
+                                          -(last_time.tv_sec + 1e-6*last_time.tv_usec);
+                            if( buffer_rate>0 )
+                                buffer_rate = 1/buffer_rate;
+                            else
+                                buffer_rate = 999999;
+                        } else {
+                            buffer_rate = 0;
+                        }
+                        last_time = t;
+
+
+                        // send message about new buffer count
+                        buffer_count += 1;
+                        broadcast_buffer_count();
+                        if( output_file && buffer_count == MAX_BUFFER_COUNT )
+                            change_output_file();
+                    }
+                    continue;
+                }
+
+                if( !xiacontr->XIA_check_status() )
+                    do_stop();
+            }
+            struct timeval timeout = { 0, 250 };
+            ioc.run(&timeout);
+        }
+
+        engine_shm_detach();
     } catch ( const std::exception &ex ){
         std::cerr << ex.what() << std::endl;
         exit(EXIT_FAILURE);
     }
 
-    // attach shared memory and initialize some variables
-    unsigned int* buffer  = engine_shm_attach(true);
-    if( !buffer ) {
-        std::cerr << "engine: Failed to attach shared memory." << std::endl;
-        exit(EXIT_FAILURE);
-    }
-    unsigned int* time_us       = &buffer[ENGINE_TIME_US];
-    unsigned int* time_s        = &buffer[ENGINE_TIME_S ];
-    unsigned int* data          = buffer + buffer[ENGINE_DATA_START];
-    unsigned int* first_header  = &buffer[ENGINE_FIRST_HEADER];
-    const unsigned int datalen  = buffer[ENGINE_DATA_SIZE];
-    /*const unsigned int*/ datalen_char = datalen*sizeof(int);
-
-    // main loop
-    while( leaveprog == 'n' ) {
-        if( !stopped ) {
-            if ( xiacontr->XIA_check_buffer(datalen) ) {
-                // a buffer is available; reset timestamp
-                *time_us = *time_s = 0;
-                // transfer the buffer
-                if( !xiacontr->XIA_fetch_buffer(data, datalen, first_header) ) {
-                    // the buffer was not transferred completely, stop
-                    do_stop();
-                } else {
-
-                    // write actual timestamp
-                    timeval t{};
-                    gettimeofday(&t, 0);
-                    *time_us = t.tv_usec;
-                    *time_s  = t.tv_sec;
-
-                    // send via binary server
-                    if ( bs_engine ) {
-                        bs_engine->send_all(t.tv_sec, t.tv_usec, data, datalen_char);
-                    }
-
-                    // write buffer
-                    if( output_file ) {
-                        unsigned int w = fwrite(data, 1, datalen_char, output_file);
-                        if( w != datalen_char ) {
-                            ls_engine->send_all("503 error_file Write error, closing file and stopping.\n");
-                            do_stop();
-                        }
-                    }
-
-                    // calculate buffer rate
-                    if( last_time.tv_sec!=0 && last_time.tv_usec!=0 ) {
-                        // but only if this is not the first buffer
-                        buffer_rate = (t.tv_sec + 1e-6*t.tv_usec)
-                                      -(last_time.tv_sec + 1e-6*last_time.tv_usec);
-                        if( buffer_rate>0 )
-                            buffer_rate = 1/buffer_rate;
-                        else
-                            buffer_rate = 999999;
-                    } else {
-                        buffer_rate = 0;
-                    }
-                    last_time = t;
-
-
-                    // send message about new buffer count
-                    buffer_count += 1;
-                    broadcast_buffer_count();
-                    if( output_file && buffer_count == MAX_BUFFER_COUNT )
-                        change_output_file();
-                }
-                continue;
-            }
-
-            if( !xiacontr->XIA_check_status() )
-                do_stop();
-        }
-        struct timeval timeout = { 0, 250 };
-        ioc.run(&timeout);
-    }
-
-    engine_shm_detach();
-
 
     delete commands;
     return 0;
 
-}
-
-// ########################################################################
-// ########################################################################
-
-int main_gui(int nmod, QApplication &app, XIAConfigurator &c)
-{
-    c.show();
-    /*while ( leaveprog == 'n' )
-        app.processEvents();
-    return 0;*/
-    return app.exec();
 }
 
 // ########################################################################
@@ -665,8 +619,6 @@ int main(int argc, char* argv[])
     std::string pidStr = std::to_string(getpid()) + "\n";
     write(fd, pidStr.c_str(), pidStr.size());
 
-
-    QApplication app(argc, argv);
     unsigned short PXIMapping[PRESET_MAX_MODULES];
     for (unsigned short & mapping : PXIMapping)
         mapping = 0;
@@ -709,13 +661,9 @@ int main(int argc, char* argv[])
 
     auto nmod = xiacontr->GetNumMod();
     XIAInterfaceAPI2 interface(nmod);
-    XIAConfigurator configurator(&interface);
+    xia_config_interface = &interface;
 
-    // Now we are ready to start the two threads, this will launch the settings window!
-    auto engine_thread = std::thread(main_engine, argc, argv);
-    auto r = main_gui(nmod, app, configurator);
-
-    if ( engine_thread.joinable() ) engine_thread.join();
+    auto r = main_engine(argc, argv);
 
     // Cleanup
     flock(fd, LOCK_UN);
