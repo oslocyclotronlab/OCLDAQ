@@ -139,17 +139,25 @@ set(GUI_PROJECT_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/enumerate.h
 )
 
-qt_add_executable(XIAengine MANUAL_FINALIZATION ${GUI_PROJECT_SOURCES}
+set(ENGINE_PROJECT_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/engine.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/functions.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/WriteTerminal.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/XIAControl.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/XIAConfigProtocol.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/XIAConfigProtocol.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/XIAConfigServer.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/XIAConfigServer.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/xiainterface2.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/xiainterface2.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/xiainterface.cpp
 )
+
+add_executable(XIAengine ${ENGINE_PROJECT_SOURCES})
 
 target_include_directories(XIAengine
 	PRIVATE
-		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/engine/src>
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/engine>
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/XIAConfigurator>
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/XIAConfigurator>
@@ -163,8 +171,6 @@ target_link_libraries(XIAengine
 	PUBLIC
 		XIA::Pixie16
 		sirius::sirius
-		Qt6::Core
-		Qt6::Widgets
 		inih::inih
 		Threads::Threads
 )
@@ -174,6 +180,36 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 else()
 	target_compile_definitions(XIAengine PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1)
 endif()
+
+qt_add_executable(XIAconfigurator MANUAL_FINALIZATION ${GUI_PROJECT_SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/main.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/xiainterface_remote.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/XIAConfigurator/xiainterface_remote.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/XIAConfigProtocol.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/engine/XIAConfigProtocol.h
+)
+
+target_include_directories(XIAconfigurator
+	PRIVATE
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/engine>
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/XIAConfigurator>
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/XIAConfigurator>
+)
+
+set_target_properties(XIAconfigurator PROPERTIES CXX_STANDARD 20)
+set_property(TARGET XIAconfigurator PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_compile_definitions(XIAconfigurator PRIVATE NUMBER_OF_CHANNELS=16)
+
+target_link_libraries(XIAconfigurator
+	PUBLIC
+		sirius::sirius
+		Qt6::Core
+		Qt6::Widgets
+		Threads::Threads
+)
+
+qt_finalize_executable(XIAconfigurator)
 
 add_custom_command(
 		TARGET XIAengine POST_BUILD
@@ -196,8 +232,4 @@ add_custom_command(
 		${CMAKE_CURRENT_BINARY_DIR}/settings.set
 )
 
-if(QT_VERSION_MAJOR EQUAL 6)
-	qt_finalize_executable(XIAengine)
-endif()
-
-install(TARGETS ${PROJECT_NAME} DESTINATION bin)
+install(TARGETS XIAengine XIAconfigurator DESTINATION bin)
