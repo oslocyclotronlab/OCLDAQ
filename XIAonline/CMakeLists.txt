@@ -24,32 +24,13 @@ endif()
 # see https://github.com/TheLartians/CPM.cmake for more info
 include(../cmake/CPM.cmake)
 
-CPMAddPackage(
-		NAME PackageProject.cmake
-		GITHUB_REPOSITORY TheLartians/PackageProject.cmake
-		VERSION 1.13.0
-)
-
-CPMAddPackage(
-		NAME yaml-cpp
-		GITHUB_REPOSITORY jbeder/yaml-cpp
-		GIT_TAG 56e3bb550c91fd7005566f19c079cb7a503223cf
-)
-
-CPMAddPackage(
-		NAME magic_enum
-		GITHUB_REPOSITORY Neargye/magic_enum
-		VERSION 0.9.6
-)
-
-CPMAddPackage("gh:jgaa/logfault@0.8.5")
-CPMAddPackage("gh:vetlewi/Histogram@2.3.0")
-CPMAddPackage("gh:p-ranav/structopt@0.1.3")
-CPMAddPackage(
-		NAME indicators
-		GITHUB_REPOSITORY p-ranav/indicators
-		VERSION 2.3
-)
+CPMAddPackage(NAME PackageProject.cmake SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../cmake/PackageProject.cmake)
+CPMAddPackage(NAME yaml-cpp SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/external/yaml-cpp)
+CPMAddPackage(NAME magic_enum SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/external/magic_enum)
+CPMAddPackage(NAME logfault SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/external/logfault)
+CPMAddPackage(NAME Histogram SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/external/Histogram)
+CPMAddPackage(NAME structopt SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/external/structopt)
+CPMAddPackage(NAME indicators SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/external/indicators)
 
 find_package(ROOT CONFIG REQUIRED)
 find_package(Threads REQUIRED)

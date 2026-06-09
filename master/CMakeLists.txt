@@ -9,6 +9,7 @@ project(
 # --- Import tools ----
 
 include(../cmake/tools.cmake)
+#include(../cmake/PackageProject/PackageProject.cmake)
 
 # ---- Options ----
 
@@ -24,11 +25,7 @@ endif()
 # see https://github.com/TheLartians/CPM.cmake for more info
 include(../cmake/CPM.cmake)
 
-CPMAddPackage(
-		NAME PackageProject.cmake
-		GITHUB_REPOSITORY TheLartians/PackageProject.cmake
-		VERSION 1.13.0
-)
+CPMAddPackage(NAME PackageProject.cmake SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../cmake/PackageProject.cmake)
 
 if (NOT sirius_ADDED )
 	CPMAddPackage(NAME sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sirius)

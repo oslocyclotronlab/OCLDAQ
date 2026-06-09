@@ -19,12 +19,7 @@ endif()
 # ---- Add dependencies via CPM ----
 # see https://github.com/TheLartians/CPM.cmake for more info
 include(../cmake/CPM.cmake)
-
-CPMAddPackage(
-		NAME PackageProject.cmake
-		GITHUB_REPOSITORY TheLartians/PackageProject.cmake
-		VERSION 1.13.0
-)
+CPMAddPackage(NAME PackageProject.cmake SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../cmake/PackageProject.cmake)
 
 add_library(sirius STATIC
 		${CMAKE_CURRENT_SOURCE_DIR}/src/engine_shm.cpp

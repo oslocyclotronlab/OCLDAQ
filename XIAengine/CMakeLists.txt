@@ -23,27 +23,15 @@ endif()
 # ---- Add dependencies via CPM ----
 # see https://github.com/TheLartians/CPM.cmake for more info
 include(../cmake/CPM.cmake)
+CPMAddPackage(NAME PackageProject.cmake SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../cmake/PackageProject.cmake)
 
-CPMAddPackage(
-		NAME PackageProject.cmake
-		GITHUB_REPOSITORY TheLartians/PackageProject.cmake
-		VERSION 1.13.0
-)
-
-CPMAddPackage(
-	NAME inih
-	GITHUB_REPOSITORY jtilly/inih
-	GIT_TAG 1185eac0f0977654f9ac804055702e110bb4da91
-)
-
-if ( inih_ADDED )
-	add_library(inih INTERFACE)
-	target_include_directories(inih INTERFACE ${inih_SOURCE_DIR})
-	add_library(inih::inih ALIAS inih)
-endif()
+CPMAddPackage(NAME inih SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/external/inih)
+add_library(inih INTERFACE)
+target_include_directories(inih INTERFACE ${inih_SOURCE_DIR})
+add_library(inih::inih ALIAS inih)
 
 if (NOT sirius_ADDED )
-CPMAddPackage(NAME sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sirius)
+	CPMAddPackage(NAME sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sirius)
 endif()
 
 find_package(Threads REQUIRED)

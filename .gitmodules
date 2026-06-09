@@ -1,0 +1,24 @@
+[submodule "XIAonline/external/Histogram"]
+	path = XIAonline/external/Histogram
+	url = https://github.com/vetlewi/Histogram
+[submodule "XIAonline/external/indicators"]
+	path = XIAonline/external/indicators
+	url = https://github.com/p-ranav/indicators.git
+[submodule "XIAonline/external/structopt"]
+	path = XIAonline/external/structopt
+	url = https://github.com/p-ranav/structopt.git
+[submodule "XIAonline/external/magic_enum"]
+	path = XIAonline/external/magic_enum
+	url = https://github.com/Neargye/magic_enum.git
+[submodule "XIAonline/external/yaml-cpp"]
+	path = XIAonline/external/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "XIAonline/external/logfault"]
+	path = XIAonline/external/logfault
+	url = https://github.com/jgaa/logfault.git
+[submodule "XIAengine/external/inih"]
+	path = XIAengine/external/inih
+	url = https://github.com/jtilly/inih.git
+[submodule "cmake/PackageProject.cmake"]
+	path = cmake/PackageProject.cmake
+	url = https://github.com/TheLartians/PackageProject.cmake.git
