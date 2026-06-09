@@ -6,11 +6,6 @@ project(
 	VERSION 2.0.0
 	LANGUAGES CXX C)
 
-# --- Import tools ----
-
-include(../cmake/tools.cmake)
-#include(../cmake/PackageProject/PackageProject.cmake)
-
 # ---- Options ----
 
 # ---- Include guards ----
