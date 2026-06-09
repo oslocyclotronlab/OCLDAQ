@@ -1,7 +1,6 @@
 #include "XIAControl.h"
 
 #include "WriteTerminal.h"
-#include "utilities.h"
 #include "functions.h"
 #include "xiaformat.h"
 
@@ -36,6 +35,19 @@ constexpr unsigned int kChanEventsBAddress = 0x0004a42f;
 
 constexpr int kChannelsPerModule = 16;
 constexpr int kStatisticsWords = 448;
+
+std::string strip(const std::string& s)
+{
+    std::string::size_type start = s.find_first_not_of(" \t\r\n");
+    if( start==std::string::npos )
+        start = 0;
+
+    std::string::size_type stop = s.find_last_not_of(" \t\r\n");
+    if( stop==std::string::npos )
+        stop = s.size()-1;
+
+    return s.substr(start, stop+1-start);
+}
 
 bool next_line(std::istream &in, std::string &line)
 {

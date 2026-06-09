@@ -159,6 +159,21 @@ target_link_libraries(XIAengine
 		Threads::Threads
 )
 
+add_executable(SimpleReadout
+		${CMAKE_CURRENT_SOURCE_DIR}/src/SimpleReadout/readout.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/SimpleReadout/functions.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/SimpleReadout/WriteTerminal.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/SimpleReadout/XIAControl.cpp
+)
+
+target_include_directories(SimpleReadout
+		PRIVATE
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/SimpleReadout>
+)
+
+target_link_libraries(SimpleReadout PUBLIC XIA::Pixie16 inih::inih)
+set_target_properties(SimpleReadout PROPERTIES CXX_STANDARD 20 POSITION_INDEPENDENT_CODE ON)
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	target_compile_definitions(XIAengine PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1 OFFLINE=1)
 else()
