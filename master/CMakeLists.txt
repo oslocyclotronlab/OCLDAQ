@@ -26,6 +26,34 @@ if (NOT sirius_ADDED )
 	CPMAddPackage(NAME sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sirius)
 endif()
 
+if(APPLE)
+	# Homebrew's openmotif (libXm) is built against Homebrew's libxt, libICE
+	# and libSM, not the older copies bundled with XQuartz at /opt/X11. If
+	# CMake's FindX11 module resolves any of these to the XQuartz copy while
+	# everything else resolves to Homebrew, the process ends up loading two
+	# incompatible images of the same library at once at runtime -- visible
+	# as "No type converter registered ..." warnings followed by a crash
+	# inside XtVaAppInitialize. Steer the search at Homebrew's copies first,
+	# when they are installed.
+	find_program(HOMEBREW_EXECUTABLE brew)
+	if(HOMEBREW_EXECUTABLE)
+		foreach(_x11_comp_formula Xt:libxt ICE:libice SM:libsm)
+			string(REPLACE ":" ";" _x11_comp_formula "${_x11_comp_formula}")
+			list(GET _x11_comp_formula 0 _x11_comp)
+			list(GET _x11_comp_formula 1 _x11_formula)
+			execute_process(
+				COMMAND ${HOMEBREW_EXECUTABLE} --prefix ${_x11_formula}
+				OUTPUT_VARIABLE _x11_comp_prefix
+				OUTPUT_STRIP_TRAILING_WHITESPACE
+				ERROR_QUIET)
+			if(_x11_comp_prefix AND EXISTS "${_x11_comp_prefix}/lib/lib${_x11_comp}.dylib")
+				set(X11_${_x11_comp}_INCLUDE_PATH "${_x11_comp_prefix}/include" CACHE PATH "Path to lib${_x11_comp} includes" FORCE)
+				set(X11_${_x11_comp}_LIB "${_x11_comp_prefix}/lib/lib${_x11_comp}.dylib" CACHE FILEPATH "Path to lib${_x11_comp} library" FORCE)
+			endif()
+		endforeach()
+	endif()
+endif()
+
 find_package(X11 REQUIRED)
 find_package(Motif REQUIRED)
 
