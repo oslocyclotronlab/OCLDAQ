@@ -144,18 +144,19 @@ static void engine_check_directory()
         return;
 
     // Check if the exp id is the same
-    auto exp_id = commands->get("exp_id", "-none-");
+    std::string exp_id = commands->get("exp_id", "-none-");
+    std::string engine_exp_id = m_engine_get_exp_id();
     if ( exp_id != "-none-" ) { // Pointlsess test if we only get the default value
-        const char* engine_exp_id_c = m_engine_get_exp_id();
-        if ( engine_exp_id_c && exp_id == engine_exp_id_c )
+        if ( exp_id == engine_exp_id )
             return;
     }
 
     if( m_engine_is_started() ) {
+        std::cout << "Engine started, but in different directory!" << std::endl;
         log_message(LOG_INFO, "Engine started, but in different directory!\n");
         return;
     }
-    show_engine_dir_dialog(cwd);
+    //show_engine_dir_dialog(cwd); Disable for now...
 }
 
 // ########################################################################
@@ -241,12 +242,13 @@ static void sort_check_directory()
             return;
     }
 
-    show_sort_dir_dialog(cwd);
+    //show_sort_dir_dialog(cwd);
 }
 
 // ########################################################################
 
-/** Update status for all menu options and pushbuttons.
+/*
+ * Update status for all menu options and push buttons.
  */
 void gui_update_state()
 {

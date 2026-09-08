@@ -243,21 +243,21 @@ bool m_engine_is_connected()
 
 const char* m_engine_get_output()
 {
-    return engine_output.empty() ? 0 : engine_output.c_str();
+    return engine_output.empty() ? "" : engine_output.c_str();
 }
 
 // ########################################################################
 
 const char* m_engine_get_output_dir()
 {
-    return engine_output_dir.empty() ? 0 : engine_output_dir.c_str();
+    return engine_output_dir.empty() ? "" : engine_output_dir.c_str();
 }
 
 // ########################################################################
 
 const char* m_engine_get_exp_id()
 {
-    return engine_exp_id.empty() ? 0 : engine_exp_id.c_str();
+    return engine_exp_id.empty() ? "" : engine_exp_id.c_str();
 }
 
 // ########################################################################
