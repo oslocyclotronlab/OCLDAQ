@@ -146,7 +146,8 @@ static void engine_check_directory()
     // Check if the exp id is the same
     auto exp_id = commands->get("exp_id", "-none-");
     if ( exp_id != "-none-" ) { // Pointlsess test if we only get the default value
-        if ( exp_id == m_engine_get_exp_id() )
+        const char* engine_exp_id_c = m_engine_get_exp_id();
+        if ( engine_exp_id_c && exp_id == engine_exp_id_c )
             return;
     }
 
@@ -235,7 +236,8 @@ static void sort_check_directory()
 
     auto exp_id = commands->get("exp_id", "-none-");
     if ( exp_id != "-none-" ) { // This test is pointless if the exp_id is not set.
-        if ( exp_id == m_sort_get_exp_id() )
+        const char* sort_exp_id_c = m_sort_get_exp_id();
+        if ( sort_exp_id_c && exp_id == sort_exp_id_c )
             return;
     }
 
