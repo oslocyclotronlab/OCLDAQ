@@ -5,7 +5,7 @@
 #ifndef YAML_HELPERS_H
 #define YAML_HELPERS_H
 
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
 #include <yaml-cpp/yaml.h>
 
 #include "DetectorTypes.h"

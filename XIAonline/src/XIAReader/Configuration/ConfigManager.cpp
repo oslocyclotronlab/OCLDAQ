@@ -5,7 +5,7 @@
 #include "ConfigManager.h"
 
 #include <iostream>
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
 
 #include <variant>
 #include <logfault/logfault.h>
