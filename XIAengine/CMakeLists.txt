@@ -185,6 +185,10 @@ set_target_properties(XIAconfigurator PROPERTIES CXX_STANDARD 20)
 set_property(TARGET XIAconfigurator PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_compile_definitions(XIAconfigurator PRIVATE NUMBER_OF_CHANNELS=16)
 
+if (APPLE)
+	set_target_properties(XIAconfigurator PROPERTIES MACOSX_BUNDLE TRUE)
+endif()
+
 target_link_libraries(XIAconfigurator
 	PUBLIC
 		sirius::sirius

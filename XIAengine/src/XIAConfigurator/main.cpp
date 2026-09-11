@@ -3,6 +3,7 @@
 #include "xiainterface_remote.h"
 
 #include <QApplication>
+#include <QInputDialog>
 
 #include <cstdlib>
 #include <iostream>
@@ -14,7 +15,19 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    const std::string host = argc > 1 ? argv[1] : "localhost";
+    std::string host;
+    if ( argc > 1 ) {
+        host = argv[1];
+    } else {
+        bool ok = false;
+        QString address = QInputDialog::getText(nullptr, QObject::tr("Connect to XIA server"),
+            QObject::tr("Server IP address:"), QLineEdit::Normal, QString(), &ok);
+        if ( !ok || address.isEmpty() ) {
+            std::cerr << "No server IP address given." << std::endl;
+            return EXIT_FAILURE;
+        }
+        host = address.toStdString();
+    }
     const int port = argc > 2 ? std::atoi(argv[2]) : xia_config_protocol::DefaultConfigPort;
 
     try {
