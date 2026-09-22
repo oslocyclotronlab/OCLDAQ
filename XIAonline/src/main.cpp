@@ -437,10 +437,6 @@ void start_application(const Options_t& options) {
     input_queue.mark_as_finish();
     pool.DoEnd();
 
-    if (leave_thread.joinable()) {
-        leave_thread.join();
-    }
-
     if (server_thread.joinable()) {
         server_thread.join();
     }
