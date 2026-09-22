@@ -17,19 +17,21 @@ void Splitter::Run()
     Entry_t entry;
     std::vector<Entry_t> entries;
     entries.reserve(128);
-    while ( input_queue.wait_and_pop(entry) ){
-        ++entries_processed;
-        if (entries.empty()) {
-            entries.emplace_back(entry);
-            continue;
-        }
+    while ( !done ){
+        if ( input_queue.wait_and_pop(entry, std::chrono::milliseconds(100)) ) {
+            ++entries_processed;
+            if (entries.empty()) {
+                entries.emplace_back(entry);
+                continue;
+            }
 
-        if ( (double(entry.timestamp - entries.back().timestamp) + (entry.cfdcorr - entries.back().cfdcorr)) <= gap) {
-            entries.emplace_back(entry);
-        } else {
-            output_queue.push(entries);
-            entries.clear();
-            entries.emplace_back(entry);
+            if ( (double(entry.timestamp - entries.back().timestamp) + (entry.cfdcorr - entries.back().cfdcorr)) <= gap) {
+                entries.emplace_back(entry);
+            } else {
+                output_queue.push(entries);
+                entries.clear();
+                entries.emplace_back(entry);
+            }
         }
     }
     output_queue.mark_as_finish();

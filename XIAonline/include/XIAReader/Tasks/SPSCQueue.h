@@ -9,6 +9,8 @@
 #include <array>
 #include <bit>
 #include <cassert>
+#include <chrono>
+#include <thread>
 
 template<typename T, size_t Capacity>
 class SPSCBlockingQueue
@@ -79,8 +81,18 @@ public:
         return true;
     }
 
-    bool wait_and_pop(T& out) {
+    // timeout: how long to wait for an entry before failing when the queue is empty.
+    // A value of zero (the default) waits indefinitely. std::atomic::wait() has no
+    // timed overload, so a non-zero timeout is honored by polling in short slices
+    // instead of blocking on tail_.wait(), which lets callers periodically re-check
+    // a "done" flag instead of blocking forever.
+    bool wait_and_pop(T& out, std::chrono::duration<double> timeout = std::chrono::duration<double>::zero()) {
         size_t head = head_local_;
+        const bool has_timeout = timeout > std::chrono::duration<double>::zero();
+        const auto deadline = has_timeout
+            ? std::chrono::steady_clock::now() + std::chrono::duration_cast<std::chrono::steady_clock::duration>(timeout)
+            : std::chrono::steady_clock::time_point{};
+
         while ( true ) {
             tail_cache_ = tail_.load(std::memory_order_acquire);
             if (head != tail_cache_) {
@@ -92,7 +104,17 @@ public:
             }
             if (is_finish)
                 return false;
-            tail_.wait(tail_cache_);
+
+            if (!has_timeout) {
+                tail_.wait(tail_cache_);
+            } else {
+                const auto now = std::chrono::steady_clock::now();
+                if (now >= deadline)
+                    return false;
+
+                constexpr std::chrono::steady_clock::duration poll_interval = std::chrono::milliseconds(10);
+                std::this_thread::sleep_for(std::min(poll_interval, deadline - now));
+            }
             head = head_local_;
         }
     }

@@ -75,7 +75,10 @@ void Trigger::Run()
 {
     QueueWorker worker(output_queue);
     std::vector<Entry_t> input;
-    while ( input_queue.wait_and_pop(input) ){
+    while ( !done ){
+        if ( !input_queue.wait_and_pop(input, std::chrono::milliseconds(100)) )
+            continue;
+
         ++entries_processed;
         if ( config.GetSortType() == SortType::gap && config.GetTrigger() == DetectorType::any ) {
             output_queue.push(std::make_pair(input, -1));

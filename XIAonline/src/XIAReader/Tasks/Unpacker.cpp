@@ -24,24 +24,27 @@ void Unpacker::Run()
 {
     QueueWorker worker(output_queue);
     std::vector<uint32_t> raw;
-    while ( input_queue.wait_and_pop(raw) ){
-        data.insert(data.end(), overflow.begin(), overflow.end());
-        overflow.clear();
-        data.insert(data.end(), raw.begin(), raw.end());
-        auto* begin = data.data();
-        auto* end = data.data() + data.size();
-        auto* pos = begin;
-        while ( pos < end ) {
-            const auto *header = reinterpret_cast<const XIA_base_t *>(pos);
-            if ( pos + header->eventLen <= end ) {
-                if ( config.keep(header) ) {
-                    output_queue.push(config(header));
+    while ( !done ){
+        if ( input_queue.wait_and_pop(raw, std::chrono::milliseconds(100)) ) {
+            data.insert(data.end(), overflow.begin(), overflow.end());
+            overflow.clear();
+            data.insert(data.end(), raw.begin(), raw.end());
+            auto* begin = data.data();
+            auto* end = data.data() + data.size();
+            auto* pos = begin;
+            while ( pos < end ) {
+                const auto *header = reinterpret_cast<const XIA_base_t *>(pos);
+                if ( pos + header->eventLen <= end ) {
+                    if ( config.keep(header) ) {
+                        output_queue.push(config(header));
+                    }
+                } else {
+                    overflow.insert(overflow.end(), pos, end);
                 }
-            } else {
-                overflow.insert(overflow.end(), pos, end);
+                pos += header->eventLen;
             }
-            pos += header->eventLen;
+            data.clear();
         }
-        data.clear();
     }
+    output_queue.mark_as_finish();
 }

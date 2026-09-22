@@ -81,11 +81,14 @@ Sorter::Sorter(SharedHistograms& histograms, MCEventQueue_t &input, const UserCo
 }
 
 void Sorter::Run() {
+    Task::QueueWorker<MCEventQueue_t> worker(output_queue);
     std::vector<Entry_t> entries;
-    while ( input_queue.wait_and_pop(entries) ){
-        Triggered_event event(entries);
-        analyzer.AddEntry(event);
-        output_queue.push(entries);
-        ++entries_processed;
+    while ( !done ){
+        if ( input_queue.wait_and_pop(entries, std::chrono::milliseconds(100)) ) {
+            Triggered_event event(entries);
+            analyzer.AddEntry(event);
+            output_queue.push(entries);
+            ++entries_processed;
+        }
     }
 }
