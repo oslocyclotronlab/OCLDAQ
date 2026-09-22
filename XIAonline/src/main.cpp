@@ -397,11 +397,6 @@ void start_application(const Options_t& options) {
     int last_tus=0;
     int last_t=0;
 
-    std::thread leave_thread([]() {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        keyb_int(SIGINT);
-    });
-
     while ( leaveprog == 'n' ){
         if (!network_mode) {
             const int tus = *time_us;
