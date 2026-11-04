@@ -163,6 +163,15 @@ void HistManager::AddEntry(Triggered_event &buffer) {
     auto ringID = trigger->detectorID % 8;
     auto [de_evts, e_evts] = buffer.GetTrap(trapID);
 
+    Particle_telescope_t* telescope = GetPart(trapID);
+    if ( !telescope )
+        return; // Maybe debug log here...
+    telescope->Fill(de_evts, e_evts);
+
+    if ( de_evts.size() != 1 && e_evts.size() != 1 )
+        return; // For now, we want only 1 and only 1.
+    ede_spectra_all->Fill(de_evts.front().adcvalue, e_evts.front().adcvalue);
+    return;
 }
 
 Sorter::Sorter(SharedHistograms& histograms, TEventQueue_t &input, const UserConfiguration& config)
