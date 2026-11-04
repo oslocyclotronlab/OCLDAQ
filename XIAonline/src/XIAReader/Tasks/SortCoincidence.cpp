@@ -170,7 +170,7 @@ void HistManager::AddEntry(Triggered_event &buffer) {
 
     if ( de_evts.size() != 1 && e_evts.size() != 1 )
         return; // For now, we want only 1 and only 1.
-    ede_spectra_all->Fill(de_evts.front().adcvalue, e_evts.front().adcvalue);
+    //ede_spectra_all->Fill(de_evts.front().adcvalue, e_evts.front().adcvalue);
     return;
 }
 
