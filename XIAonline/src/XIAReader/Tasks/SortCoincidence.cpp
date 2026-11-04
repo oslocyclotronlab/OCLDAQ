@@ -120,7 +120,7 @@ HistManager::HistManager(SharedHistograms &histograms, const UserConfiguration &
     , ppacs( histograms, "ppac", user_config.GetNumDetectors(DetectorType::ppac) )
     , particle_coincidence{{ histograms, 0}, { histograms, 1}, { histograms, 2}, { histograms, 3},
                            { histograms, 4}, { histograms, 5}, { histograms, 6},{ histograms, 7}}
-    , ede_spectra_all( histograms.Create2D("ede_all", "E-#Delta E spectra (all)", 1024, 0, 16384, "E energy [keV]", 1024, 0, 16384, "#Delta E energy [keV]") )
+    , ede_spectra_all( histograms.Create2D("ede_all", "E-#Delta E spectra (all)", 1024, 0, 16384*4, "E energy [keV]", 1024, 0, 16384*4, "#Delta E energy [keV]") )
 {
 }
 
@@ -163,6 +163,14 @@ void HistManager::AddEntry(Triggered_event &buffer) {
     auto ringID = trigger->detectorID % 8;
     auto [de_evts, e_evts] = buffer.GetTrap(trapID);
 
+    for ( auto &front : buffer.GetDetector(DetectorType::oscarF) ) {
+        for ( auto &back : buffer.GetDetector(DetectorType::oscarB) ) {
+            if (( front.detectorID  == 4 && back.detectorID == 2 ) )
+            //if ( front.detectorID == 2 && front.detectorID == 4)
+                ede_spectra_all->Fill(back.adcvalue, front.adcvalue);
+        }
+    }
+
     Particle_telescope_t* telescope = GetPart(trapID);
     if ( !telescope )
         return; // Maybe debug log here...
@@ -170,7 +178,7 @@ void HistManager::AddEntry(Triggered_event &buffer) {
 
     if ( de_evts.size() != 1 && e_evts.size() != 1 )
         return; // For now, we want only 1 and only 1.
-    //ede_spectra_all->Fill(de_evts.front().adcvalue, e_evts.front().adcvalue);
+
     return;
 }
 
