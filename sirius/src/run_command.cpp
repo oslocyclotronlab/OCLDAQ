@@ -236,6 +236,21 @@ std::string command_list::get(const std::string& key, const std::string& default
 }
 
 // ########################################################################
+
+std::map<std::string, std::string> command_list::get_prefixed(const std::string& prefix) const
+{
+    std::map<std::string, std::string> result;
+    for(auto it = commands.lower_bound(prefix); it != commands.end(); ++it) {
+        if( it->first.compare(0, prefix.size(), prefix) != 0 )
+            break;
+        const std::string key = it->first.substr(prefix.size());
+        if( !key.empty() )
+            result[key] = it->second;
+    }
+    return result;
+}
+
+// ########################################################################
 // ########################################################################
 
 #ifdef TEST_RUN_COMMAND

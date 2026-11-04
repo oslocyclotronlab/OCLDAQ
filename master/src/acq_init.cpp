@@ -5,6 +5,7 @@
 #include "m_sort.h"
 #include "io_xtapp.h"
 #include "run_command.h"
+#include "elog_client.h"
 
 #include <iostream>
 
@@ -15,6 +16,7 @@
 #include "debug.h"
 
 command_list* commands = 0;
+elog_config* elog_cfg = 0;
 
 static io_control* ioc = 0;
 
@@ -62,8 +64,16 @@ int main(int argc, char *argv[])
             "manual   = firefox http://ocl.uio.no/sirius/\n"
             "sort     = xterm -e acq_sort\n"
             "engine   = xterm -e usb-engine\n"
-            "elog     = echo\n"
             );
+    }
+
+    elog_cfg = new elog_config(elog_config_from_commands(*commands));
+    if( elog_cfg->enabled() ) {
+        std::cerr << "elog: logbook entries go to " << elog_cfg->describe() << std::endl;
+        if( !elog_ssl_available() )
+            std::cerr << "elog: WARNING: built without OpenSSL, entries will be sent unencrypted" << std::endl;
+    } else {
+        std::cerr << "elog: disabled (set elog_host and elog_logbook in acq_master_commands.txt)" << std::endl;
     }
 
     ioc = new io_xtapp(app_context);
@@ -78,6 +88,7 @@ int main(int argc, char *argv[])
 
     delete ioc;
     delete commands;
+    delete elog_cfg;
 
     return 0;
 }
