@@ -60,7 +60,7 @@ namespace Task {
             SharedHistogram2Dp ede_spectra_all;
 
             Detector_Histograms_t *GetSpec(const DetectorType &type);
-            Particle_telescope_t *GetPart(const size_t& num){ return ( num < NUM_SI_DE_DET ) ? particle_coincidence[num] : nullptr; }
+            Particle_telescope_t *GetPart(const size_t& num){ return ( num < NUM_SI_DE_DET ) ? &particle_coincidence[num] : nullptr; }
 
         public:
             HistManager(SharedHistograms &histograms, const UserConfiguration &configuration);
