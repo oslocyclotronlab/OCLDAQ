@@ -6,6 +6,7 @@
 #include "m_engine.h"
 #include "m_sort.h"
 #include "run_command.h"
+#include "elog_client.h"
 
 #include <Xm/CascadeB.h>
 #include <Xm/CascadeBG.h>
@@ -58,6 +59,7 @@ static std::string last_telewin_filename = /*"../../data/"*/ "telewin.tmp";
 static std::string last_sort_filename    = "user_routine_mama.cpp";
 
 extern command_list* commands;
+extern elog_config* elog_cfg;
 
 /**
  * Utility function to avoid warnings from the c++ compiler for all
@@ -1363,11 +1365,13 @@ int gui_setup(int& argc, char* argv[])
 
 void logbook_message(std::string const& subject, std::string const& message)
 {
-    std::vector<std::string> args;
-    args.push_back("-a");
-    args.push_back(std::string("Subject=")+subject);
-    args.push_back(message);
-    commands->run("elog", args);
+    // Submitted from a background thread so the GUI never blocks on the
+    // network; success, warnings and errors are printed to stderr.
+    if( !elog_cfg || !elog_cfg->enabled() )
+        return;
+    elog_attributes attrs;
+    attrs.push_back(std::make_pair(std::string("Subject"), subject));
+    elog_submit_async(*elog_cfg, attrs, message);
 }
 
 // ########################################################################
