@@ -34,6 +34,10 @@ public:
 
     std::string get(const std::string& key, const std::string& default_val = "") const;
 
+    //! All entries whose key starts with 'prefix', with the prefix removed
+    //! from the returned keys (e.g. "elog_attr_Type" -> "Type").
+    std::map<std::string, std::string> get_prefixed(const std::string& prefix) const;
+
 private:
     std::map<std::string, std::string> commands;
 };

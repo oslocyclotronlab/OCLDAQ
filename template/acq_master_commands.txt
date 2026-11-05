@@ -5,4 +5,32 @@ readme   = gedit $HOME/Uni/Oslo/Applications/sirius/help/README
 manual   = firefox http://ocl.uio.no/workshop09/
 sort     = xterm -e ./XIAsort
 engine   = xterm -e ./XIAengine 2 3 4 5 6 7 8
-elog     = elog -h localhost -p 8080 -l 28Si-XIA-p-2018 -a Type=Automatic -a Category=ACQ -a Author=GUI
+#
+# ---- Electronic logbook (elog) ----
+# Entries are submitted directly by master (no 'elog' binary needed); other
+# programs can read the same keys through command_list::get().
+# SSL is detected automatically: if the server supports it, it is always used,
+# otherwise the entry is sent as plain HTTP and a warning is printed.
+#
+# elog_port is optional; without it 443 (SSL) is tried first, then 80.
+# elog_subdir is an optional URL prefix, e.g. "elog" for https://host/elog/<logbook>/.
+# elog_password may be left empty; it is then taken from $ELOG_PASSWORD.
+# elog_ssl_verify = yes refuses servers with an untrusted certificate
+# (default: print a warning and continue).
+# elog_encoding is plain (default), ELCode or HTML.
+# Every elog_attr_<Name> = <value> becomes the attribute <Name> on each entry.
+elog_host          = localhost
+elog_port          = 8080
+elog_subdir        =
+elog_logbook       = 28Si-XIA-p-2018
+elog_user          =
+elog_password      =
+elog_ssl_verify    = no
+elog_timeout       = 10
+elog_encoding      = plain
+elog_attr_Type     = Automatic
+elog_attr_Category = ACQ
+elog_attr_Author   = GUI
+#
+# Legacy format, still understood when elog_host and elog_logbook are absent:
+#elog     = elog -h localhost -p 8080 -l 28Si-XIA-p-2018 -a Type=Automatic -a Category=ACQ -a Author=GUI
