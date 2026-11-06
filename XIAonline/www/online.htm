@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <!-- Main page of the XIAonline web interface: the standard JSROOT online
+           browser plus a toolbar for sending spectra to the elog.
+           This file is compiled into XIAonline (see CMakeLists.txt). -->
+      <meta charset="utf-8">
+      <title>XIAonline</title>
+      <link rel="shortcut icon" href="jsrootsys/img/RootIcon.ico"/>
+      <!--jsroot_importmap-->
+      <style>
+         :root {
+            --bar-bg: #f2f2f2; --bar-fg: #222; --bar-border: #c8c8c8;
+            --ok: #1a7f37; --err: #c62828; --busy: #555;
+         }
+         @media (prefers-color-scheme: dark) {
+            :root { --bar-bg: #2b2b2b; --bar-fg: #ddd; --bar-border: #444;
+                    --ok: #5cc879; --err: #ff6b6b; --busy: #aaa; }
+         }
+         html, body { height: 100%; margin: 0; }
+         #elogbar {
+            position: absolute; left: 0; right: 0; top: 0; height: 34px;
+            box-sizing: border-box; padding: 4px 8px;
+            display: flex; align-items: center; gap: 8px;
+            background: var(--bar-bg); color: var(--bar-fg);
+            border-bottom: 1px solid var(--bar-border);
+            font: 13px system-ui, -apple-system, "Segoe UI", sans-serif;
+         }
+         #elogbar button { flex: none; white-space: nowrap; font: inherit; padding: 2px 10px; cursor: pointer; }
+         #elogbar button:disabled { cursor: default; }
+         #elogcomment { flex: 0 1 360px; min-width: 120px; font: inherit; padding: 2px 6px; }
+         #elogstatus { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+         #elogstatus.ok { color: var(--ok); }
+         #elogstatus.err { color: var(--err); }
+         #elogstatus.busy { color: var(--busy); }
+         #guiwrap { position: absolute; left: 0; right: 0; top: 34px; bottom: 0; }
+         body.noelog #elogbar { display: none; }
+         body.noelog #guiwrap { top: 0; }
+      </style>
+   </head>
+   <body>
+      <div id="elogbar">
+         <button id="elogone" title="Send the active drawing (PNG as shown + ROOT file) to the elog">Elog</button>
+         <button id="elogall" title="Send a ROOT file with all spectra (TH1/TH2/TH3) to the elog">Elog All</button>
+         <input id="elogcomment" type="text" placeholder="Comment for the elog entry (optional)">
+         <span id="elogstatus"></span>
+      </div>
+      <div id="guiwrap">
+         <div id="onlineGUI">
+            loading ...
+         </div>
+      </div>
+   </body>
+   <script type="module">
+      import { buildGUI, internals } from 'jsroot/gui';
+      import { getHPainter, getElementCanvPainter, getElementMainPainter } from 'jsroot';
+
+      internals.getCachedHierarchy = function() { return "$$$h.json$$$"; }
+
+      const btnOne = document.getElementById('elogone'),
+            btnAll = document.getElementById('elogall'),
+            comment = document.getElementById('elogcomment'),
+            statusEl = document.getElementById('elogstatus');
+
+      function setStatus(text, kind) {
+         statusEl.textContent = text;
+         statusEl.title = text;
+         statusEl.className = kind || '';
+      }
+
+      function setBusy(busy) {
+         btnOne.disabled = busy;
+         btnAll.disabled = busy;
+      }
+
+      // The frame of the active drawing, or the last visible one.
+      function activeFrame() {
+         const disp = getHPainter()?.getDisplay();
+         if (!disp)
+            return null;
+         let frame = disp.getActiveFrame();
+         if (!frame && typeof disp.forEachFrame === 'function')
+            disp.forEachFrame(f => { frame = f; }, true);
+         return frame || null;
+      }
+
+      function fmt(v) {
+         return Number.isFinite(v) ? String(Number(v.toPrecision(6))) : '';
+      }
+
+      // Ask the server how a submission went, until it is done.
+      async function waitForJob(job, what) {
+         for (let n = 0; n < 120; ++n) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const res = await (await fetch(`elog/status?job=${job}`, { cache: 'no-store' })).json();
+            if (!res.ok && !res.done)
+               throw Error(res.error || 'lost track of the elog entry');
+            if (!res.done)
+               continue;
+            if (!res.ok)
+               throw Error(res.error || 'elog did not accept the entry');
+            const id = res.message_id >= 0 ? ` #${res.message_id}` : '';
+            const warn = res.warnings?.length ? ` (${res.warnings.join('; ')})` : '';
+            return `sent ${what} to elog${id}${warn}`;
+         }
+         throw Error('no answer from the elog after 2 minutes');
+      }
+
+      async function submit(url, body, what) {
+         const res = await (await fetch(url, { method: 'POST', body, cache: 'no-store' })).json();
+         if (!res.ok)
+            throw Error(res.error || 'request failed');
+         setStatus(`sending ${what} to elog ...`, 'busy');
+         const msg = await waitForJob(res.job, what);
+         comment.value = '';
+         return msg;
+      }
+
+      async function elogOne() {
+         const frame = activeFrame(),
+               canv = frame ? getElementCanvPainter(frame) : null,
+               // the histogram painter is the main painter of the canvas
+               main = canv?.getMainPainter?.() ?? (frame ? getElementMainPainter(frame) : null),
+               obj = main?.getObject();
+         if (!main || !canv || !obj || !obj._typename?.startsWith('TH'))
+            throw Error('nothing drawn: open a spectrum first');
+
+         const params = new URLSearchParams();
+         params.set('item', main.getItemName() || frame.getAttribute('frame_title') || '');
+         params.set('name', obj.fName || '');
+         params.set('comment', comment.value.trim());
+
+         const fp = main.getFramePainter();
+         if (fp) {
+            params.set('xmin', fmt(fp.scale_xmin));
+            params.set('xmax', fmt(fp.scale_xmax));
+            params.set('ymin', fmt(fp.scale_ymin));
+            params.set('ymax', fmt(fp.scale_ymax));
+         }
+         const pad = canv.getRootPad(true);
+         if (pad) {
+            params.set('logx', pad.fLogx ? '1' : '0');
+            params.set('logy', pad.fLogy ? '1' : '0');
+            params.set('logz', pad.fLogz ? '1' : '0');
+         }
+
+         setStatus(`making image of ${obj.fName} ...`, 'busy');
+         // PNG of the canvas exactly as shown (zoom, log scale, ...)
+         let png = await canv.produceImage(true, 'png', { as_buffer: true });
+         if (typeof png === 'string')   // data URL
+            png = await (await fetch(png)).arrayBuffer();
+         if (!png || !png.byteLength)
+            throw Error('could not make an image of the drawing');
+
+         return submit(`elog/submit?${params}`, png, obj.fName);
+      }
+
+      async function elogAll() {
+         const params = new URLSearchParams();
+         params.set('comment', comment.value.trim());
+         setStatus('writing all spectra ...', 'busy');
+         return submit(`elog/submit_all?${params}`, '', 'all spectra');
+      }
+
+      function run(action) {
+         setBusy(true);
+         action().then(msg => setStatus(msg, 'ok'))
+                 .catch(err => setStatus(`elog: ${err.message}`, 'err'))
+                 .finally(() => setBusy(false));
+      }
+
+      btnOne.addEventListener('click', () => run(elogOne));
+      btnAll.addEventListener('click', () => run(elogAll));
+
+      // Hide the toolbar if the server has no elog configured.
+      fetch('elog/config', { cache: 'no-store' })
+         .then(r => r.json())
+         .then(cfg => {
+            if (cfg.enabled) {
+               setStatus(`elog: ${cfg.logbook}`);
+            } else {
+               document.body.classList.add('noelog');
+               console.log(`XIAonline: elog disabled: ${cfg.reason || ''}`);
+            }
+         })
+         .catch(() => document.body.classList.add('noelog'))
+         .finally(() => buildGUI('onlineGUI', 'online'));
+   </script>
+</html>

@@ -39,6 +39,11 @@
 
         // Name of shared histograms
         std::optional<std::string> shared_histograms_name = "XIAonline";
+
+        // Disable the "Elog" / "Elog All" buttons of the web interface.
+        // The server binds to 0.0.0.0 by default, so anyone who can reach it
+        // can otherwise post entries to the elog.
+        std::optional<bool> disable_elog = false;
     };
 //}
 

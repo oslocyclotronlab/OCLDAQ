@@ -40,7 +40,7 @@
 
 #include <structopt/app.hpp>
 
-STRUCTOPT(Options_t, engine, bind_address, bind_port, network_source, network_port, configuration, log_level, shared_histograms_name);
+STRUCTOPT(Options_t, engine, bind_address, bind_port, network_source, network_port, configuration, log_level, shared_histograms_name, disable_elog);
 
 char leaveprog='n';
 static int buffer_count=0,bad_buffer_count=0;
@@ -50,6 +50,38 @@ static SharedHistograms *histograms = nullptr;
 
 static RingBuffer *stats = nullptr;
 command_list* commands = nullptr;
+static ROOTServer* root_server = nullptr;
+
+//! Elog settings for the web interface, from the current acq_master_commands.txt.
+static OnlineElogSettings elog_settings_from_commands()
+{
+    OnlineElogSettings settings;
+    if ( !commands )
+        return settings;
+    settings.config = elog_config_from_commands(*commands);
+    settings.exp_id = commands->get("exp_id");
+    const std::string max_mb = commands->get("elog_max_attachment_mb");
+    if ( !max_mb.empty() ) {
+        try {
+            settings.max_attachment = std::size_t(std::stoul(max_mb)) << 20;
+        } catch ( std::exception& ) {
+            LFLOG_WARN << "elog: ignoring bad elog_max_attachment_mb '" << max_mb << "'";
+        }
+    }
+    return settings;
+}
+
+static void update_elog_settings()
+{
+    if ( !root_server )
+        return;
+    const OnlineElogSettings settings = elog_settings_from_commands();
+    if ( settings.config.enabled() )
+        LFLOG_INFO << "elog: web interface entries go to " << settings.config.describe();
+    else
+        LFLOG_INFO << "elog: disabled (set elog_host and elog_logbook in acq_master_commands.txt)";
+    root_server->SetElogSettings(settings);
+}
 
 static void reload_commands()
 {
@@ -57,6 +89,7 @@ static void reload_commands()
     if (!commands->read("acq_master_commands.txt")) {
         // Fallback or log error
     }
+    update_elog_settings();
 }
 
 void keyb_int(int sig_num)
@@ -352,8 +385,10 @@ void start_application(const Options_t& options) {
     stats = &trigger.GetStats();
 
     // Set up ROOT server
-    ROOTServer root_server(options, histograms, leaveprog);
-    std::thread server_thread(&ROOTServer::run, &root_server);
+    ROOTServer root_server_obj(options, histograms, leaveprog);
+    root_server = &root_server_obj;
+    update_elog_settings();
+    std::thread server_thread(&ROOTServer::run, &root_server_obj);
 
     // Declare the sorting routine
     ThreadPool<std::thread> pool;
@@ -440,6 +475,7 @@ void start_application(const Options_t& options) {
     if (server_thread.joinable()) {
         server_thread.join();
     }
+    root_server = nullptr;
 
     if (engine_shm) {
         engine_shm_detach();

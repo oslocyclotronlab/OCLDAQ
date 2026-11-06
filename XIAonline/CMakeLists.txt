@@ -78,9 +78,17 @@ add_executable(XIAonline
 		${CMAKE_CURRENT_SOURCE_DIR}/src/ROOTServer.cpp
 )
 
+# The web interface main page is compiled into the program.
+set(XIAONLINE_PAGE_SRC ${CMAKE_CURRENT_SOURCE_DIR}/www/online.htm)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${XIAONLINE_PAGE_SRC})
+file(READ ${XIAONLINE_PAGE_SRC} XIAONLINE_PAGE_CONTENT)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/OnlinePage.h.in
+		${CMAKE_CURRENT_BINARY_DIR}/generated/OnlinePage.h @ONLY)
+
 target_include_directories(XIAonline
 		PRIVATE
-		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+		${CMAKE_CURRENT_BINARY_DIR}/generated)
 
 target_compile_definitions(XIAonline PRIVATE _FILE_OFFSET_BITS=64 BUILD_GUI=1 REMOVE_TRACE=1)
 set_target_properties(XIAonline PROPERTIES CXX_STANDARD 20 POSITION_INDEPENDENT_CODE ON)
