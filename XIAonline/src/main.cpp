@@ -95,8 +95,10 @@ static void reload_commands()
 void keyb_int(int sig_num)
 {
     if (sig_num == SIGINT) {
-        printf("\n\nLeaving...\n");
+        printf("\n\nLeaving... (press Ctrl-C again to force quit)\n");
         leaveprog = 'y';
+        // If the clean shutdown ever gets stuck, a second Ctrl-C kills the program.
+        signal(SIGINT, SIG_DFL);
     }
 }
 
