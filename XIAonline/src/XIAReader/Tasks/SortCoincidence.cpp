@@ -5,6 +5,9 @@
 #include "SortCoincidence.h"
 
 
+//const std::pair<int, int> comb_oscar = {{9, 10}};
+
+
 using namespace Task::Coincidence;
 
 Detector_Histograms_t::Detector_Histograms_t(SharedHistograms &hm, const std::string &name, const size_t &num)
@@ -43,6 +46,39 @@ void Detector_Histograms_t::Fill(const subvector<Entry_t> &subvec,
 #define EDE_YDIM 250
 #define EDE_RAW_XDIM 1024
 #define EDE_RAW_YDIM 1024
+
+OscarParticle_t::OscarParticle_t(SharedHistograms &hm)
+    : raw{
+    hm.Create2D("oscar_particle_f02b08", "ede spectra b08 f02",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered"),
+    hm.Create2D("oscar_particle_f06b11", "ede spectra b11 f06",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered"),
+    hm.Create2D("oscar_particle_f09b06", "ede spectra b06 f09",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered"),
+    hm.Create2D("oscar_particle_f14b09", "ede spectra b09 f14",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered")
+        }
+{}
+
+void OscarParticle_t::Fill(const subvector<Entry_t> &front, const subvector<Entry_t>& back) {
+    for (auto &f : front) {
+        for (auto &b : back) {
+            int n = 0;
+            for ( auto [fID, bID] : oscar_pairs ) {
+                if ( f.detectorID == fID && b.detectorID == bID ) {
+                    raw[n]->Fill(b.adcvalue, f.adcvalue);
+                }
+                ++n;
+            }
+        }
+    }
+}
+
+
 
 
 Particle_telescope_t::Particle_telescope_t(SharedHistograms &hm, const size_t &num)
@@ -120,6 +156,7 @@ HistManager::HistManager(SharedHistograms &histograms, const UserConfiguration &
     , ppacs( histograms, "ppac", user_config.GetNumDetectors(DetectorType::ppac) )
     , particle_coincidence{{ histograms, 0}, { histograms, 1}, { histograms, 2}, { histograms, 3},
                            { histograms, 4}, { histograms, 5}, { histograms, 6},{ histograms, 7}}
+    , oscar_particle( histograms )
     , ede_spectra_all( histograms.Create2D("ede_all", "E-#Delta E spectra (all)", 1024, 0, 16384*4, "E energy [keV]", 1024, 0, 16384*4, "#Delta E energy [keV]") )
 {
 }
@@ -145,6 +182,8 @@ void HistManager::AddEntry(Triggered_event &buffer) {
         return;
     }
 
+    oscar_particle.Fill(buffer.GetDetector(DetectorType::oscarF), buffer.GetDetector(DetectorType::oscarB));
+
     // For now, we will discard events with bad CFD
     // We have this req. if we get a trigger
     if ( trigger->cfdfail )
@@ -165,8 +204,7 @@ void HistManager::AddEntry(Triggered_event &buffer) {
 
     for ( auto &front : buffer.GetDetector(DetectorType::oscarF) ) {
         for ( auto &back : buffer.GetDetector(DetectorType::oscarB) ) {
-            if (( front.detectorID  == 4 && back.detectorID == 2 ) )
-            //if ( front.detectorID == 2 && front.detectorID == 4)
+            if ( front.detectorID  == 14 && back.detectorID == 9  )
                 ede_spectra_all->Fill(back.adcvalue, front.adcvalue);
         }
     }

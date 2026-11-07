@@ -33,6 +33,13 @@ namespace Task {
 
         };
 
+        struct OscarParticle_t {
+            SharedHistogram2Dp raw[4];
+            std::array<std::pair<int, int>, 4> oscar_pairs = {std::make_pair(2, 8), std::make_pair(6, 11), std::make_pair(9, 6), std::make_pair(14, 9)};
+            void Fill(const subvector<Entry_t>& front, const subvector<Entry_t>& back);
+            OscarParticle_t(SharedHistograms &hist);
+        };
+
         class Particle_telescope_t
         {
         public:
@@ -57,6 +64,7 @@ namespace Task {
             Detector_Histograms_t ppacs;
 
             Particle_telescope_t particle_coincidence[NUM_SI_E_DET];
+            OscarParticle_t oscar_particle;
             SharedHistogram2Dp ede_spectra_all;
 
             Detector_Histograms_t *GetSpec(const DetectorType &type);
