@@ -34,8 +34,15 @@ namespace Task {
         };
 
         struct OscarParticle_t {
-            SharedHistogram2Dp raw[4];
-            std::array<std::pair<int, int>, 4> oscar_pairs = {std::make_pair(2, 8), std::make_pair(6, 11), std::make_pair(9, 6), std::make_pair(14, 9)};
+            SharedHistogram2Dp raw[15];
+            std::array<std::pair<int, int>, 15> oscar_pairs = {std::make_pair(0, 4), std::make_pair(1, 8),
+                                                              std::make_pair(3, 8), std::make_pair(4, 7),
+                                                              std::make_pair(5, 7), std::make_pair(6, 11),
+                                                              std::make_pair(7, 11), std::make_pair(8, 10),
+                                                              std::make_pair(9, 6), std::make_pair(10, 10),
+                                                              std::make_pair(11, 10), std::make_pair(12, 9),
+                                                              std::make_pair(13, 9), std::make_pair(14, 9),
+                                                              std::make_pair(15, 9)};
             void Fill(const subvector<Entry_t>& front, const subvector<Entry_t>& back);
             OscarParticle_t(SharedHistograms &hist);
         };
