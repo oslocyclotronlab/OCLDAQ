@@ -703,8 +703,10 @@ std::string build_body(const elog_config& cfg, const elog_attributes& attrs,
     add_part(body, boundary, "Text", to_crlf(text));
     for(std::size_t i=0; i<files.size(); ++i)
         add_file_part(body, boundary, static_cast<int>(i+1), files[i]);
+    // closing delimiter (RFC 2046); elogd does not need the trailing "--",
+    // but standard multipart parsers such as elogNG's do
     body += boundary;
-    body += "\r\n";
+    body += "--\r\n";
     return body;
 }
 
@@ -716,7 +718,9 @@ std::string build_header(const elog_config& cfg, int port, bool tls,
         h += cfg.subdir + "/";
     h += url_encode(cfg.logbook) + "/";
     h += " HTTP/1.0\r\n";
-    h += "Content-Type: multipart/form-data; boundary=" + boundary + "\r\n";
+    // the delimiter in the body is "--" + the boundary parameter (RFC 2046),
+    // as browsers send it: accepted by both classic elogd and elogNG
+    h += "Content-Type: multipart/form-data; boundary=" + boundary.substr(2) + "\r\n";
     h += "Host: " + cfg.host;
     if( port != (tls ? 443 : 80) )
         h += ":" + int_to_string(port);
@@ -766,6 +770,11 @@ void parse_response(const std::string& response, elog_result& res)
             res.error = "Missing or non-existing attribute";
     } else if( response.find("form name=form1") != std::string::npos ) {
         res.error = "Missing or invalid user name/password";
+    } else if( response.find("Error: ") != std::string::npos ) {
+        // elogd and elogNG report other errors as an HTML page with "Error: ..."
+        std::string line = response.substr(response.find("Error: "));
+        line = line.substr(0, line.find_first_of("\r\n"));
+        res.error = strip_html(line);
     } else {
         const std::string status = first_line(response);
         res.error = "Error transmitting message"
