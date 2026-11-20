@@ -19,6 +19,13 @@ engine   = xterm -e ./XIAengine 2 3 4 5 6 7 8
 # (default: print a warning and continue).
 # elog_encoding is plain (default), ELCode or HTML.
 # Every elog_attr_<Name> = <value> becomes the attribute <Name> on each entry.
+#
+# The server can be a classic ELOG (elogd) or elogNG. For elogNG, use an API
+# token (Account -> API tokens) as elog_password and the token owner's user
+# name as elog_user. elog_logbook may be the logbook's name or slug. elogNG
+# sets the author from the token, ignores attributes the logbook does not
+# define, and needs no elog_subdir unless a reverse proxy serves it under a
+# prefix.
 elog_host          = localhost
 elog_port          = 8080
 elog_subdir        =
