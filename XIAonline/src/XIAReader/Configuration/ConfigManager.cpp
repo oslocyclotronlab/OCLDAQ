@@ -76,7 +76,9 @@ ConfigManager::ConfigManager(const YAML::Node &setup)
 
 
 bool ConfigManager::keep(const XIA_base_t* xia) const {
-    switch (dinfo.at(xia->index()).type) {
+    if ( !valid_address(xia->index()) )
+        return false;
+    switch (dinfo[xia->index()].type) {
         case labr:
         case deDet:
         case eDet:

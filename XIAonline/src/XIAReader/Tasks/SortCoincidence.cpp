@@ -5,6 +5,9 @@
 #include "SortCoincidence.h"
 
 
+//const std::pair<int, int> comb_oscar = {{9, 10}};
+
+
 using namespace Task::Coincidence;
 
 Detector_Histograms_t::Detector_Histograms_t(SharedHistograms &hm, const std::string &name, const size_t &num)
@@ -43,6 +46,72 @@ void Detector_Histograms_t::Fill(const subvector<Entry_t> &subvec,
 #define EDE_YDIM 250
 #define EDE_RAW_XDIM 1024
 #define EDE_RAW_YDIM 1024
+
+OscarParticle_t::OscarParticle_t(SharedHistograms &hm)
+    : raw{
+    hm.Create2D("oscar_particle_f00b04", "ede spectra f0b4",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered"),
+    hm.Create2D("oscar_particle_f01b08", "ede spectra f01b08",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered"),
+    hm.Create2D("oscar_particle_f02b08", "ede spectra b08 f02",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered"),
+    hm.Create2D("oscar_particle_f03b08", "ede spectra b08 f03",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered"),
+    hm.Create2D("oscar_particle_f04b07", "ede spectra f04b07",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered"),
+    hm.Create2D("oscar_particle_f05b07", "ede spectra b07 f05",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered"),
+    hm.Create2D("oscar_particle_f06b11", "ede spectra b11 f06",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered"),
+    hm.Create2D("oscar_particle_f07b11", "ede spectra b11 f07",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered"),
+    hm.Create2D("oscar_particle_f08b10", "ede spectra b10 f08",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered"),
+    hm.Create2D("oscar_particle_f09b06", "ede spectra b06 f09",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered"),
+    hm.Create2D("oscar_particle_f10b10", "ede spectra b10 f10b10",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered"),
+    hm.Create2D("oscar_particle_f11b10", "ede spectra b10 f11b10",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered"),
+    hm.Create2D("oscar_particle_f12b09", "ede spectra b09 f12b09",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered"),
+    hm.Create2D("oscar_particle_f13b09", "ede spectra b09 f13b09",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered"),
+    hm.Create2D("oscar_particle_f14b09", "ede spectra b09 f14",
+                EDE_RAW_XDIM, 0, 65536, "Back energy [ch]",
+                EDE_RAW_YDIM, 0, 65536, "Front energy [ch]", "triggered")
+        }
+{}
+
+void OscarParticle_t::Fill(const subvector<Entry_t> &front, const subvector<Entry_t>& back) {
+    for (auto &f : front) {
+        for (auto &b : back) {
+            int n = 0;
+            for ( auto [fID, bID] : oscar_pairs ) {
+                if ( f.detectorID == fID && b.detectorID == bID ) {
+                    raw[n]->Fill(b.adcvalue, f.adcvalue);
+                }
+                ++n;
+            }
+        }
+    }
+}
+
+
 
 
 Particle_telescope_t::Particle_telescope_t(SharedHistograms &hm, const size_t &num)
@@ -120,7 +189,8 @@ HistManager::HistManager(SharedHistograms &histograms, const UserConfiguration &
     , ppacs( histograms, "ppac", user_config.GetNumDetectors(DetectorType::ppac) )
     , particle_coincidence{{ histograms, 0}, { histograms, 1}, { histograms, 2}, { histograms, 3},
                            { histograms, 4}, { histograms, 5}, { histograms, 6},{ histograms, 7}}
-    , ede_spectra_all( histograms.Create2D("ede_all", "E-#Delta E spectra (all)", 1024, 0, 16384, "E energy [keV]", 1024, 0, 16384, "#Delta E energy [keV]") )
+    , oscar_particle( histograms )
+    , ede_spectra_all( histograms.Create2D("ede_all", "E-#Delta E spectra (all)", 1024, 0, 16384*4, "E energy [keV]", 1024, 0, 16384*4, "#Delta E energy [keV]") )
 {
 }
 
@@ -156,12 +226,33 @@ void HistManager::AddEntry(Triggered_event &buffer) {
             spec->Fill(buffer.GetDetector(type), trigger);
     }
 
+    oscar_particle.Fill(buffer.GetDetector(DetectorType::oscarF), buffer.GetDetector(DetectorType::oscarB));
+    for ( int trapID = 0 ; trapID < NUM_SI_DE_TEL ; ++trapID ) {
+        auto [de_evts, e_evts] = buffer.GetTrap(trapID);
+        Particle_telescope_t* telescope = GetPart(trapID);
+        if ( !telescope )
+            return; // Maybe debug log here...
+        telescope->Fill(de_evts, e_evts);
+    }
+
+    return;
+
+    // Maybe we will fill this in during the experiments? I dont know...
     if ( trigger->type != DetectorType::deDet ) // All analysis below requires the trigger to be a dE detector
         return;
 
     auto trapID = trigger->detectorID / 8;
     auto ringID = trigger->detectorID % 8;
     auto [de_evts, e_evts] = buffer.GetTrap(trapID);
+    GetPart(trapID)->Fill(de_evts, e_evts);
+
+    if ( de_evts.size() != 1 || e_evts.size() != 1 )
+        return; // DONE!!
+
+    auto e_evt = e_evts[0];
+    auto de_evt = de_evts[1];
+
+    double etot = e_evt.energy + de_evt.energy;
 
 }
 

@@ -12,6 +12,7 @@
 #ifndef ELOG_CLIENT_H
 #define ELOG_CLIENT_H 1
 
+#include <functional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -50,6 +51,20 @@ struct elog_result {
     elog_result() : ok(false), message_id(-1) { }
 };
 
+//! A file attached to an elog entry. 'data' holds the raw (binary) bytes.
+struct elog_attachment {
+    std::string filename;   //!< name shown in the logbook (directories are stripped)
+    std::string data;       //!< file contents
+
+    elog_attachment() { }
+    elog_attachment(const std::string& f, const std::string& d) : filename(f), data(d) { }
+};
+
+typedef std::vector<elog_attachment> elog_attachments;
+
+//! Called from the submit thread when an asynchronous submission is done.
+typedef std::function<void(const elog_result&)> elog_callback;
+
 //! True if sirius was built with OpenSSL, i.e. TLS can be used.
 bool elog_ssl_available();
 
@@ -68,9 +83,19 @@ elog_config elog_config_from_commands(const command_list& commands);
 elog_result elog_submit(const elog_config& cfg, const elog_attributes& attrs,
                         const std::string& text);
 
+//! As above, with file attachments (sent as attfile1, attfile2, ...).
+elog_result elog_submit(const elog_config& cfg, const elog_attributes& attrs,
+                        const std::string& text, const elog_attachments& files);
+
 //! Submit an entry from a detached background thread. Warnings and errors
 //! are printed to std::cerr prefixed with "elog: ".
 void elog_submit_async(const elog_config& cfg, const elog_attributes& attrs,
                        const std::string& text);
+
+//! As above, with file attachments. If 'done' is set, it is called with the
+//! result from the submit thread (after the result has been reported).
+void elog_submit_async(const elog_config& cfg, const elog_attributes& attrs,
+                       const std::string& text, const elog_attachments& files,
+                       const elog_callback& done = elog_callback());
 
 #endif /* ELOG_CLIENT_H */

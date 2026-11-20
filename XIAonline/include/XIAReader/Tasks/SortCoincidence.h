@@ -33,6 +33,20 @@ namespace Task {
 
         };
 
+        struct OscarParticle_t {
+            SharedHistogram2Dp raw[15];
+            std::array<std::pair<int, int>, 15> oscar_pairs = {std::make_pair(0, 4), std::make_pair(1, 8),
+                                                              std::make_pair(3, 8), std::make_pair(4, 7),
+                                                              std::make_pair(5, 7), std::make_pair(6, 11),
+                                                              std::make_pair(7, 11), std::make_pair(8, 10),
+                                                              std::make_pair(9, 6), std::make_pair(10, 10),
+                                                              std::make_pair(11, 10), std::make_pair(12, 9),
+                                                              std::make_pair(13, 9), std::make_pair(14, 9),
+                                                              std::make_pair(15, 9)};
+            void Fill(const subvector<Entry_t>& front, const subvector<Entry_t>& back);
+            OscarParticle_t(SharedHistograms &hist);
+        };
+
         class Particle_telescope_t
         {
         public:
@@ -57,9 +71,11 @@ namespace Task {
             Detector_Histograms_t ppacs;
 
             Particle_telescope_t particle_coincidence[NUM_SI_E_DET];
+            OscarParticle_t oscar_particle;
             SharedHistogram2Dp ede_spectra_all;
 
             Detector_Histograms_t *GetSpec(const DetectorType &type);
+            Particle_telescope_t *GetPart(const size_t& num){ return ( num < NUM_SI_DE_DET ) ? &particle_coincidence[num] : nullptr; }
 
         public:
             HistManager(SharedHistograms &histograms, const UserConfiguration &configuration);

@@ -18,16 +18,18 @@ private:
 
     void end_all()
     {
+        // Stop the tasks in pipeline order (the order they were added): stop
+        // one task and wait for it to exit before stopping the next. A task
+        // may still push to its output queue while it shuts down (Buffer
+        // flushes its whole sort buffer), and push() blocks while the queue is
+        // full. If the consumer was already stopped, nobody would empty the
+        // queue and the join would hang forever. Stopping in order keeps every
+        // consumer running until its producer has exited.
         for ( auto &thread : tasks ) {
             thread.second->Finish();
-        }
-
-        // Then we will try to join all the threads.
-        for ( auto &thread : tasks ) {
             if ( thread.first.joinable() )
                 thread.first.join();
         }
-
     }
 
 public:

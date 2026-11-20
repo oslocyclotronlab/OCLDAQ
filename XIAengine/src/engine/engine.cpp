@@ -97,6 +97,35 @@ bool prepare_output_file_path(const std::string &requested_filename, std::string
     actual_filename = (run_dir / requested_path.filename()).string();
     return true;
 }
+
+// Copy the setup.yml from the current (experiment) directory next to the
+// data file, named after the run, e.g. sirius-yyyymmdd-HHMMSS.yml.
+// A missing setup.yml only gives a warning; it does not prevent the run.
+void copy_setup_for_data_file(const std::string &data_filename)
+{
+    static const std::filesystem::path setup_file("setup.yml");
+
+    std::filesystem::path target(data_filename);
+    target.replace_extension(".yml");
+
+    std::error_code error;
+    if (!std::filesystem::exists(setup_file, error)) {
+        termWrite.WriteError("engine: no setup.yml in current directory, not copied to run folder.\n");
+        return;
+    }
+
+    if (!std::filesystem::copy_file(setup_file, target,
+                                    std::filesystem::copy_options::overwrite_existing, error) || error) {
+        std::ostringstream out;
+        out << "engine: could not copy setup.yml to '" << target.string() << "': " << error.message() << "\n";
+        termWrite.WriteError(out.str().c_str());
+        return;
+    }
+
+    std::ostringstream out;
+    out << "Copied setup.yml to '" << target.string() << "'\n";
+    termWrite.Write(out.str().c_str());
+}
 }
 
 #ifndef OFFLINE
@@ -189,6 +218,9 @@ static bool do_change_output_file(const std::string& fname, bool save_settings =
             do_stop();
         return false;
     }
+
+    if ( save_settings )
+        copy_setup_for_data_file(fname);
 
     // change output filename
     output_filename = fname;

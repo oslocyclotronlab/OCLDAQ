@@ -667,8 +667,25 @@ elog_attributes merge_attributes(const elog_attributes& defaults, const elog_att
     return merged;
 }
 
+// as elog.cxx: no Content-Type header in the part, elogd only looks at filename
+void add_file_part(std::string& body, const std::string& boundary,
+                   int index, const elog_attachment& file)
+{
+    std::string fname = basename_of(file.filename);
+    std::replace(fname.begin(), fname.end(), '"', '_');
+    body += boundary;
+    body += "\r\nContent-Disposition: form-data; name=\"attfile";
+    body += int_to_string(index);
+    body += "\"; filename=\"";
+    body += fname;
+    body += "\"\r\n\r\n";
+    body += file.data;
+    body += "\r\n";
+}
+
 std::string build_body(const elog_config& cfg, const elog_attributes& attrs,
-                       const std::string& text, const std::string& boundary)
+                       const std::string& text, const elog_attachments& files,
+                       const std::string& boundary)
 {
     std::string body;
     add_part(body, boundary, "cmd", "Submit");
@@ -684,6 +701,8 @@ std::string build_body(const elog_config& cfg, const elog_attributes& attrs,
             add_part(body, boundary, stou(attrs[i].first), attrs[i].second);
     }
     add_part(body, boundary, "Text", to_crlf(text));
+    for(std::size_t i=0; i<files.size(); ++i)
+        add_file_part(body, boundary, static_cast<int>(i+1), files[i]);
     body += boundary;
     body += "\r\n";
     return body;
@@ -918,6 +937,12 @@ elog_config elog_config_from_commands(const command_list& commands)
 elog_result elog_submit(const elog_config& cfg, const elog_attributes& attrs,
                         const std::string& text)
 {
+    return elog_submit(cfg, attrs, text, elog_attachments());
+}
+
+elog_result elog_submit(const elog_config& cfg, const elog_attributes& attrs,
+                        const std::string& text, const elog_attachments& files)
+{
     elog_result res;
     if( !cfg.enabled() ) {
         res.error = "elog not configured (elog_host and elog_logbook are required)";
@@ -934,7 +959,7 @@ elog_result elog_submit(const elog_config& cfg, const elog_attributes& attrs,
         return res;
 
     const std::string boundary = make_boundary();
-    const std::string body = build_body(cfg, merge_attributes(cfg.attributes, attrs), text, boundary);
+    const std::string body = build_body(cfg, merge_attributes(cfg.attributes, attrs), text, files, boundary);
     const std::string header = build_header(cfg, port, c.is_tls(), boundary, body.size());
 
     std::string err;
@@ -958,7 +983,8 @@ elog_result elog_submit(const elog_config& cfg, const elog_attributes& attrs,
 // ########################################################################
 
 static void submit_and_report(const elog_config cfg, const elog_attributes attrs,
-                              const std::string text)
+                              const std::string text, const elog_attachments files,
+                              const elog_callback done)
 {
     // one entry at a time: keeps entries in order and probes TLS only once
     static std::mutex submit_mutex;
@@ -966,7 +992,7 @@ static void submit_and_report(const elog_config cfg, const elog_attributes attrs
 
     elog_result res;
     try {
-        res = elog_submit(cfg, attrs, text);
+        res = elog_submit(cfg, attrs, text, files);
     } catch( std::exception& e ) {
         res.ok = false;
         res.error = e.what();
@@ -992,15 +1018,35 @@ static void submit_and_report(const elog_config cfg, const elog_attributes attrs
     const std::string s = out.str();
     std::cerr.write(s.data(), static_cast<std::streamsize>(s.size()));
     std::cerr.flush();
+
+    if( done ) {
+        try {
+            done(res);
+        } catch( std::exception& e ) {
+            std::cerr << "elog: ERROR: in completion callback: " << e.what() << std::endl;
+        }
+    }
 }
 
 void elog_submit_async(const elog_config& cfg, const elog_attributes& attrs,
                        const std::string& text)
 {
+    elog_submit_async(cfg, attrs, text, elog_attachments());
+}
+
+void elog_submit_async(const elog_config& cfg, const elog_attributes& attrs,
+                       const std::string& text, const elog_attachments& files,
+                       const elog_callback& done)
+{
     try {
-        std::thread(submit_and_report, cfg, attrs, text).detach();
+        std::thread(submit_and_report, cfg, attrs, text, files, done).detach();
     } catch( std::exception& e ) {
         std::cerr << "elog: ERROR: cannot start submit thread: " << e.what() << std::endl;
+        if( done ) {
+            elog_result res;
+            res.error = std::string("cannot start submit thread: ") + e.what();
+            done(res);
+        }
     }
 }
 
@@ -1008,6 +1054,8 @@ void elog_submit_async(const elog_config& cfg, const elog_attributes& attrs,
 // ########################################################################
 
 #ifdef TEST_ELOG_CLIENT
+
+#include <fstream>
 
 int main(int argc, char* argv[])
 {
@@ -1027,7 +1075,7 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
 
     if( argc < 4 ) {
-        std::cerr << argv[0] << " <commands-file> <subject> <text>" << std::endl;
+        std::cerr << argv[0] << " <commands-file> <subject> <text> [attachment ...]" << std::endl;
         return argc <= 2 ? EXIT_SUCCESS : EXIT_FAILURE;
     }
 
@@ -1041,7 +1089,18 @@ int main(int argc, char* argv[])
 
     elog_attributes attrs;
     attrs.push_back(std::make_pair(std::string("Subject"), std::string(argv[2])));
-    const elog_result res = elog_submit(cfg, attrs, argv[3]);
+    elog_attachments files;
+    for(int a=4; a<argc; ++a) {
+        std::ifstream in(argv[a], std::ios::binary);
+        if( !in ) {
+            std::cerr << "Could not read attachment '" << argv[a] << "'" << std::endl;
+            return EXIT_FAILURE;
+        }
+        std::ostringstream data;
+        data << in.rdbuf();
+        files.push_back(elog_attachment(argv[a], data.str()));
+    }
+    const elog_result res = elog_submit(cfg, attrs, argv[3], files);
     for(std::size_t i=0; i<res.warnings.size(); ++i)
         std::cerr << "elog: " << res.warnings[i] << '\n';
     if( !res.ok ) {

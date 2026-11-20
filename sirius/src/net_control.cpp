@@ -323,6 +323,8 @@ void line_channel::handle_write()
 void line_channel::disconnect()
 {
     DBGL;
+    if( get_fd() < 0 )
+	return; // already disconnected
     close();
     if( cb_disconnected )
 	cb_disconnected->run(this);
@@ -562,9 +564,11 @@ io_channel* line_server::new_channel(int fd)
 void line_server::send_all(const std::string& message)
 {
     DBGL;
-    std::set<io_channel*>::iterator it;
-    for(it=io_channels.begin(); it!=io_channels.end(); ++it) {
-	line_channel* lc = static_cast<line_channel*>( *it );
+    // Iterate over a copy: a failed send disconnects the client, which
+    // erases it from io_channels (see binary_server::send_all).
+    const std::set<io_channel*> channels(io_channels);
+    for(io_channel* ic : channels) {
+	line_channel* lc = static_cast<line_channel*>( ic );
 	lc->send( message );
     }
 }
@@ -670,15 +674,24 @@ void binary_channel::send_frame(unsigned int s, unsigned int us, const void* dat
     const unsigned int magic = 0xDEADBEEF;
     const size_t header_size = 4 * 4; // magic, s, us, size
 
-    outbuf.resize(header_size + size);
+    // Never touch bytes that are already queued: the socket is non-blocking,
+    // so a previous frame may only have been partially written. Overwriting
+    // it would truncate that frame on the wire and desynchronise the reader.
+    // If a slow client falls too far behind, drop this frame as a whole
+    // instead, so that every frame that is sent stays intact.
+    static const size_t max_backlog = 32u << 20; // 32 MiB
+    if( outbuf.size() > max_backlog ) {
+        handle_write();
+        return;
+    }
 
-    unsigned int* header = reinterpret_cast<unsigned int*>(outbuf.data());
-    header[0] = magic;
-    header[1] = s;
-    header[2] = us;
-    header[3] = static_cast<unsigned int>(size);
+    const unsigned int header[4] = { magic, s, us, static_cast<unsigned int>(size) };
+    const unsigned char* hp = reinterpret_cast<const unsigned char*>(header);
+    const unsigned char* dp = static_cast<const unsigned char*>(data);
 
-    memcpy(outbuf.data() + header_size, data, size);
+    outbuf.reserve(outbuf.size() + header_size + size);
+    outbuf.insert(outbuf.end(), hp, hp + header_size);
+    outbuf.insert(outbuf.end(), dp, dp + size);
 
     handle_write();
 }
@@ -757,7 +770,13 @@ void binary_channel::handle_write()
 void binary_channel::disconnect()
 {
     DBGL;
+    if( get_fd() < 0 )
+	return; // already disconnected
     close();
+    // The channel object outlives the connection, so release the (possibly
+    // large) queued data now.
+    std::vector<unsigned char>().swap(outbuf);
+    std::vector<unsigned char>().swap(inbuf);
     if( cb_disconnected )
 	cb_disconnected->run(this, 0, 0, nullptr, 0); // Note: binary_callback signature
 }
@@ -809,9 +828,12 @@ io_channel* binary_server::new_channel(int fd)
 void binary_server::send_all(unsigned int s, unsigned int us, const void* data, size_t size)
 {
     DBGL;
-    std::set<io_channel*>::iterator it;
-    for(it = io_channels.begin(); it != io_channels.end(); ++it) {
-	binary_channel* bc = static_cast<binary_channel*>( *it );
+    // Iterate over a copy: if a client has gone away, send_frame() ends up in
+    // client_disconnected() -> remove_channel(), which erases from io_channels
+    // and would invalidate the iterator we are using (use-after-free crash).
+    const std::set<io_channel*> channels(io_channels);
+    for(io_channel* ic : channels) {
+	binary_channel* bc = static_cast<binary_channel*>( ic );
 	bc->send_frame(s, us, data, size);
     }
 }

@@ -51,6 +51,7 @@ public:
     static ConfigManager FromFile(const char *file);
     static ConfigManager FromFile(std::istream &);
 
+    [[nodiscard]] bool valid_address(unsigned short index) const { return index < dinfo.size(); }
     bool keep(const XIA_base_t* xia) const;
     Entry_t operator()(const XIA_base_t* raw) const;
 };
