@@ -228,29 +228,33 @@ void HistManager::AddEntry(Triggered_event &buffer) {
             spec->Fill(buffer.GetDetector(type), trigger);
     }
 
+    for ( int trapID = 0 ; trapID < NUM_SI_DE_TEL ; ++trapID ) {
+        auto [de_evts, e_evts] = buffer.GetTrap(trapID);
+        Particle_telescope_t* telescope = GetPart(trapID);
+        if ( !telescope )
+            return; // Maybe debug log here...
+        telescope->Fill(de_evts, e_evts);
+    }
+
+    return;
+
+    // Maybe we will fill this in during the experiments? I dont know...
     if ( trigger->type != DetectorType::deDet ) // All analysis below requires the trigger to be a dE detector
         return;
 
     auto trapID = trigger->detectorID / 8;
     auto ringID = trigger->detectorID % 8;
     auto [de_evts, e_evts] = buffer.GetTrap(trapID);
+    GetPart(trapID)->Fill(de_evts, e_evts);
 
-    for ( auto &front : buffer.GetDetector(DetectorType::oscarF) ) {
-        for ( auto &back : buffer.GetDetector(DetectorType::oscarB) ) {
-            if ( front.detectorID  == 14 && back.detectorID == 9  )
-                ede_spectra_all->Fill(back.adcvalue, front.adcvalue);
-        }
-    }
+    if ( de_evts.size() != 1 || e_evts.size() != 1 )
+        return; // DONE!!
 
-    Particle_telescope_t* telescope = GetPart(trapID);
-    if ( !telescope )
-        return; // Maybe debug log here...
-    telescope->Fill(de_evts, e_evts);
+    auto e_evt = e_evts[0];
+    auto de_evt = de_evts[1];
 
-    if ( de_evts.size() != 1 && e_evts.size() != 1 )
-        return; // For now, we want only 1 and only 1.
+    double etot = e_evt.energy + de_evt.energy;
 
-    return;
 }
 
 Sorter::Sorter(SharedHistograms& histograms, TEventQueue_t &input, const UserConfiguration& config)
