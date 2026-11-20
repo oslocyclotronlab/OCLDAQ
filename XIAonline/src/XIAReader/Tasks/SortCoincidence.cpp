@@ -215,8 +215,6 @@ void HistManager::AddEntry(Triggered_event &buffer) {
         return;
     }
 
-    oscar_particle.Fill(buffer.GetDetector(DetectorType::oscarF), buffer.GetDetector(DetectorType::oscarB));
-
     // For now, we will discard events with bad CFD
     // We have this req. if we get a trigger
     if ( trigger->cfdfail )
@@ -228,6 +226,7 @@ void HistManager::AddEntry(Triggered_event &buffer) {
             spec->Fill(buffer.GetDetector(type), trigger);
     }
 
+    oscar_particle.Fill(buffer.GetDetector(DetectorType::oscarF), buffer.GetDetector(DetectorType::oscarB));
     for ( int trapID = 0 ; trapID < NUM_SI_DE_TEL ; ++trapID ) {
         auto [de_evts, e_evts] = buffer.GetTrap(trapID);
         Particle_telescope_t* telescope = GetPart(trapID);
