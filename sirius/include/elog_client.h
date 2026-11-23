@@ -1,9 +1,10 @@
 // -*- c++ -*-
 //
 // Native client for submitting entries to an elogd server
-// (https://elog.psi.ch/elog/). Speaks the same multipart/form-data
-// protocol as the `elog` command line tool, so no external binary is
-// needed.
+// (https://elog.psi.ch/elog/) or to elogNG, through its classic ELOG
+// compatibility endpoint (use an elogNG API token as the password).
+// Speaks the same multipart/form-data protocol as the `elog` command
+// line tool, so no external binary is needed.
 //
 // TLS is detected automatically: if the server speaks TLS it is always
 // used, otherwise the entry is sent as plain HTTP and a warning is
